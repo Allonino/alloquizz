@@ -529,8 +529,7 @@ async function loadThemes() {
 // ===== SPECTATOR =====
 function pushGridState(){
   const gridData = gameThemes.map(t=>({
-    id: t.id,
-    name: t.name,
+    id: t.id, name: t.name,
     locked: lockedThemes.has(t.id),
     count: (t.images||[]).length
   }));
@@ -542,8 +541,7 @@ function pushGridState(){
     timer: null, timerRunning: false,
     grid: gridData
   };
-  localStorage.setItem('qg_spectator', JSON.stringify(state));
-  if(bc) bc.postMessage(state);
+  sendToSpectator(state);
 }
 
 function pushSpectator(extra) {
@@ -560,22 +558,55 @@ function pushSpectator(extra) {
     grid: null,
     ...(extra||{})
   };
-  localStorage.setItem('qg_spectator', JSON.stringify(state));
-  if (bc) bc.postMessage(state);
+  sendToSpectator(state);
 }
 function clearSpectator() {
   pushGridState();
 }
 
+let spectatorWin = null;
 function openSpectatorWindow() {
-  const win = window.open('', 'aq_spectator', 'width=1280,height=720,toolbar=0,menubar=0,location=0');
-  if (!win) { showToast('Pop-up bloquée'); return; }
-  win.document.open(); win.document.write(buildSpectatorHTML()); win.document.close();
+  const html = buildSpectatorHTML();
+  const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+  spectatorWin = window.open(dataUrl, 'aq_spectator', 'width=1280,height=720,toolbar=0,menubar=0,location=0');
+  if (!spectatorWin) { showToast('Pop-up bloquée — autorise les pop-ups'); return; }
   showToast('Écran joueurs ouvert — glisse sur la TV puis F11');
-  // Wait for spectator to init its BroadcastChannel, then push state multiple times
-  setTimeout(() => pushGridState(), 200);
-  setTimeout(() => pushGridState(), 600);
-  setTimeout(() => pushGridState(), 1200);
+  setTimeout(() => sendToSpectator(getCurrentState()), 500);
+  setTimeout(() => sendToSpectator(getCurrentState()), 1200);
+  setTimeout(() => sendToSpectator(getCurrentState()), 2500);
+}
+
+function getCurrentState() {
+  if (document.getElementById('game-play').style.display !== 'none') {
+    const imgs = currentPlayTheme ? (currentPlayTheme.images||[]) : [];
+    const img = imgs[currentImgIdx];
+    return {
+      view:'play', theme: currentPlayTheme ? currentPlayTheme.name : null,
+      s1:scores[0], s2:scores[1], r1:roundScores[0], r2:roundScores[1],
+      timer:timerVal, timerRunning,
+      imgSrc: img ? img.public_url : null,
+      counter: imgs.length ? (currentImgIdx+1)+'/'+imgs.length : null,
+      grid: null
+    };
+  } else {
+    const gridData = gameThemes.map(t=>({id:t.id, name:t.name, locked:lockedThemes.has(t.id)}));
+    return {
+      view:'grid', theme:null, imgSrc:null, counter:null,
+      s1:scores[0], s2:scores[1], r1:0, r2:0,
+      timer:null, timerRunning:false, grid:gridData
+    };
+  }
+}
+
+function sendToSpectator(state) {
+  // Method 1: direct window call
+  if (spectatorWin && !spectatorWin.closed && spectatorWin.applyState) {
+    try { spectatorWin.applyState(state); } catch(e){}
+  }
+  // Method 2: BroadcastChannel
+  if (bc) try { bc.postMessage(state); } catch(e){}
+  // Method 3: localStorage
+  try { localStorage.setItem('qg_spectator', JSON.stringify(state)); } catch(e){}
 }
 
 function buildSpectatorHTML() {
@@ -652,7 +683,7 @@ body{background:#06060d;color:#f0f0f5;font-family:'Syne',sans-serif;height:100vh
 </div>
 <script>
 let ps1=0,ps2=0;
-function applyState(s){
+window.applyState=function applyState(s){
   if(!s)return;
   document.getElementById('sp-theme').textContent=s.theme||'En attente…';
   const e1=document.getElementById('sp-s1'),e2=document.getElementById('sp-s2');
@@ -893,8 +924,7 @@ function showCountdown(themeId){
     imgSrc: null, counter: null, grid: null,
     team: currentTeam
   };
-  localStorage.setItem('qg_spectator', JSON.stringify(cdState));
-  if(bc) bc.postMessage(cdState);
+  sendToSpectator(cdState);
   showGameView('countdown');
 }
 function cancelCountdown(){
