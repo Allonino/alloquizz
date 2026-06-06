@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>AlloQuizz — Joueurs</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#06060d;color:#f0f0f5;font-family:'Syne',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.top{display:flex;align-items:center;justify-content:space-between;padding:18px 40px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+.theme-lbl{font-size:10px;color:#44445a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;font-family:'DM Sans',sans-serif}
+.theme-name{font-size:20px;font-weight:800;color:#f0f0f5}
+.scores{display:flex;align-items:center;gap:48px}
+.score-block{text-align:center}
+.score-val{font-size:56px;font-weight:800;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;min-width:60px;text-align:center}
+.score-val.bump{animation:bump .3s ease-out}
+@keyframes bump{0%{transform:scale(1.4)}100%{transform:scale(1)}}
+.score-lbl{font-size:11px;color:#44445a;margin-top:4px;font-family:'DM Sans',sans-serif}
+.score-global{font-size:20px;font-weight:700;color:#44445a;line-height:1}
+.t1c{color:#4f9eff}.t2c{color:#ff6b9d}
+.timer-val{font-size:56px;font-weight:800;width:110px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums}
+.ok{color:#e0e0e0}.warn{color:#ffc84a}.urgent{color:#ff5c5c;animation:pulse .5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Play area */
+.main{flex:1;display:flex;align-items:center;justify-content:center;padding:24px 48px;position:relative}
+.play-wrap{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.play-wrap img{max-width:100%;max-height:100%;border-radius:14px;object-fit:contain}
+.waiting{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#22223a;font-size:20px;font-weight:700;width:100%;height:100%}
+.counter{position:absolute;top:14px;right:18px;background:rgba(0,0,0,.5);border-radius:20px;padding:4px 14px;font-size:13px;color:#44445a;font-weight:700}
+
+/* Grid area */
+.grid-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.sp-grid{display:grid;gap:12px;width:100%}
+.sp-card{background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;padding:18px;min-height:80px;font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:#111}
+.sp-card.locked{background:#111118;border:1px solid #2a2a3a;color:rgba(255,255,255,0.25)}
+
+/* Countdown */
+.cd-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;width:100%;height:100%}
+.cd-team{padding:6px 20px;border-radius:20px;font-size:14px;font-weight:700;font-family:'DM Sans',sans-serif}
+.cd-theme{font-size:36px;font-weight:800;color:#f0f0f5;text-align:center;max-width:600px;line-height:1.2}
+.cd-sub{font-size:16px;color:#44445a;font-family:'DM Sans',sans-serif}
+</style>
+</head>
+<body>
+<div class="top">
+  <div>
+    <div class="theme-lbl">Thème</div>
+    <div class="theme-name" id="sp-theme">En attente…</div>
+  </div>
+  <div class="scores">
+    <div class="score-block">
+      <div class="score-lbl">Équipe 1</div>
+      <div style="display:flex;align-items:baseline;gap:10px">
+        <div class="score-val t1c" id="sp-r1">0</div>
+        <div class="score-global" id="sp-s1">0</div>
+      </div>
+      <div class="score-lbl">manche &nbsp;·&nbsp; total</div>
+    </div>
+    <div class="score-block">
+      <div class="score-lbl">Équipe 2</div>
+      <div style="display:flex;align-items:baseline;gap:10px">
+        <div class="score-val t2c" id="sp-r2">0</div>
+        <div class="score-global" id="sp-s2">0</div>
+      </div>
+      <div class="score-lbl">manche &nbsp;·&nbsp; total</div>
+    </div>
+  </div>
+  <div class="timer-val ok" id="sp-timer">—</div>
+</div>
+
+<div class="main">
+  <!-- Play -->
+  <div class="play-wrap" id="view-play" style="display:none">
+    <div class="waiting" id="sp-waiting">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      En attente d'une image…
+    </div>
+    <img id="sp-img" src="" alt="" style="display:none">
+    <div class="counter" id="sp-counter" style="display:none"></div>
+  </div>
+
+  <!-- Grid -->
+  <div class="grid-wrap" id="view-grid" style="display:none">
+    <div class="sp-grid" id="sp-grid"></div>
+  </div>
+
+  <!-- Countdown -->
+  <div class="cd-wrap" id="view-countdown" style="display:none">
+    <div class="cd-team" id="sp-cd-team">Équipe 1</div>
+    <div class="cd-theme" id="sp-cd-theme">—</div>
+    <div class="cd-sub">Préparez-vous !</div>
+  </div>
+
+  <!-- Default waiting -->
+  <div class="waiting" id="view-default">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    En attente du maître du jeu…
+  </div>
+</div>
+
+<script>
+let ps1=0, ps2=0;
+
+function showView(v) {
+  ['play','grid','countdown','default'].forEach(x => {
+    const el = document.getElementById('view-'+x);
+    if(el) el.style.display = 'none';
+  });
+  const target = document.getElementById('view-'+v);
+  if(target) target.style.display = (v==='play'||v==='grid'||v==='countdown') ? 'flex' : 'flex';
+}
+
+function applyState(s) {
+  if(!s) return;
+
+  // Theme
+  document.getElementById('sp-theme').textContent = s.theme || 'En attente…';
+
+  // Scores
+  const r1 = s.r1||0, r2 = s.r2||0;
+  const r1el = document.getElementById('sp-r1');
+  const r2el = document.getElementById('sp-r2');
+  if(r1 !== ps1){ r1el.textContent=r1; r1el.classList.remove('bump'); void r1el.offsetWidth; r1el.classList.add('bump'); ps1=r1; }
+  if(r2 !== ps2){ r2el.textContent=r2; r2el.classList.remove('bump'); void r2el.offsetWidth; r2el.classList.add('bump'); ps2=r2; }
+  document.getElementById('sp-s1').textContent = s.s1||0;
+  document.getElementById('sp-s2').textContent = s.s2||0;
+
+  // Timer
+  const te = document.getElementById('sp-timer');
+  if(s.view==='play' && s.timer != null) {
+    te.textContent = s.timer;
+    te.className = 'timer-val ' + (s.timer>20?'ok':s.timer>10?'warn':'urgent');
+  } else {
+    te.textContent = '—'; te.className = 'timer-val ok';
+  }
+
+  // View routing
+  if(s.view === 'play') {
+    showView('play');
+    const img = document.getElementById('sp-img');
+    const waiting = document.getElementById('sp-waiting');
+    const counter = document.getElementById('sp-counter');
+    if(s.imgSrc) {
+      img.src = s.imgSrc; img.style.display='block';
+      waiting.style.display='none';
+      counter.style.display='block'; counter.textContent = s.counter||'';
+    } else {
+      img.style.display='none'; waiting.style.display='flex'; counter.style.display='none';
+    }
+  } else if(s.view === 'grid' && s.grid) {
+    showView('grid');
+    const cols = s.grid.length<=4 ? s.grid.length : s.grid.length<=9 ? 3 : 4;
+    const g = document.getElementById('sp-grid');
+    g.style.gridTemplateColumns = 'repeat('+cols+',1fr)';
+    g.innerHTML = s.grid.map(t=>'<div class="sp-card'+(t.locked?' locked':'')+'">'+t.name+'</div>').join('');
+  } else if(s.view === 'countdown') {
+    showView('countdown');
+    document.getElementById('sp-cd-theme').textContent = s.theme||'—';
+    const tb = document.getElementById('sp-cd-team');
+    tb.textContent = 'Équipe '+(s.team||1);
+    tb.style.background = s.team===2 ? 'rgba(255,107,157,0.15)' : 'rgba(79,158,255,0.15)';
+    tb.style.color = s.team===2 ? '#ff6b9d' : '#4f9eff';
+  } else {
+    showView('default');
+  }
+}
+
+// BroadcastChannel
+try {
+  const bc = new BroadcastChannel('quiz_spectator');
+  bc.onmessage = e => applyState(e.data);
+} catch(e) {}
+
+// Poll localStorage every 500ms as fallback
+setInterval(() => {
+  try {
+    const raw = localStorage.getItem('qg_spectator');
+    if(raw) applyState(JSON.parse(raw));
+  } catch(e) {}
+}, 500);
+
+// Init
+try { applyState(JSON.parse(localStorage.getItem('qg_spectator'))); } catch(e) {}
+</script>
+</body>
+</html>
