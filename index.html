@@ -566,14 +566,14 @@ function clearSpectator() {
 
 let spectatorWin = null;
 function openSpectatorWindow() {
-  const html = buildSpectatorHTML();
-  const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
-  spectatorWin = window.open(dataUrl, 'aq_spectator', 'width=1280,height=720,toolbar=0,menubar=0,location=0');
+  // Push state to localStorage before opening
+  const state = getCurrentState();
+  try { localStorage.setItem('qg_spectator', JSON.stringify(state)); } catch(e){}
+  spectatorWin = window.open('spectator.html', 'aq_spectator', 'width=1280,height=720,toolbar=0,menubar=0,location=0');
   if (!spectatorWin) { showToast('Pop-up bloquée — autorise les pop-ups'); return; }
   showToast('Écran joueurs ouvert — glisse sur la TV puis F11');
-  setTimeout(() => sendToSpectator(getCurrentState()), 500);
-  setTimeout(() => sendToSpectator(getCurrentState()), 1200);
-  setTimeout(() => sendToSpectator(getCurrentState()), 2500);
+  setTimeout(() => sendToSpectator(getCurrentState()), 800);
+  setTimeout(() => sendToSpectator(getCurrentState()), 2000);
 }
 
 function getCurrentState() {
