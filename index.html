@@ -30,6 +30,8 @@ h1,h2,h3,h4{font-family:'Syne',sans-serif}
 .nav-tab.active{color:var(--text);border-bottom-color:var(--accent)}
 .screen{display:none}.screen.active{display:block}
 svg.icon{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px}
+.btn-spectator{background:#5c6bc0;border:none;color:#fff;font-size:12px;font-weight:600;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;transition:all .12s;white-space:nowrap}
+.btn-spectator:hover{background:#3949ab}
 
 .loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;transition:opacity .3s}
 .loading-overlay.hidden{opacity:0;pointer-events:none}
@@ -252,8 +254,7 @@ svg.icon{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;str
 .nm-btn{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .12s}
 .nm-btn.create{background:var(--accent);color:#fff}.nm-btn.create:hover{background:#6a5eff}
 .nm-btn.cancel{background:var(--bg3);color:var(--text3);border:1px solid var(--border)}
-.btn-spectator{background:rgba(255,200,74,0.1);border:1px solid rgba(255,200,74,0.3);color:var(--yellow);font-size:12px;font-weight:500;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;transition:all .12s}
-.btn-spectator:hover{background:rgba(255,200,74,0.18)}
+
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 18px;font-size:13px;color:var(--text2);opacity:0;transition:opacity .3s;pointer-events:none;z-index:400;white-space:nowrap}
 .toast.show{opacity:1}
 </style>
