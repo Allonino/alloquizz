@@ -50,20 +50,20 @@ body{background:#06060d;color:#f0f0f5;font-family:'Syne',sans-serif;height:100vh
   </div>
   <div class="scores">
     <div class="score-block">
-      <div class="score-lbl">Équipe 1</div>
-      <div style="display:flex;align-items:baseline;gap:10px">
-        <div class="score-val t1c" id="sp-r1">0</div>
-        <div class="score-global" id="sp-s1">0</div>
+      <div class="score-lbl" id="lbl-s1">Équipe 1</div>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <div class="score-val t1c" id="sp-main1">0</div>
+        <div class="score-global" id="sp-sub1" style="display:none">0</div>
       </div>
-      <div class="score-lbl">manche &nbsp;·&nbsp; total</div>
+      <div class="score-lbl" id="sublbl-s1" style="display:none">total</div>
     </div>
     <div class="score-block">
-      <div class="score-lbl">Équipe 2</div>
-      <div style="display:flex;align-items:baseline;gap:10px">
-        <div class="score-val t2c" id="sp-r2">0</div>
-        <div class="score-global" id="sp-s2">0</div>
+      <div class="score-lbl" id="lbl-s2">Équipe 2</div>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <div class="score-val t2c" id="sp-main2">0</div>
+        <div class="score-global" id="sp-sub2" style="display:none">0</div>
       </div>
-      <div class="score-lbl">manche &nbsp;·&nbsp; total</div>
+      <div class="score-lbl" id="sublbl-s2" style="display:none">total</div>
     </div>
   </div>
   <div class="timer-val ok" id="sp-timer">—</div>
@@ -117,14 +117,34 @@ function applyState(s) {
   // Theme
   document.getElementById('sp-theme').textContent = s.theme || 'En attente…';
 
-  // Scores
-  const r1 = s.r1||0, r2 = s.r2||0;
-  const r1el = document.getElementById('sp-r1');
-  const r2el = document.getElementById('sp-r2');
-  if(r1 !== ps1){ r1el.textContent=r1; r1el.classList.remove('bump'); void r1el.offsetWidth; r1el.classList.add('bump'); ps1=r1; }
-  if(r2 !== ps2){ r2el.textContent=r2; r2el.classList.remove('bump'); void r2el.offsetWidth; r2el.classList.add('bump'); ps2=r2; }
-  document.getElementById('sp-s1').textContent = s.s1||0;
-  document.getElementById('sp-s2').textContent = s.s2||0;
+  // Scores — grid mode: show global big. play mode: show round big + global small
+  const isPlay = s.view === 'play';
+  const main1 = document.getElementById('sp-main1');
+  const main2 = document.getElementById('sp-main2');
+  const sub1 = document.getElementById('sp-sub1');
+  const sub2 = document.getElementById('sp-sub2');
+  const sublbl1 = document.getElementById('sublbl-s1');
+  const sublbl2 = document.getElementById('sublbl-s2');
+  if(isPlay) {
+    // Round big, global small
+    const r1 = s.r1||0, r2 = s.r2||0;
+    if(r1 !== ps1){ main1.textContent=r1; main1.classList.remove('bump'); void main1.offsetWidth; main1.classList.add('bump'); ps1=r1; }
+    if(r2 !== ps2){ main2.textContent=r2; main2.classList.remove('bump'); void main2.offsetWidth; main2.classList.add('bump'); ps2=r2; }
+    sub1.textContent = s.s1||0; sub1.style.display='block';
+    sub2.textContent = s.s2||0; sub2.style.display='block';
+    sublbl1.style.display='block'; sublbl2.style.display='block';
+    document.getElementById('lbl-s1').textContent='Équipe 1';
+    document.getElementById('lbl-s2').textContent='Équipe 2';
+  } else {
+    // Global big, no sub
+    const g1 = s.s1||0, g2 = s.s2||0;
+    if(g1 !== ps1){ main1.textContent=g1; main1.classList.remove('bump'); void main1.offsetWidth; main1.classList.add('bump'); ps1=g1; }
+    if(g2 !== ps2){ main2.textContent=g2; main2.classList.remove('bump'); void main2.offsetWidth; main2.classList.add('bump'); ps2=g2; }
+    sub1.style.display='none'; sub2.style.display='none';
+    sublbl1.style.display='none'; sublbl2.style.display='none';
+    document.getElementById('lbl-s1').textContent='Équipe 1';
+    document.getElementById('lbl-s2').textContent='Équipe 2';
+  }
 
   // Timer
   const te = document.getElementById('sp-timer');
