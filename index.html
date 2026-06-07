@@ -302,6 +302,20 @@ svg.icon{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;str
           <p>JPG, PNG, GIF, WebP — plusieurs fichiers acceptés</p>
         </div>
         <input type="file" id="file-input" multiple accept="image/*" onchange="handleFiles(this.files)">
+        
+        <!-- URL import -->
+        <div style="display:flex;gap:8px;margin-bottom:20px">
+          <div style="flex:1;position:relative">
+            <input type="text" id="url-input" placeholder="Ou coller une URL d'image (Unsplash, Pexels…)" 
+              style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 14px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+              onkeydown="if(event.key==='Enter')importFromUrl()">
+          </div>
+          <button onclick="importFromUrl()" style="background:var(--accent);border:none;color:#fff;font-size:12px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .15s">
+            Importer
+          </button>
+        </div>
+
         <div class="images-grid" id="images-grid"></div>
       </div>
     </div>
@@ -798,6 +812,48 @@ async function deleteImage(id,storagePath){
   if(t){t.images=t.images.filter(i=>i.id!==id);renderImages(t);updateMeta(t);renderSidebar();}
   showSavedToast();
 }
+async function importFromUrl(){
+  if(!currentThemeId) return;
+  const url = document.getElementById('url-input').value.trim();
+  if(!url) return;
+  
+  // Extract label from URL
+  let label = '';
+  try {
+    const urlObj = new URL(url);
+    const parts = urlObj.pathname.split('/');
+    const filename = parts[parts.length-1];
+    label = decodeURIComponent(filename)
+      .replace(/\.[^.]+$/, '')        // remove extension
+      .replace(/[-_]/g, ' ')          // dashes/underscores to spaces
+      .replace(/\w/g, c => c.toUpperCase()) // capitalize
+      .trim();
+  } catch(e) {}
+  
+  // Check it's an image URL
+  if(!/\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url) && !url.includes('unsplash') && !url.includes('pexels') && !url.includes('images')) {
+    showToast('URL invalide — doit pointer vers une image');
+    return;
+  }
+
+  const t = themes.find(x=>x.id===currentThemeId); if(!t) return;
+  const sort_order = t.images.length;
+
+  const {data:imgData, error} = await db.from('images').insert({
+    theme_id: currentThemeId,
+    label: label || 'Image',
+    storage_path: '',
+    sort_order,
+    public_url: url
+  }).select().single();
+
+  if(error){ showToast('Erreur : '+error.message); return; }
+  t.images.push(imgData);
+  renderImages(t); updateMeta(t); renderSidebar();
+  document.getElementById('url-input').value = '';
+  showSavedToast();
+}
+
 async function handleFiles(files){
   if(!currentThemeId)return;
   const t=themes.find(x=>x.id===currentThemeId); if(!t)return;
