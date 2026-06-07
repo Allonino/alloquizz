@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlloQuizz — Le Juste Prix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0c0c0f;--bg2:#13131a;--bg3:#1a1a24;--bg4:#22222f;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#f0f0f5;--text2:#8888aa;--text3:#55557a;
+  --accent:#7c6fff;--accent2:#a599ff;--accent-bg:rgba(124,111,255,0.12);--accent-border:rgba(124,111,255,0.3);
+  --green:#4fce8f;--green-bg:rgba(79,206,143,0.1);
+  --red:#ff5c5c;--yellow:#ffc84a;--blue:#4f9eff;--pink:#ff6b9d;
+  --radius:10px;--radius-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+h1,h2,h3,h4{font-family:'Syne',sans-serif}
+.nav{display:flex;align-items:center;border-bottom:1px solid var(--border);padding:0 24px;background:var(--bg);position:sticky;top:0;z-index:100}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--text);padding:16px 0;margin-right:8px;letter-spacing:-.02em;text-decoration:none}
+.nav-logo span{color:var(--accent)}
+.nav-sep{color:var(--text3);padding:16px 8px}
+.nav-game{font-size:13px;color:var(--text3);padding:16px 0}
+.nav-back{margin-left:auto;font-size:12px;color:var(--text3);text-decoration:none;padding:6px 12px;border-radius:6px;border:1px solid var(--border)}
+svg.icon{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px}
+
+.screen{display:none}.screen.active{display:flex;flex-direction:column}
+.loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;transition:opacity .3s}
+.loading.hidden{opacity:0;pointer-events:none}
+.spinner{width:32px;height:32px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== TABS ===== */
+.tabs{display:flex;border-bottom:1px solid var(--border);padding:0 24px;background:var(--bg)}
+.tab{padding:14px 16px;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab:hover{color:var(--text2)}
+.tab.active{color:var(--text);border-bottom-color:var(--accent)}
+
+/* ===== BACK-OFFICE ===== */
+.bo-layout{display:grid;grid-template-columns:260px 1fr;flex:1}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:16px 0;display:flex;flex-direction:column}
+.sidebar-hdr{padding:0 14px 14px;display:flex;align-items:center;justify-content:space-between}
+.sidebar-title{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
+.btn-new{background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent2);font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-new:hover{background:rgba(124,111,255,0.2)}
+.item-list{flex:1;overflow-y:auto;padding:0 8px}
+.item-row{padding:9px 10px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:2px;transition:all .12s}
+.item-row:hover{background:var(--bg3)}
+.item-row.active{background:var(--accent-bg)}
+.item-thumb{width:36px;height:28px;border-radius:4px;object-fit:cover;background:var(--bg3);flex-shrink:0}
+.item-thumb-ph{width:36px;height:28px;border-radius:4px;background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3)}
+.item-info{flex:1;overflow:hidden}
+.item-name{font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item-row.active .item-name{color:var(--text)}
+.item-price{font-size:11px;color:var(--text3);font-family:'Syne',sans-serif;font-weight:600}
+.item-row.active .item-price{color:var(--accent2)}
+.sidebar-empty{padding:20px 14px;text-align:center;color:var(--text3);font-size:13px}
+
+.editor{padding:24px 28px;overflow-y:auto;flex:1}
+.editor-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:12px;color:var(--text3)}
+.editor-empty p{font-size:14px}
+.field-group{margin-bottom:20px}
+.field-label{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;display:block}
+.field-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s}
+.field-input:focus{border-color:var(--accent)}
+.field-input::placeholder{color:var(--text3)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.editor-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.editor-header h3{font-size:18px;font-weight:700}
+.btn-danger{background:transparent;border:1px solid rgba(255,92,92,0.3);color:var(--red);font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-danger:hover{background:rgba(255,92,92,0.1)}
+.btn-save{background:var(--accent);border:none;color:#fff;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;display:flex;align-items:center;gap:6px}
+.btn-save:hover{background:#6a5eff}
+
+/* Image preview */
+.img-preview{width:100%;max-height:200px;border-radius:var(--radius-lg);object-fit:contain;background:var(--bg3);display:block;margin-top:8px}
+.img-upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:20px;text-align:center;cursor:pointer;transition:all .15s;margin-top:8px}
+.img-upload-zone:hover{border-color:var(--accent);background:var(--accent-bg)}
+.img-upload-zone p{font-size:12px;color:var(--text3);margin-top:4px}
+#item-file-input{display:none}
+
+/* ===== GAME SETUP ===== */
+.game-setup{padding:32px;max-width:600px;margin:0 auto;flex:1}
+.setup-title{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.setup-sub{color:var(--text3);font-size:14px;margin-bottom:32px}
+.setup-field{margin-bottom:20px}
+.setup-label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:8px;display:block}
+.setup-options{display:flex;gap:8px;flex-wrap:wrap}
+.setup-opt{padding:8px 18px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text3);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.setup-opt:hover{border-color:var(--border2);color:var(--text2)}
+.setup-opt.selected{border-color:var(--accent);background:var(--accent-bg);color:var(--accent2)}
+.setup-code-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:24px;text-align:center;margin-top:24px}
+.setup-code{font-family:'Syne',sans-serif;font-size:52px;font-weight:800;letter-spacing:.2em;color:var(--text);margin:8px 0}
+.setup-code-label{font-size:12px;color:var(--text3);margin-bottom:4px}
+.setup-players{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.player-chip{padding:5px 14px;border-radius:20px;background:var(--bg3);border:1px solid var(--border2);font-size:12px;font-weight:500;color:var(--text2)}
+.player-chip.new{animation:popin .3s ease-out}
+@keyframes popin{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+.btn-launch{background:var(--accent);border:none;color:#fff;font-size:14px;font-weight:700;padding:14px 32px;border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;margin-top:24px;width:100%}
+.btn-launch:hover{background:#6a5eff}
+.btn-launch:disabled{background:var(--bg4);color:var(--text3);cursor:not-allowed}
+
+/* ===== ROUND (master + player shared) ===== */
+.round-screen{background:#f8f8fc;flex:1;display:flex;flex-direction:column}
+.round-header{background:#fff;border-bottom:1px solid #e8e8f0;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.round-info{font-size:12px;color:#9e9eb8;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+.round-num{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#1e2a6e}
+.timer-big{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;font-variant-numeric:tabular-nums;min-width:52px;text-align:center}
+.timer-big.ok{color:#3949ab}.timer-big.warn{color:#e67e00}.timer-big.urgent{color:#cc2222;animation:pulse .5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.answers-count{font-size:12px;color:#9e9eb8;text-align:right}
+.answers-count strong{color:#1e2a6e}
+.round-body{flex:1;display:grid;grid-template-columns:1fr 360px;overflow:hidden}
+.round-img-area{display:flex;align-items:center;justify-content:center;padding:24px}
+.round-img{max-width:100%;max-height:55vh;border-radius:14px;object-fit:contain}
+.round-img-ph{width:100%;max-width:500px;aspect-ratio:16/9;background:#ededf5;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#c0c0d8;font-size:16px}
+.round-question{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#1e2a6e;text-align:center;margin-top:16px;line-height:1.3}
+.round-panel{background:#fff;border-left:1px solid #e8e8f0;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.panel-label{font-size:10px;font-weight:600;color:#9e9eb8;letter-spacing:.08em;text-transform:uppercase}
+.answer-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:#f8f8fc;border:1px solid #e8e8f0}
+.answer-name{font-size:13px;font-weight:600;color:#1e2a6e;flex:1}
+.answer-val{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#3949ab}
+.answer-pending{font-size:12px;color:#c0c0d8;font-style:italic}
+
+/* Player input */
+.player-input-area{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:24px;gap:16px}
+.price-input-wrap{display:flex;align-items:center;gap:0;border-radius:12px;overflow:hidden;border:2px solid #3949ab;background:#fff}
+.price-currency{background:#f0f2ff;padding:14px 16px;font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#3949ab;border-right:1px solid #d0d4f0}
+.price-input{border:none;outline:none;padding:14px 18px;font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#1e2a6e;width:220px;background:#fff}
+.price-input::placeholder{color:#c0c0d8}
+.btn-submit{background:#3949ab;border:none;color:#fff;font-size:15px;font-weight:700;padding:14px 40px;border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;width:100%;max-width:300px}
+.btn-submit:hover{background:#2c3a94}
+.btn-submit:disabled{background:#c0c0d8;cursor:not-allowed}
+.submitted-badge{background:var(--green-bg);border:1px solid rgba(79,206,143,0.3);color:var(--green);font-size:14px;font-weight:600;padding:12px 24px;border-radius:10px;text-align:center}
+.waiting-badge{background:#f0f2ff;border:1px solid #d0d4f0;color:#3949ab;font-size:14px;font-weight:600;padding:12px 24px;border-radius:10px;text-align:center}
+
+/* ===== DASHBOARD ===== */
+.dashboard{background:linear-gradient(145deg,#3f4fa8 0%,#5c6bc0 45%,#7986cb 100%);flex:1;display:flex;flex-direction:column}
+.dash-header{background:rgba(0,0,0,0.18);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07)}
+.dash-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,0.5);text-transform:uppercase}
+.dash-round{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#fff}
+.dash-body{flex:1;padding:24px 32px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;max-width:700px;margin:0 auto;width:100%}
+.dash-correct{background:rgba(255,255,255,0.1);border-radius:14px;padding:16px 20px;text-align:center;margin-bottom:8px}
+.dash-correct-label{font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.dash-correct-val{font-family:'Syne',sans-serif;font-size:42px;font-weight:800;color:#fff}
+.dash-correct-unit{font-size:14px;color:rgba(255,255,255,0.6);margin-top:2px}
+.rank-row{background:rgba(255,255,255,0.92);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px}
+.rank-num{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#9e9eb8;min-width:28px}
+.rank-num.gold{color:#f5a623}
+.rank-num.silver{color:#9e9eb8}
+.rank-num.bronze{color:#cd7f32}
+.rank-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#1e2a6e;flex:1}
+.rank-answer{font-size:13px;color:#6666aa}
+.rank-diff{font-size:12px;padding:3px 10px;border-radius:20px;font-weight:600;font-family:'Syne',sans-serif}
+.rank-diff.winner{background:rgba(79,206,143,0.15);color:#2a9a5a}
+.rank-diff.close{background:rgba(79,158,255,0.12);color:#3949ab}
+.rank-diff.far{background:rgba(255,92,92,0.1);color:#cc3333}
+.rank-score{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#3949ab;min-width:50px;text-align:right}
+.rank-score span{font-size:11px;font-weight:500;color:#9e9eb8}
+.dash-footer{padding:16px 28px;background:rgba(0,0,0,0.15);border-top:1px solid rgba(255,255,255,0.06)}
+.btn-continue{background:#fff;border:none;color:#3949ab;font-size:14px;font-weight:700;padding:13px 32px;border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;width:100%}
+.btn-continue:hover{background:#f0f2ff}
+
+/* ===== FINAL ===== */
+.final-screen{background:linear-gradient(145deg,#3f4fa8 0%,#5c6bc0 45%,#7986cb 100%);flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:16px}
+.final-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:.15em;color:rgba(255,255,255,0.4);text-transform:uppercase}
+.final-winner{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:#fff;text-align:center}
+.final-trophy{font-size:56px;margin-bottom:8px}
+.final-list{width:100%;max-width:500px;display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.btn-newgame{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;font-size:14px;font-weight:700;padding:13px 32px;border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;margin-top:16px}
+.btn-newgame:hover{background:rgba(255,255,255,0.25)}
+
+/* ===== JOIN (player) ===== */
+.join-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:20px;max-width:400px;margin:0 auto;width:100%}
+.join-logo{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:8px}
+.join-logo span{color:var(--accent)}
+.join-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;text-align:center}
+.join-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px 18px;color:var(--text);font-size:16px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;text-align:center}
+.join-input:focus{border-color:var(--accent)}
+.join-input.code{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
+.btn-join{background:var(--accent);border:none;color:#fff;font-size:14px;font-weight:700;padding:14px;border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;width:100%}
+.btn-join:hover{background:#6a5eff}
+.join-error{font-size:13px;color:var(--red);text-align:center;display:none}
+.join-error.show{display:block}
+.join-waiting{text-align:center}
+.join-waiting-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px}
+.join-waiting-sub{font-size:14px;color:var(--text3)}
+.join-code-display{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;letter-spacing:.2em;color:var(--accent);margin:12px 0}
+
+/* Player round — mobile optimized */
+.player-round{background:#f8f8fc;flex:1;display:flex;flex-direction:column}
+.player-round-header{background:#fff;border-bottom:1px solid #e8e8f0;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+.player-round-img{padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.player-round-img img{max-width:100%;max-height:35vh;border-radius:12px;object-fit:contain}
+.player-round-img .question{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#1e2a6e;text-align:center;line-height:1.3}
+.player-controls{padding:16px 20px;background:#fff;border-top:1px solid #e8e8f0;margin-top:auto}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 18px;font-size:13px;color:var(--text2);opacity:0;transition:opacity .3s;pointer-events:none;z-index:400;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:28px;min-width:320px}
+.modal-box h3{font-size:16px;font-weight:700;margin-bottom:16px}
+.nm-btns{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.nm-btn{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .12s}
+.nm-btn.create{background:var(--accent);color:#fff}.nm-btn.create:hover{background:#6a5eff}
+.nm-btn.cancel{background:var(--bg3);color:var(--text3);border:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading"><div class="spinner"></div></div>
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html">Allo<span>Quizz</span></a>
+  <span class="nav-sep">/</span>
+  <span class="nav-game">Le Juste Prix</span>
+  <a class="nav-back" href="index.html">← Accueil</a>
+</nav>
+
+<div class="tabs">
+  <div class="tab active" id="tab-bo" onclick="switchTab('bo')">📁 Contenu</div>
+  <div class="tab" id="tab-master" onclick="switchTab('master')">🎮 Maître du jeu</div>
+  <div class="tab" id="tab-player" onclick="switchTab('player')">📱 Rejoindre</div>
+</div>
+
+<!-- ===== BACK-OFFICE ===== -->
+<div class="screen active" id="screen-bo">
+  <div class="bo-layout">
+    <div class="sidebar">
+      <div class="sidebar-hdr">
+        <span class="sidebar-title">Objets</span>
+        <button class="btn-new" onclick="openNewItemModal()">+ Nouveau</button>
+      </div>
+      <div class="item-list" id="item-list"></div>
+    </div>
+    <div class="editor">
+      <div class="editor-empty" id="item-editor-empty">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <p>Sélectionne ou crée un objet</p>
+      </div>
+      <div id="item-editor-content" style="display:none">
+        <div class="editor-header">
+          <h3 id="item-editor-title">Modifier l'objet</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn-danger" onclick="deleteItem()">Supprimer</button>
+            <button class="btn-save" onclick="saveItem()">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+              Sauvegarder
+            </button>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Question</label>
+            <input type="text" class="field-input" id="item-question" placeholder="Ex: Quel est le prix de ce sac ?">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Prix correct (€)</label>
+            <input type="number" step="0.01" class="field-input" id="item-price" placeholder="Ex: 24.99">
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Image</label>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input type="text" class="field-input" id="item-url" placeholder="URL d'image…" style="flex:1">
+            <button onclick="loadImageFromUrl()" style="background:var(--accent);border:none;color:#fff;font-size:12px;font-weight:600;padding:0 14px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">Charger</button>
+          </div>
+          <div class="img-upload-zone" onclick="document.getElementById('item-file-input').click()" ondrop="handleItemDrop(event)" ondragover="e=>e.preventDefault()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text3)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p>Cliquer ou glisser une image</p>
+          </div>
+          <input type="file" id="item-file-input" accept="image/*" onchange="handleItemFile(this.files[0])">
+          <img id="item-preview" class="img-preview" src="" alt="" style="display:none;margin-top:12px">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MASTER ===== -->
+<div class="screen" id="screen-master">
+
+  <!-- Setup -->
+  <div id="master-setup" class="game-setup">
+    <div class="setup-title">Créer une session</div>
+    <div class="setup-sub">Configure la partie et partage le code aux joueurs</div>
+
+    <div class="setup-field">
+      <label class="setup-label">Nombre de questions</label>
+      <div class="setup-options" id="opt-questions">
+        <div class="setup-opt" onclick="selectOpt('questions',5,this)">5</div>
+        <div class="setup-opt selected" onclick="selectOpt('questions',10,this)">10</div>
+        <div class="setup-opt" onclick="selectOpt('questions',15,this)">15</div>
+        <div class="setup-opt" onclick="selectOpt('questions',20,this)">20</div>
+      </div>
+    </div>
+
+    <div class="setup-field">
+      <label class="setup-label">Durée par manche</label>
+      <div class="setup-options" id="opt-duration">
+        <div class="setup-opt" onclick="selectOpt('duration',10,this)">10s</div>
+        <div class="setup-opt selected" onclick="selectOpt('duration',20,this)">20s</div>
+        <div class="setup-opt" onclick="selectOpt('duration',30,this)">30s</div>
+        <div class="setup-opt" onclick="selectOpt('duration',45,this)">45s</div>
+      </div>
+    </div>
+
+    <div class="setup-code-box" id="session-box" style="display:none">
+      <div class="setup-code-label">Code de la session</div>
+      <div class="setup-code" id="session-code">—</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Les joueurs entrent ce code dans l'onglet "Rejoindre"</div>
+      <div class="setup-players" id="players-list">
+        <div style="font-size:12px;color:var(--text3)">En attente de joueurs…</div>
+      </div>
+      <button class="btn-launch" id="btn-start-game" onclick="startGame()" disabled style="margin-top:16px">
+        Lancer la partie (<span id="player-count">0</span> joueur(s))
+      </button>
+    </div>
+
+    <button class="btn-launch" id="btn-create-session" onclick="createSession()" style="margin-top:0">
+      Créer la session →
+    </button>
+  </div>
+
+  <!-- Round (master view) -->
+  <div id="master-round" class="round-screen" style="display:none">
+    <div class="round-header">
+      <div>
+        <div class="round-info">Manche</div>
+        <div class="round-num" id="master-round-num">1 / 10</div>
+      </div>
+      <div class="timer-big ok" id="master-timer">20</div>
+      <div class="answers-count">
+        <strong id="answered-count">0</strong> / <span id="total-players">0</span> réponses
+      </div>
+    </div>
+    <div class="round-body">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;flex:1">
+        <img id="master-img" src="" class="round-img" style="display:none">
+        <div id="master-img-ph" class="round-img-ph">Aucune image</div>
+        <div class="round-question" id="master-question">—</div>
+      </div>
+      <div class="round-panel">
+        <div class="panel-label">Réponses en temps réel</div>
+        <div id="answers-live"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard (master) -->
+  <div id="master-dashboard" class="dashboard" style="display:none">
+    <div class="dash-header">
+      <div class="dash-title">Résultats de la manche</div>
+      <div class="dash-round" id="dash-round-num">Manche 1</div>
+    </div>
+    <div class="dash-body">
+      <div class="dash-correct">
+        <div class="dash-correct-label">Prix correct</div>
+        <div class="dash-correct-val" id="dash-price">—</div>
+        <div class="dash-correct-unit">€</div>
+      </div>
+      <div id="dash-rankings"></div>
+    </div>
+    <div class="dash-footer">
+      <button class="btn-continue" onclick="nextRound()" id="btn-next-round">Manche suivante →</button>
+    </div>
+  </div>
+
+  <!-- Final (master) -->
+  <div id="master-final" class="final-screen" style="display:none">
+    <div class="final-title">Classement final</div>
+    <div class="final-trophy">🏆</div>
+    <div class="final-winner" id="final-winner">—</div>
+    <div class="final-list" id="final-rankings"></div>
+    <button class="btn-newgame" onclick="resetGame()">Nouvelle partie</button>
+  </div>
+
+</div>
+
+<!-- ===== PLAYER ===== -->
+<div class="screen" id="screen-player">
+
+  <!-- Join -->
+  <div class="join-screen" id="player-join" style="display:flex">
+    <div class="join-logo">Allo<span>Quizz</span></div>
+    <div class="join-title">Le Juste Prix</div>
+    <input type="text" class="join-input code" id="join-code" placeholder="CODE" maxlength="4" oninput="this.value=this.value.toUpperCase()">
+    <input type="text" class="join-input" id="join-name" placeholder="Ton pseudo" maxlength="20">
+    <div class="join-error" id="join-error">Code invalide ou session introuvable</div>
+    <button class="btn-join" onclick="joinSession()">Rejoindre →</button>
+  </div>
+
+  <!-- Waiting -->
+  <div class="join-screen" id="player-waiting" style="display:none">
+    <div class="join-waiting">
+      <div class="join-waiting-title" id="waiting-name">—</div>
+      <div class="join-code-display" id="waiting-code">—</div>
+      <div class="join-waiting-sub">En attente du maître du jeu…</div>
+      <div style="margin-top:16px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center" id="waiting-players"></div>
+    </div>
+  </div>
+
+  <!-- Player round -->
+  <div id="player-round" class="player-round" style="display:none">
+    <div class="player-round-header">
+      <div>
+        <div class="round-info">Manche</div>
+        <div class="round-num" id="player-round-num">1 / 10</div>
+      </div>
+      <div class="timer-big ok" id="player-timer">20</div>
+    </div>
+    <div class="player-round-img">
+      <img id="player-img" src="" style="display:none;max-width:100%;max-height:35vh;border-radius:12px;object-fit:contain">
+      <div id="player-img-ph" class="round-img-ph" style="max-width:100%;aspect-ratio:16/9">Chargement…</div>
+      <div class="question" id="player-question">—</div>
+    </div>
+    <div class="player-controls">
+      <div id="player-input-zone">
+        <div class="price-input-wrap" style="margin-bottom:12px;width:100%">
+          <span class="price-currency">€</span>
+          <input type="number" step="0.01" class="price-input" id="player-answer" placeholder="0" style="flex:1;width:auto">
+        </div>
+        <button class="btn-submit" onclick="submitAnswer()" id="btn-submit-answer">Valider ma réponse</button>
+      </div>
+      <div id="player-submitted-zone" style="display:none">
+        <div class="submitted-badge">✓ Réponse envoyée — en attente des autres joueurs</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Player dashboard -->
+  <div id="player-dashboard" class="dashboard" style="display:none">
+    <div class="dash-header">
+      <div class="dash-title">Résultats</div>
+      <div class="dash-round" id="player-dash-round">Manche 1</div>
+    </div>
+    <div class="dash-body">
+      <div class="dash-correct">
+        <div class="dash-correct-label">Prix correct</div>
+        <div class="dash-correct-val" id="player-dash-price">—</div>
+        <div class="dash-correct-unit">€</div>
+      </div>
+      <div id="player-dash-rankings"></div>
+    </div>
+    <div class="dash-footer">
+      <button class="btn-continue" onclick="playerReadyForNext()" id="btn-player-continue">Prêt pour la suite →</button>
+    </div>
+  </div>
+
+  <!-- Player final -->
+  <div id="player-final" class="final-screen" style="display:none">
+    <div class="final-title">Classement final</div>
+    <div class="final-trophy">🏆</div>
+    <div class="final-winner" id="player-final-winner">—</div>
+    <div class="final-list" id="player-final-rankings"></div>
+    <button class="btn-newgame" onclick="switchTab('player')">Rejoindre une nouvelle partie</button>
+  </div>
+
+</div>
+
+<!-- New item modal -->
+<div class="modal-overlay" id="new-item-modal" onclick="if(event.target===this)closeNewItemModal()">
+  <div class="modal-box">
+    <h3>Nouvel objet</h3>
+    <input type="text" class="field-input" id="new-item-name" placeholder="Nom de l'objet…" style="width:100%;margin-bottom:0" onkeydown="if(event.key==='Enter')createItem()">
+    <div class="nm-btns">
+      <button class="nm-btn cancel" onclick="closeNewItemModal()">Annuler</button>
+      <button class="nm-btn create" onclick="createItem()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL='https://tsneytqibltnjarajcll.supabase.co';
+const SUPABASE_KEY='sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
+const BUCKET='images';
+const {createClient}=supabase;
+const db=createClient(SUPABASE_URL,SUPABASE_KEY);
+
+// ===== STATE =====
+let items=[], currentItemId=null;
+let sessionId=null, sessionCode=null, sessionConfig={questions:10, duration:20};
+let currentRound=0, totalRounds=0, roundDuration=20;
+let timerInterval=null, timerVal=0;
+let players=[], myPlayerId=null, myPlayerName=null;
+let roundItems=[], currentRoundAnswers=[];
+let realtimeChannel=null;
+let readyPlayers=new Set();
+
+// ===== INIT =====
+async function init(){
+  await loadItems();
+  document.getElementById('loading').classList.add('hidden');
+}
+
+// ===== TABS =====
+function switchTab(tab){
+  ['bo','master','player'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('screen-'+t).classList.toggle('active',t===tab);
+  });
+}
+
+// ===== BACK-OFFICE =====
+async function loadItems(){
+  const {data}=await db.from('jp_items').select('*').order('sort_order');
+  items=data||[];
+  renderItemList();
+}
+
+function renderItemList(){
+  const list=document.getElementById('item-list');
+  if(!items.length){list.innerHTML='<div class="sidebar-empty">Aucun objet</div>';return;}
+  list.innerHTML=items.map(item=>`
+    <div class="item-row${currentItemId===item.id?' active':''}" onclick="selectItem(${item.id})">
+      ${item.image_url?`<img class="item-thumb" src="${item.image_url}" alt="">`:'<div class="item-thumb-ph">?</div>'}
+      <div class="item-info">
+        <div class="item-name">${item.question||'Sans question'}</div>
+        <div class="item-price">${item.price!=null?formatPrice(item.price)+'€':'—'}</div>
+      </div>
+    </div>`).join('');
+}
+
+function selectItem(id){
+  currentItemId=id;
+  renderItemList();
+  const item=items.find(x=>x.id===id);if(!item)return;
+  document.getElementById('item-editor-empty').style.display='none';
+  document.getElementById('item-editor-content').style.display='block';
+  document.getElementById('item-question').value=item.question||'';
+  document.getElementById('item-price').value=item.price??'';
+  document.getElementById('item-url').value=item.image_url||'';
+  const prev=document.getElementById('item-preview');
+  if(item.image_url){prev.src=item.image_url;prev.style.display='block';}
+  else prev.style.display='none';
+}
+
+function loadImageFromUrl(){
+  const url=document.getElementById('item-url').value.trim();
+  if(!url)return;
+  const prev=document.getElementById('item-preview');
+  prev.src=url;prev.style.display='block';
+}
+
+async function handleItemFile(file){
+  if(!file)return;
+  const ext=file.name.split('.').pop();
+  const path=`jp/${Date.now()}.${ext}`;
+  const {error}=await db.storage.from(BUCKET).upload(path,file);
+  if(error){showToast('Erreur upload');return;}
+  const {data}=db.storage.from(BUCKET).getPublicUrl(path);
+  document.getElementById('item-url').value=data.publicUrl;
+  const prev=document.getElementById('item-preview');
+  prev.src=data.publicUrl;prev.style.display='block';
+}
+
+function handleItemDrop(e){
+  e.preventDefault();
+  const file=e.dataTransfer.files[0];
+  if(file&&file.type.startsWith('image/'))handleItemFile(file);
+}
+
+async function saveItem(){
+  if(!currentItemId)return;
+  const question=document.getElementById('item-question').value.trim();
+  const price=parseFloat(document.getElementById('item-price').value);
+  const image_url=document.getElementById('item-url').value.trim();
+  const {error}=await db.from('jp_items').update({question,price:isNaN(price)?null:price,image_url}).eq('id',currentItemId);
+  if(error){showToast('Erreur : '+error.message);return;}
+  const item=items.find(x=>x.id===currentItemId);
+  if(item){item.question=question;item.price=price;item.image_url=image_url;}
+  renderItemList();showToast('Sauvegardé ✓');
+}
+
+async function deleteItem(){
+  if(!currentItemId)return;
+  if(!confirm('Supprimer cet objet ?'))return;
+  await db.from('jp_items').delete().eq('id',currentItemId);
+  items=items.filter(x=>x.id!==currentItemId);
+  currentItemId=null;renderItemList();
+  document.getElementById('item-editor-empty').style.display='flex';
+  document.getElementById('item-editor-content').style.display='none';
+}
+
+function openNewItemModal(){document.getElementById('new-item-modal').classList.add('show');setTimeout(()=>document.getElementById('new-item-name').focus(),50);}
+function closeNewItemModal(){document.getElementById('new-item-modal').classList.remove('show');document.getElementById('new-item-name').value='';}
+async function createItem(){
+  const question=document.getElementById('new-item-name').value.trim();if(!question)return;
+  const sort_order=items.length;
+  const {data,error}=await db.from('jp_items').insert({question,sort_order}).select().single();
+  if(error){showToast('Erreur');return;}
+  items.push(data);closeNewItemModal();renderItemList();selectItem(data.id);
+}
+
+// ===== GAME SETUP =====
+function selectOpt(type,val,el){
+  sessionConfig[type]=val;
+  el.closest('.setup-options').querySelectorAll('.setup-opt').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function createSession(){
+  if(items.length<sessionConfig.questions){
+    showToast(`Pas assez d'objets (${items.length} dispo, ${sessionConfig.questions} demandés)`);
+    return;
+  }
+  // Generate 4-letter code
+  const code=Math.random().toString(36).substring(2,6).toUpperCase();
+  // Shuffle items and pick N
+  const shuffled=[...items].sort(()=>Math.random()-.5).slice(0,sessionConfig.questions);
+  const itemsOrder=shuffled.map(i=>i.id).join(',');
+  const {data,error}=await db.from('jp_sessions').insert({
+    code, status:'waiting',
+    current_item_index:0,
+    items_order:itemsOrder
+  }).select().single();
+  if(error){showToast('Erreur : '+error.message);return;}
+  sessionId=data.id;
+  sessionCode=code;
+  totalRounds=sessionConfig.questions;
+  roundDuration=sessionConfig.duration;
+  roundItems=shuffled;
+  document.getElementById('session-code').textContent=code;
+  document.getElementById('session-box').style.display='block';
+  document.getElementById('btn-create-session').style.display='none';
+  // Subscribe to players joining
+  subscribeToSession();
+}
+
+function subscribeToSession(){
+  if(realtimeChannel)realtimeChannel.unsubscribe();
+  realtimeChannel=db.channel('session-'+sessionId)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'jp_players',filter:`session_id=eq.${sessionId}`},payload=>{
+      players.push(payload.new);
+      renderWaitingPlayers();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'jp_answers',filter:`session_id=eq.${sessionId}`},payload=>{
+      if(payload.eventType==='INSERT'){
+        currentRoundAnswers.push(payload.new);
+        updateAnswersLive();
+      }
+    })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'jp_sessions',filter:`id=eq.${sessionId}`},payload=>{
+      handleSessionUpdate(payload.new);
+    })
+    .subscribe();
+}
+
+function renderWaitingPlayers(){
+  const list=document.getElementById('players-list');
+  const btn=document.getElementById('btn-start-game');
+  document.getElementById('player-count').textContent=players.length;
+  if(!players.length){
+    list.innerHTML='<div style="font-size:12px;color:var(--text3)">En attente de joueurs…</div>';
+    btn.disabled=true;return;
+  }
+  list.innerHTML=players.map(p=>`<div class="player-chip">${p.name}</div>`).join('');
+  btn.disabled=players.length<1;
+}
+
+async function startGame(){
+  await db.from('jp_sessions').update({status:'playing',current_item_index:0}).eq('id',sessionId);
+  currentRound=0;
+  showMasterRound();
+}
+
+// ===== MASTER ROUND =====
+function showMasterRound(){
+  document.getElementById('master-setup').style.display='none';
+  document.getElementById('master-round').style.display='flex';
+  document.getElementById('master-dashboard').style.display='none';
+  document.getElementById('master-final').style.display='none';
+  currentRoundAnswers=[];
+  readyPlayers=new Set();
+  const item=roundItems[currentRound];
+  document.getElementById('master-round-num').textContent=(currentRound+1)+' / '+totalRounds;
+  document.getElementById('master-question').textContent=item.question||'';
+  document.getElementById('total-players').textContent=players.length;
+  document.getElementById('answered-count').textContent='0';
+  document.getElementById('answers-live').innerHTML='';
+  const img=document.getElementById('master-img');
+  const ph=document.getElementById('master-img-ph');
+  if(item.image_url){img.src=item.image_url;img.style.display='block';ph.style.display='none';}
+  else{img.style.display='none';ph.style.display='flex';}
+  startTimer(roundDuration, ()=>showMasterDashboard());
+}
+
+function updateAnswersLive(){
+  document.getElementById('answered-count').textContent=currentRoundAnswers.length;
+  const html=currentRoundAnswers.map(a=>{
+    const p=players.find(x=>x.id===a.player_id);
+    return`<div class="answer-row">
+      <span class="answer-name">${p?p.name:'?'}</span>
+      <span class="answer-val">${formatPrice(a.answer)} €</span>
+    </div>`;
+  }).join('');
+  document.getElementById('answers-live').innerHTML=html;
+  // Auto-advance if all answered
+  if(currentRoundAnswers.length>=players.length){
+    clearInterval(timerInterval);showMasterDashboard();
+  }
+}
+
+function startTimer(duration, onEnd){
+  timerVal=duration;
+  clearInterval(timerInterval);
+  const masterEl=document.getElementById('master-timer');
+  const playerEl=document.getElementById('player-timer');
+  function tick(){
+    timerVal--;
+    [masterEl,playerEl].forEach(el=>{
+      if(!el)return;
+      el.textContent=timerVal;
+      el.className='timer-big '+(timerVal>duration*.5?'ok':timerVal>10?'warn':'urgent');
+    });
+    if(timerVal<=0){clearInterval(timerInterval);onEnd();}
+  }
+  [masterEl,playerEl].forEach(el=>{if(el){el.textContent=duration;el.className='timer-big ok';}});
+  timerInterval=setInterval(tick,1000);
+}
+
+function showMasterDashboard(){
+  clearInterval(timerInterval);
+  document.getElementById('master-round').style.display='none';
+  document.getElementById('master-dashboard').style.display='flex';
+  const item=roundItems[currentRound];
+  document.getElementById('dash-round-num').textContent='Manche '+(currentRound+1);
+  document.getElementById('dash-price').textContent=formatPrice(item.price);
+  renderRankings('dash-rankings', item.price, currentRoundAnswers, players, true);
+  const btnNext=document.getElementById('btn-next-round');
+  if(currentRound+1>=totalRounds){btnNext.textContent='Voir le classement final →';}
+  else{btnNext.textContent='Manche suivante →';}
+  // Notify players via session update
+  db.from('jp_sessions').update({status:'dashboard',current_item_index:currentRound}).eq('id',sessionId);
+}
+
+async function nextRound(){
+  currentRound++;
+  if(currentRound>=totalRounds){
+    showMasterFinal();return;
+  }
+  await db.from('jp_sessions').update({status:'playing',current_item_index:currentRound}).eq('id',sessionId);
+  showMasterRound();
+}
+
+function showMasterFinal(){
+  document.getElementById('master-dashboard').style.display='none';
+  document.getElementById('master-final').style.display='flex';
+  // Compute final scores
+  renderFinalRankings('final-rankings','final-winner',players);
+  db.from('jp_sessions').update({status:'finished'}).eq('id',sessionId);
+}
+
+function resetGame(){
+  sessionId=null;sessionCode=null;currentRound=0;players=[];roundItems=[];
+  document.getElementById('master-setup').style.display='flex';
+  document.getElementById('master-final').style.display='none';
+  document.getElementById('session-box').style.display='none';
+  document.getElementById('btn-create-session').style.display='block';
+}
+
+// ===== PLAYER JOIN =====
+async function joinSession(){
+  const code=document.getElementById('join-code').value.trim().toUpperCase();
+  const name=document.getElementById('join-name').value.trim();
+  if(!code||!name){showToast('Remplis le code et ton pseudo');return;}
+  // Find session
+  const {data:sessions}=await db.from('jp_sessions').select('*').eq('code',code).eq('status','waiting');
+  if(!sessions||!sessions.length){
+    document.getElementById('join-error').classList.add('show');return;
+  }
+  const sess=sessions[0];
+  sessionId=sess.id;sessionCode=code;
+  const itemIds=sess.items_order.split(',').map(Number);
+  totalRounds=itemIds.length;
+  roundDuration=20; // will be updated
+  // Load items for this session
+  const {data:sessionItems}=await db.from('jp_items').select('*').in('id',itemIds);
+  roundItems=itemIds.map(id=>sessionItems.find(x=>x.id===id)).filter(Boolean);
+  // Create player
+  const {data:player}=await db.from('jp_players').insert({session_id:sessionId,name,score:0,is_active:true}).select().single();
+  myPlayerId=player.id;myPlayerName=name;
+  // Show waiting
+  document.getElementById('player-join').style.display='none';
+  document.getElementById('player-waiting').style.display='flex';
+  document.getElementById('waiting-name').textContent='Bienvenue, '+name+' !';
+  document.getElementById('waiting-code').textContent=code;
+  // Subscribe
+  subscribeAsPlayer(sess);
+}
+
+async function subscribeAsPlayer(sess){
+  // Load existing players
+  const {data:existingPlayers}=await db.from('jp_players').select('*').eq('session_id',sessionId);
+  players=existingPlayers||[];
+  renderWaitingPlayersPlayer();
+  realtimeChannel=db.channel('player-'+sessionId)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'jp_players',filter:`session_id=eq.${sessionId}`},payload=>{
+      if(!players.find(p=>p.id===payload.new.id))players.push(payload.new);
+      renderWaitingPlayersPlayer();
+    })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'jp_sessions',filter:`id=eq.${sessionId}`},payload=>{
+      handlePlayerSessionUpdate(payload.new);
+    })
+    .subscribe();
+}
+
+function renderWaitingPlayersPlayer(){
+  document.getElementById('waiting-players').innerHTML=players.map(p=>`<div class="player-chip">${p.name}</div>`).join('');
+}
+
+function handlePlayerSessionUpdate(sess){
+  currentRound=sess.current_item_index||0;
+  if(sess.status==='playing'){showPlayerRound();}
+  else if(sess.status==='dashboard'){showPlayerDashboard();}
+  else if(sess.status==='finished'){showPlayerFinal();}
+}
+
+function showPlayerRound(){
+  document.getElementById('player-waiting').style.display='none';
+  document.getElementById('player-join').style.display='none';
+  document.getElementById('player-round').style.display='flex';
+  document.getElementById('player-dashboard').style.display='none';
+  document.getElementById('player-final').style.display='none';
+  document.getElementById('player-input-zone').style.display='block';
+  document.getElementById('player-submitted-zone').style.display='none';
+  document.getElementById('player-answer').value='';
+  document.getElementById('btn-submit-answer').disabled=false;
+  const item=roundItems[currentRound];
+  document.getElementById('player-round-num').textContent=(currentRound+1)+' / '+totalRounds;
+  document.getElementById('player-question').textContent=item?item.question:'';
+  const img=document.getElementById('player-img');
+  const ph=document.getElementById('player-img-ph');
+  if(item&&item.image_url){img.src=item.image_url;img.style.display='block';ph.style.display='none';}
+  else{img.style.display='none';ph.style.display='flex';}
+  startTimer(roundDuration,()=>{
+    document.getElementById('player-input-zone').style.display='none';
+    document.getElementById('player-submitted-zone').style.display='block';
+    document.getElementById('player-submitted-zone').innerHTML='<div class="waiting-badge">Temps écoulé — en attente des résultats</div>';
+  });
+}
+
+async function submitAnswer(){
+  const val=parseFloat(document.getElementById('player-answer').value);
+  if(isNaN(val)||val<0){showToast('Entre un prix valide');return;}
+  document.getElementById('btn-submit-answer').disabled=true;
+  const item=roundItems[currentRound];
+  await db.from('jp_answers').insert({session_id:sessionId,player_id:myPlayerId,item_id:item.id,answer:val,round_index:currentRound});
+  // Update player score
+  const diff=Math.abs(val-(item.price||0));
+  const pts=diff===0?3:diff<(item.price||1)*.1?2:diff<(item.price||1)*.25?1:0;
+  if(pts>0){
+    const p=players.find(x=>x.id===myPlayerId);
+    const newScore=(p?p.score:0)+pts;
+    await db.from('jp_players').update({score:newScore}).eq('id',myPlayerId);
+    if(p)p.score=newScore;
+  }
+  document.getElementById('player-input-zone').style.display='none';
+  document.getElementById('player-submitted-zone').style.display='block';
+}
+
+async function showPlayerDashboard(){
+  clearInterval(timerInterval);
+  document.getElementById('player-round').style.display='none';
+  document.getElementById('player-dashboard').style.display='flex';
+  const item=roundItems[currentRound];
+  document.getElementById('player-dash-round').textContent='Manche '+(currentRound+1);
+  document.getElementById('player-dash-price').textContent=formatPrice(item.price);
+  // Load answers for this round
+  const {data:answers}=await db.from('jp_answers').select('*').eq('session_id',sessionId).eq('round_index',currentRound);
+  // Load updated player scores
+  const {data:updatedPlayers}=await db.from('jp_players').select('*').eq('session_id',sessionId);
+  if(updatedPlayers)players=updatedPlayers;
+  renderRankings('player-dash-rankings',item.price,answers||[],players,false);
+}
+
+function playerReadyForNext(){
+  // Just wait for master to advance — button is informational
+  document.getElementById('btn-player-continue').disabled=true;
+  document.getElementById('btn-player-continue').textContent='En attente du prochain round…';
+}
+
+function showPlayerFinal(){
+  document.getElementById('player-dashboard').style.display='none';
+  document.getElementById('player-final').style.display='flex';
+  renderFinalRankings('player-final-rankings','player-final-winner',players);
+}
+
+// ===== RANKINGS =====
+function renderRankings(containerId, correctPrice, answers, playersList, updateScores){
+  const sorted=playersList.map(p=>{
+    const ans=answers.find(a=>a.player_id===p.id);
+    const diff=ans?Math.abs(ans.answer-(correctPrice||0)):null;
+    const pts=ans==null?0:diff===0?3:diff<(correctPrice||1)*.1?2:diff<(correctPrice||1)*.25?1:0;
+    if(updateScores&&pts>0)p.score=(p.score||0)+pts;
+    return{...p,answer:ans?ans.answer:null,diff,pts};
+  }).sort((a,b)=>(a.diff??999999)-(b.diff??999999));
+
+  const medals=['🥇','🥈','🥉'];
+  document.getElementById(containerId).innerHTML=sorted.map((p,i)=>{
+    const diffStr=p.diff===null?'Pas de réponse':p.diff===0?'Exact !':'+/- '+formatPrice(p.diff)+' €';
+    const diffClass=p.diff===null?'far':p.diff===0?'winner':p.diff<(correctPrice||1)*.1?'close':'far';
+    return`<div class="rank-row">
+      <span class="rank-num ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${medals[i]||i+1}</span>
+      <div>
+        <div class="rank-name">${p.name}</div>
+        <div class="rank-answer">${p.answer!==null?'Réponse : '+formatPrice(p.answer)+' €':'Pas de réponse'}</div>
+      </div>
+      <span class="rank-diff ${diffClass}">${diffStr}</span>
+      <div class="rank-score">${p.score||0}<span> pts</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderFinalRankings(containerId, winnerId, playersList){
+  const sorted=[...playersList].sort((a,b)=>(b.score||0)-(a.score||0));
+  const medals=['🥇','🥈','🥉'];
+  document.getElementById(winnerId).textContent=sorted[0]?sorted[0].name+' gagne !':'Fin de partie !';
+  document.getElementById(containerId).innerHTML=sorted.map((p,i)=>`
+    <div class="rank-row">
+      <span class="rank-num ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${medals[i]||i+1}</span>
+      <div class="rank-name" style="flex:1">${p.name}</div>
+      <div class="rank-score">${p.score||0}<span> pts</span></div>
+    </div>`).join('');
+}
+
+// ===== UTILS =====
+function formatPrice(n){
+  if(n==null)return'—';
+  return Number(n).toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2});
+}
+
+function handleSessionUpdate(sess){
+  currentRound=sess.current_item_index||0;
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+// ===== SCORE SYSTEM =====
+// 3pts = exact, 2pts = <10% diff, 1pt = <25% diff, 0pt = >25% diff
+
+init();
+</script>
+</body>
+</html>
