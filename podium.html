@@ -401,6 +401,19 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
   </div>
 </div>
 
+<!-- ══ ADMIN ══ -->
+<div class="view" id="view-admin">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <div class="admin-title">Questions</div>
+    <button class="btn btn-ghost btn-sm" onclick="showView('home')">← Retour</button>
+  </div>
+  <div class="admin-q-list" id="admin-questions"></div>
+  <div class="add-q-form">
+    <input class="add-q-input" id="new-q-input" placeholder="Nouvelle question… (ex: Classe ces 5 basketteurs par taille)" onkeydown="if(event.key==='Enter')addQuestion()">
+    <button class="btn btn-pink btn-sm" onclick="addQuestion()">+ Ajouter</button>
+  </div>
+</div>
+
 <!-- ══ SCORE EDIT MODAL ══ -->
 <div class="modal-backdrop" id="score-edit-modal" style="display:none" onclick="if(event.target===this)closeScoreEditModal()">
   <div class="modal-box" style="max-width:380px">
