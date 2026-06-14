@@ -474,7 +474,6 @@ async function loadQuestions() {
     ...q,
     panel_answers: (aRes.data || []).filter(a => a.question_id === q.id).sort((a,b) => b.points - a.points)
   }));
-  renderSelector();
   renderAdmin();
 }
 
@@ -486,19 +485,7 @@ function showView(v) {
 
 // ══ SELECTOR ══
 function renderSelector() {
-  const list = document.getElementById('questions-list');
-  if (!questions.length) {
-    list.innerHTML = '<div class="sel-empty">Aucune question — créez-en dans ⚙ Questions</div>';
-    return;
-  }
-  list.innerHTML = questions.map((q, i) => `
-    <div class="q-card" onclick="startGame(${q.id})">
-      <div class="q-card-num">${String(i+1).padStart(2,'0')}</div>
-      <div class="q-card-text">${q.question}</div>
-      <div class="q-card-count">${(q.panel_answers||[]).length} réponses</div>
-      <div class="q-card-arrow">›</div>
-    </div>
-  `).join('');
+  // Sessions list is handled by loadSessions() — nothing to do here
 }
 
 // ══ NEW GAME MODAL ══
