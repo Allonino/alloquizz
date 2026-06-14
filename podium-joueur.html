@@ -8,8 +8,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden}
-body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-height:100vh;display:flex;flex-direction:column}
+html,body{height:100%}
+body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
 
 #loading-overlay{position:fixed;inset:0;background:#06060d;z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .4s}
 #loading-overlay.hidden{opacity:0;pointer-events:none}
@@ -68,7 +68,7 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 .drag-card-name{flex:1;font-size:15px;font-weight:600;color:#f0f0f5}
 .drag-handle{color:rgba(255,255,255,0.2);font-size:20px;flex-shrink:0}
 
-.submit-bar{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+.submit-bar{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.07);position:sticky;bottom:0;background:#06060d;z-index:10}
 .submitted-msg{text-align:center;padding:20px;color:rgba(255,255,255,0.4);font-size:14px;font-style:italic}
 
 /* ── WAITING ── */
@@ -200,26 +200,44 @@ function subscribeAsTeam(sess){
   },2000);
 }
 
+let lastQuestionId=null;
+let cardsBuilt=false;
+
 function applySessionToTeam(sess){
   const myTeam=(sess.teams||[]).find(t=>t.name===teamName);
   if(myTeam){
     teamScore=myTeam.score||0;
     document.getElementById('game-score').textContent=teamScore+' pts';
   }
+
   if(sess.current_question_id){
+    const qChanged=String(sess.current_question_id)!==String(lastQuestionId);
     const q=questions.find(x=>String(x.id)===String(sess.current_question_id));
+
     if(q){
       document.getElementById('game-question').textContent=q.question;
       currentItems=q.podium_items||[];
-      if(!myTeam?.submitted){
+
+      if(qChanged){
+        // New question — reset and rebuild cards
+        lastQuestionId=sess.current_question_id;
+        cardsBuilt=false;
+        teamTimerStarted=false;
+      }
+
+      if(!cardsBuilt && !myTeam?.submitted){
         buildDragCards(q.podium_items||[]);
+        cardsBuilt=true;
         showView('game');
-      } else {
+      } else if(myTeam?.submitted && !cardsBuilt){
         showSubmitted();
+        cardsBuilt=true;
+        showView('game');
+      } else if(cardsBuilt){
+        // Just update view if needed, don't rebuild cards
         showView('game');
       }
     } else {
-      // reload questions and retry
       db.from('podium_questions').select('*, podium_items(*)').order('sort_order').then(({data})=>{
         if(data){
           questions=data.map(q=>({...q,podium_items:(q.podium_items||[]).sort((a,b)=>a.correct_rank-b.correct_rank)}));
@@ -228,15 +246,18 @@ function applySessionToTeam(sess){
       });
     }
   }
-  // Timer
+
+  // Timer — only start/stop on status change
   const timerEl=document.getElementById('game-timer');
   if(sess.status==='playing'){
     timerEl.style.display='block';
     startTeamTimer(sess.timer_duration||60);
-  } else {
+  } else if(sess.status!=='playing'){
     timerEl.style.display='none';
-    clearInterval(timerInterval);
-    teamTimerStarted=false;
+    if(sess.status==='waiting'){
+      clearInterval(timerInterval);
+      teamTimerStarted=false;
+    }
   }
 }
 
