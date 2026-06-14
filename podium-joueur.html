@@ -124,7 +124,8 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
   <div class="drag-hint">Glissez les cartes pour les classer</div>
   <div class="drag-area" id="drag-area"></div>
   <div class="submit-bar" id="submit-bar">
-    <button class="btn-main" onclick="submitAnswer()">Valider mon classement →</button>
+    <button class="btn-main" id="btn-ready" onclick="markReady()" style="display:none">Je suis prêt ✓</button>
+    <div class="submitted-msg" id="submitted-msg" style="display:none">✓ Prêt ! En attente des autres équipes…</div>
   </div>
 </div>
 
@@ -298,12 +299,13 @@ function buildDragCards(items){
       <div class="drag-card-name">${item.name||''}</div>
       <div class="drag-handle">⠿</div>
     </div>`).join('');
-  document.getElementById('submit-bar').innerHTML='<button class="btn-main" id="btn-ready" onclick="markReady()">Je suis prêt ✓</button>';
+  document.getElementById('btn-ready').style.display='flex';
+  document.getElementById('submitted-msg').style.display='none';
 }
 
 function showSubmitted(){
-  document.getElementById('submit-bar').innerHTML='<div class="submitted-msg">✓ Prêt ! En attente des autres équipes…</div>';
-  // Gray out cards
+  document.getElementById('btn-ready').style.display='none';
+  document.getElementById('submitted-msg').style.display='block';
   document.querySelectorAll('.drag-card').forEach(c=>{c.style.opacity='0.5';c.draggable=false;});
 }
 
