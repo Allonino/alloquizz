@@ -621,8 +621,11 @@ function subscribeToSession(){
   if(window._masterPoll)clearInterval(window._masterPoll);
   window._masterPoll=setInterval(async()=>{
     const {data}=await db.from('podium_sessions').select('*').eq('id',currentSessionId).single();
-    if(data&&data.updated_at!==currentSession?.updated_at){
-      currentSession=data;renderMasterTeams(data.teams||[]);renderSubmitProgress();pushSpectator({view:'playing'});
+    if(data){
+      currentSession=data;
+      renderMasterTeams(data.teams||[]);
+      renderSubmitProgress();
+      if(currentQuestionId)pushSpectator({view:data.status==='playing'?'playing':'waiting'});
     }
   },2000);
 }
@@ -693,6 +696,8 @@ function adjustRoundTimer(delta){
 
 function addTime(){
   timerVal+=30;
+  const el=document.getElementById('master-timer');
+  if(el)el.textContent=timerVal;
   showToast('+30s ajoutées');
 }
 
@@ -730,6 +735,7 @@ function startTimer(duration, onEnd){
   clearInterval(timerInterval);
   const el=document.getElementById('master-timer');
   const update=()=>{
+    if(!el)return;
     el.textContent=timerVal;
     el.className='timer-num '+(timerVal>duration*.5?'ok':timerVal>10?'warn':'urgent');
   };
