@@ -251,7 +251,7 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 <div id="toast"></div>
 
 <nav class="nav">
-  <div class="nav-logo">Allo<span>Quizz</span> <span style="color:rgba(255,255,255,0.2);font-size:13px;font-weight:400;margin-left:6px">Le Podium</span></div>
+  <a href="index.html" class="nav-logo" style="text-decoration:none">Allo<span>Quizz</span> <span style="color:rgba(255,255,255,0.2);font-size:13px;font-weight:400;margin-left:6px">Le Podium</span></a>
   <div class="nav-right" id="nav-right">
     <button class="btn btn-ghost btn-sm" onclick="showView('admin')">⚙ Questions</button>
     <button class="btn btn-ghost btn-sm" onclick="showView('home')">🏠 Accueil</button>
@@ -1016,6 +1016,16 @@ async function deleteQuestion(id){
 }
 
 // ── ITEMS MODAL ──
+function openNewQuestionModal(){
+  editingQId=null;
+  document.getElementById('items-modal-title').textContent='Nouvelle question';
+  document.getElementById('modal-q-text').value='';
+  buildItemsGrid([]);
+  document.getElementById('items-modal-save').disabled=true;
+  document.getElementById('items-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('modal-q-text').focus(),50);
+}
+
 function openItemsModal(qId){
   editingQId=qId;
   const q=questions.find(x=>x.id===qId);
