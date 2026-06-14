@@ -186,11 +186,18 @@ function pickTeam(name){
 
 function subscribeAsTeam(sess){
   applySessionToTeam(sess);
+  // Realtime
   if(sessionSub)sessionSub.unsubscribe();
-  sessionSub=db.channel('player-'+teamSessionId+'-'+teamName)
+  sessionSub=db.channel('podium-player-'+teamSessionId)
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'podium_sessions',filter:'id=eq.'+teamSessionId},
       p=>applySessionToTeam(p.new))
     .subscribe();
+  // Polling fallback every 2s
+  if(window._pollInterval)clearInterval(window._pollInterval);
+  window._pollInterval=setInterval(async()=>{
+    const {data}=await db.from('podium_sessions').select('*').eq('id',teamSessionId).single();
+    if(data)applySessionToTeam(data);
+  },2000);
 }
 
 function applySessionToTeam(sess){
