@@ -247,17 +247,15 @@ function applySessionToTeam(sess){
     }
   }
 
-  // Timer — only start/stop on status change
+  // Timer
   const timerEl=document.getElementById('game-timer');
   if(sess.status==='playing'){
     timerEl.style.display='block';
     startTeamTimer(sess.timer_duration||60);
-  } else if(sess.status!=='playing'){
+  } else {
     timerEl.style.display='none';
-    if(sess.status==='waiting'){
-      clearInterval(timerInterval);
-      teamTimerStarted=false;
-    }
+    clearInterval(timerInterval);
+    teamTimerStarted=false;
   }
 }
 
