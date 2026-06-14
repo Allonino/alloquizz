@@ -279,12 +279,13 @@ function buildDragCards(items){
       <div class="drag-card-name">${item.name||''}</div>
       <div class="drag-handle">⠿</div>
     </div>`).join('');
-  document.getElementById('submit-bar').innerHTML='<button class="btn-main" onclick="submitAnswer()">Valider mon classement →</button>';
+  document.getElementById('submit-bar').innerHTML='<button class="btn-main" id="btn-ready" onclick="markReady()">Je suis prêt ✓</button>';
 }
 
 function showSubmitted(){
-  document.getElementById('drag-area').innerHTML='';
-  document.getElementById('submit-bar').innerHTML='<div class="submitted-msg">✓ Classement envoyé ! En attente de la révélation…</div>';
+  document.getElementById('submit-bar').innerHTML='<div class="submitted-msg">✓ Prêt ! En attente des autres équipes…</div>';
+  // Gray out cards
+  document.querySelectorAll('.drag-card').forEach(c=>{c.style.opacity='0.5';c.draggable=false;});
 }
 
 let dragSrc=null;
@@ -356,6 +357,20 @@ function swapCards(id1,id2){
     if(rankEl)rankEl.textContent=i+1;
   });
   teamDragOrder=[...area.children].map(c=>parseInt(c.id.replace('dc-','')));
+  autoSave();
+}
+
+let autoSaveTimeout=null;
+async function autoSave(){
+  clearTimeout(autoSaveTimeout);
+  autoSaveTimeout=setTimeout(async()=>{
+    if(!teamDragOrder.length||!teamSessionId)return;
+    const qId=currentItems[0]?.question_id||null;
+    // Upsert answer
+    await db.from('podium_answers').upsert({
+      session_id:teamSessionId,question_id:qId,team_name:teamName,rankings:teamDragOrder
+    },{onConflict:'session_id,question_id,team_name'});
+  },500);
 }
 
 async function submitAnswer(){
