@@ -256,6 +256,7 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
     <button class="btn btn-ghost btn-sm" onclick="showView('selector')">← Retour</button>
   </div>
   <div class="admin-questions" id="admin-questions"></div>
+  <div id="debug-box" style="display:none;background:rgba(255,200,0,0.1);border:1px solid rgba(255,200,0,0.3);border-radius:10px;padding:12px 16px;font-size:12px;color:#ffd700;word-break:break-all;font-family:monospace"></div>
   <div class="add-q-form">
     <input class="add-q-input" id="new-q-input" placeholder="Nouvelle question… (ex: Super-héros préférés)" onkeydown="if(event.key==='Enter')addQuestion()">
     <button class="btn btn-primary btn-sm" onclick="addQuestion()">+ Ajouter</button>
@@ -589,12 +590,21 @@ function renderAdmin() {
 async function addQuestion() {
   const input = document.getElementById('new-q-input');
   const text = input.value.trim();
-  if (!text) return;
-  const { error } = await db.from('panel_questions').insert({ question: text, sort_order: questions.length });
-  if (error) { showToast('Erreur : ' + error.message); return; }
+  if (!text) { showToast('Écris une question d'abord'); return; }
+  const dbg = document.getElementById('debug-box');
+  dbg.textContent = 'Envoi en cours…';
+  dbg.style.display = 'block';
+  const { data, error } = await db.from('panel_questions').insert({ question: text, sort_order: questions.length }).select();
+  if (error) {
+    dbg.textContent = 'ERREUR : ' + JSON.stringify(error);
+    showToast('Erreur : ' + error.message);
+    return;
+  }
+  dbg.textContent = 'OK : ' + JSON.stringify(data);
   input.value = '';
   await loadQuestions();
-  showToast('Question ajoutée');
+  showToast('Question ajoutée ✓');
+  setTimeout(() => { dbg.style.display = 'none'; }, 4000);
 }
 
 async function deleteQuestion(id) {
