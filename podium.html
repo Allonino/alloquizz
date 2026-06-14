@@ -286,6 +286,7 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
       <div class="master-code" id="master-code">—</div>
       <div id="master-qr" style="margin-top:12px;display:flex;justify-content:center"></div>
       <div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:8px;text-align:center">Scannez ou tapez le code sur cette page</div>
+      <button class="btn btn-ghost btn-sm" onclick="openSpectatorWindow()" style="margin-top:10px;width:100%;justify-content:center">📺 Ouvrir écran TV</button>
     </div>
     <div class="master-teams" id="master-teams">
       <div style="font-size:12px;color:rgba(255,255,255,0.25);text-align:center;padding:20px 0">En attente des équipes…</div>
@@ -614,14 +615,13 @@ function subscribeToSession(){
   if(sessionSub)sessionSub.unsubscribe();
   sessionSub=db.channel('podium-master-'+currentSessionId)
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'podium_sessions',filter:'id=eq.'+currentSessionId},
-      p=>{currentSession=p.new;renderMasterTeams(p.new.teams||[]);renderSubmitProgress();})
+      p=>{currentSession=p.new;renderMasterTeams(p.new.teams||[]);renderSubmitProgress();pushSpectator({view:'playing'});})
     .subscribe();
-  // Polling fallback every 2s
   if(window._masterPoll)clearInterval(window._masterPoll);
   window._masterPoll=setInterval(async()=>{
     const {data}=await db.from('podium_sessions').select('*').eq('id',currentSessionId).single();
     if(data&&data.updated_at!==currentSession?.updated_at){
-      currentSession=data;renderMasterTeams(data.teams||[]);renderSubmitProgress();
+      currentSession=data;renderMasterTeams(data.teams||[]);renderSubmitProgress();pushSpectator({view:'playing'});
     }
   },2000);
 }
@@ -674,6 +674,7 @@ async function selectQuestion(id){
   document.getElementById('btn-add-time').style.display='none';
   pendingTimerVal=60;
   document.getElementById('timer-setup-val').textContent='60s';
+  pushSpectator({view:'playing'});
   renderSubmitProgress();
 }
 
@@ -750,6 +751,7 @@ async function goToReveal(){
   revealIdx=0;
   buildRevealScreen(q);
   showView('reveal');
+  pushSpectator({view:'reveal',answers:revealAnswers,revealed_count:0});
 }
 
 function buildRevealScreen(q){
@@ -809,7 +811,9 @@ function revealNext(){
     if(mini)mini.classList.add(correct?'correct':'wrong');
   });
   revealIdx++;
-  // If all revealed, update scores
+  // Push to spectator
+  const ans=revealAnswers;
+  pushSpectator({view:'reveal',answers:ans,revealed_count:revealIdx});
   if(revealIdx===revealItems.length){
     document.getElementById('btn-reveal-next').style.display='none';
     updateScoresAfterReveal();
@@ -1216,6 +1220,32 @@ async function saveItems(){
 function renderQPicker(){
   const el=document.getElementById('q-picker-list');
   if(!el)return;
+}
+
+// ── SPECTATOR ──
+let spectatorWin=null;
+let bc=null;
+try{bc=new BroadcastChannel('podium_spectator');}catch(e){}
+
+function pushSpectator(extra={}){
+  const state={
+    code:currentSession?.code||'',
+    teams:currentSession?.teams||[],
+    question_id:currentQuestionId,
+    ...extra
+  };
+  try{localStorage.setItem('podium_spectator',JSON.stringify(state));}catch(e){}
+  if(bc)try{bc.postMessage(state);}catch(e){}
+  if(spectatorWin&&!spectatorWin.closed&&spectatorWin.applyState)
+    try{spectatorWin.applyState(state);}catch(e){}
+}
+
+function openSpectatorWindow(){
+  pushSpectator({view:'waiting'});
+  spectatorWin=window.open('podium-spectateur.html','podium_tv','width=1280,height=720,toolbar=0,menubar=0,location=0');
+  if(!spectatorWin){showToast('Pop-up bloquée');return;}
+  showToast('Écran TV ouvert');
+  setTimeout(()=>pushSpectator({view:currentQuestionId?'playing':'waiting'}),800);
 }
 
 // ── UTILS ──
