@@ -256,6 +256,7 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
     <button class="btn btn-ghost btn-sm" onclick="showView('admin')">⚙ Questions</button>
     <button class="btn btn-ghost btn-sm" onclick="showView('home')">🏠 Accueil</button>
     <button class="btn btn-ghost btn-sm" onclick="showView('join')">📱 Rejoindre</button>
+    <button class="btn btn-ghost btn-sm" onclick="openSpectatorWindow()">📺 Écran TV</button>
     <a class="btn btn-ghost btn-sm" href="index.html">← Retour</a>
   </div>
 </nav>
@@ -700,16 +701,19 @@ async function startRound(){
   roundDuration=pendingTimerVal;
   const teams=(currentSession?.teams||[]).map(t=>({...t,submitted:false}));
   await db.from('podium_sessions').update({status:'playing',teams,timer_duration:roundDuration}).eq('id',currentSessionId);
+  currentSession={...currentSession,teams,status:'playing'};
   document.getElementById('master-timer-wrap').style.display='flex';
   document.getElementById('timer-setup').style.display='none';
   document.getElementById('btn-add-time').style.display='';
   document.getElementById('btn-stop-round').style.display='';
   document.getElementById('btn-reveal').style.display='none';
+  pushSpectator({view:'playing'});
   startTimer(roundDuration, ()=>{
     showToast('Temps écoulé !');
     document.getElementById('btn-reveal').style.display='';
     document.getElementById('btn-stop-round').style.display='none';
     document.getElementById('btn-add-time').style.display='none';
+    pushSpectator({view:'playing'});
   });
 }
 
