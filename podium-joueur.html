@@ -91,6 +91,10 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 <div class="view" id="v-code">
   <div class="join-box">
     <div class="join-title">Rejoindre <span>une partie</span></div>
+    <div id="copy-link-wrap" style="display:none;background:rgba(244,114,182,.08);border:1px solid rgba(244,114,182,.3);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px">
+      <div id="copy-link-text" style="flex:1;font-size:12px;color:rgba(244,114,182,.8);font-family:monospace;word-break:break-all"></div>
+      <button onclick="copyLink()" style="background:rgba(244,114,182,.2);border:1px solid rgba(244,114,182,.4);color:#f472b6;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">Copier</button>
+    </div>
     <input class="code-input" id="inp-code" maxlength="4" placeholder="ABCD" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')doLookup()">
     <div class="err" id="err-code">Code invalide</div>
     <button class="btn btn-pink" onclick="doLookup()">Continuer →</button>
@@ -158,6 +162,11 @@ async function init(){
   myCode=p.get('code')||'';
   myTeam=p.get('team')||'';
 
+  if(myCode){
+    const url=`${location.origin}${location.pathname}?code=${myCode}`;
+    document.getElementById('copy-link-text').textContent=url;
+    document.getElementById('copy-link-wrap').style.display='flex';
+  }
   if(myCode&&myTeam){
     // Restore session directly
     document.getElementById('inp-code').value=myCode;
@@ -202,7 +211,13 @@ async function doLookup(){
   if(!code){toast('Entre un code');return;}
   myCode=code;
   const ok=await lookupCode(code);
-  if(ok){setURL();showView('v-team');}
+  if(ok){
+    setURL();
+    const url=`${location.origin}${location.pathname}?code=${myCode}`;
+    document.getElementById('copy-link-text').textContent=url;
+    document.getElementById('copy-link-wrap').style.display='flex';
+    showView('v-team');
+  }
 }
 
 async function lookupCode(code){
@@ -412,11 +427,19 @@ async function markReady(){
   const {data:s}=await db.from('podium_sessions').select('teams').eq('id',sessData.id).single();
   const teams=(s?.teams||[]).map(t=>t.name===myTeam?{...t,submitted:true}:t);
   await db.from('podium_sessions').update({teams}).eq('id',sessData.id);
-  // UI
-  document.getElementById('btn-ready').style.display='none';
-  document.getElementById('msg-submitted').style.display='block';
-  document.querySelectorAll('.drag-card').forEach(c=>{c.style.opacity='.5';c.draggable=false;});
+  // UI - switch to done view
+  showView('v-done');
   toast('Prêt ✓');
+}
+
+function copyLink(){
+  const url=document.getElementById('copy-link-text').textContent;
+  navigator.clipboard.writeText(url).then(()=>toast('Lien copié ✓')).catch(()=>{
+    const el=document.getElementById('copy-link-text');
+    const range=document.createRange();range.selectNode(el);
+    window.getSelection().removeAllRanges();window.getSelection().addRange(range);
+    toast('Sélectionné — copiez manuellement');
+  });
 }
 
 function toast(msg){
