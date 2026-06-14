@@ -561,7 +561,7 @@ async function createSession(){
 }
 
 function generateQR(code){
-  const url=`${location.origin}${location.pathname}?code=${code}`;
+  const url=`${location.origin}${location.pathname.replace('podium.html','podium-joueur.html')}?code=${code}`;
   const qrEl=document.getElementById('master-qr');
   if(!qrEl)return;
   // Use QR server API
@@ -917,12 +917,23 @@ function applySessionToTeam(sess){
     document.getElementById('team-score-disp').textContent=teamScore+' pts';
   }
   if(sess.current_question_id){
-    const q=questions.find(x=>x.id===sess.current_question_id);
+    const q=questions.find(x=>String(x.id)===String(sess.current_question_id));
     if(q){
       document.getElementById('team-question').textContent=q.question;
       currentItems=q.podium_items||[];
       if(!myTeam?.submitted)buildDragCards(q.podium_items||[]);
       else showSubmitted();
+    } else {
+      // questions not loaded yet — reload and retry
+      loadQuestions().then(()=>{
+        const q2=questions.find(x=>String(x.id)===String(sess.current_question_id));
+        if(q2){
+          document.getElementById('team-question').textContent=q2.question;
+          currentItems=q2.podium_items||[];
+          if(!myTeam?.submitted)buildDragCards(q2.podium_items||[]);
+          else showSubmitted();
+        }
+      });
     }
   }
   const timerEl=document.getElementById('team-timer');
