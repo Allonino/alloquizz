@@ -458,10 +458,7 @@ try { bc = new BroadcastChannel('panel_spectator'); } catch(e) {}
 
 // ══ NAV ══
 function goToAdmin() {
-  if (currentSessionId) {
-    if (!confirm('Quitter la partie en cours pour aller aux questions ?')) return;
-    currentSessionId = null;
-  }
+  // Always go to admin — session stays active in background
   showView('admin');
 }
 
