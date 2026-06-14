@@ -712,7 +712,8 @@ function revealNext(){
   const slot=document.getElementById('reveal-slot-'+revealIdx);
   slot.classList.add('revealed');
   slot.innerHTML=`${item.image_url?`<img src="${item.image_url}" alt="">`:''}
-    <div class="podium-card-name">${item.name||''}</div>`;
+    <div class="podium-card-name">${item.name||''}</div>
+    ${item.detail?`<div style="font-size:11px;color:rgba(244,114,182,0.7);font-weight:600;padding:0 6px 6px;text-align:center">${item.detail}</div>`:''}`;
   // Color team mini-cards
   const teams=currentSession?.teams||[];
   teams.forEach(t=>{
@@ -1018,11 +1019,13 @@ async function deleteQuestion(id){
 // ── ITEMS MODAL ──
 function buildItemsGrid(existing){
   const grid=document.getElementById('items-grid');
+  grid.style.gridTemplateColumns='1fr';
   grid.innerHTML=Array.from({length:5},(_,i)=>{
-    const item=existing[i]||{name:'',image_url:'',correct_rank:i+1};
-    return `<div class="item-row">
+    const item=existing[i]||{name:'',image_url:'',detail:'',correct_rank:i+1};
+    return `<div class="item-row" style="flex-wrap:wrap;gap:8px">
       <div class="item-rank-badge">${i+1}</div>
-      <input class="item-name-input" id="iname-${i}" placeholder="Nom…" value="${item.name||''}" oninput="checkItemsValid()">
+      <input class="item-name-input" id="iname-${i}" placeholder="Nom…" value="${item.name||''}" oninput="checkItemsValid()" style="min-width:120px;flex:2">
+      <input class="item-name-input" id="idetail-${i}" placeholder="Détail (ex: 2m20)…" value="${item.detail||''}" style="min-width:100px;flex:1.5;color:rgba(255,255,255,0.45);font-size:12px">
       <img class="item-img-preview" id="iimg-${i}" src="${item.image_url||''}" style="${item.image_url?'display:block':'display:none'}">
       <button class="item-img-btn" onclick="pasteImgUrl(${i})">+ img</button>
     </div>`;
@@ -1053,9 +1056,10 @@ function openItemsModal(qId){
   const grid=document.getElementById('items-grid');
   grid.innerHTML=Array.from({length:5},(_,i)=>{
     const item=(q?.podium_items||[])[i]||{name:'',image_url:'',correct_rank:i+1};
-    return `<div class="item-row">
+    return `<div class="item-row" style="flex-wrap:wrap;gap:8px">
       <div class="item-rank-badge">${i+1}</div>
-      <input class="item-name-input" id="iname-${i}" placeholder="Nom…" value="${item.name||''}">
+      <input class="item-name-input" id="iname-${i}" placeholder="Nom…" value="${item.name||''}" oninput="checkItemsValid()" style="min-width:120px;flex:2">
+      <input class="item-name-input" id="idetail-${i}" placeholder="Détail (ex: 2m20)…" value="${item.detail||''}" style="min-width:100px;flex:1.5;color:rgba(255,255,255,0.45);font-size:12px">
       ${item.image_url?`<img class="item-img-preview" id="iimg-${i}" src="${item.image_url}" style="display:block">`:
         `<img class="item-img-preview" id="iimg-${i}" src="">`}
       <button class="item-img-btn" onclick="pasteImgUrl(${i})">+ URL img</button>
@@ -1088,9 +1092,10 @@ async function saveItems(){
   }
   const items=Array.from({length:5},(_,i)=>{
     const name=document.getElementById('iname-'+i).value.trim();
+    const detail=document.getElementById('idetail-'+i)?.value.trim()||'';
     const imgEl=document.getElementById('iimg-'+i);
     const image_url=imgEl&&imgEl.style.display!=='none'&&imgEl.src?imgEl.src:null;
-    return {question_id:qId,name,image_url,correct_rank:i+1};
+    return {question_id:qId,name,detail,image_url,correct_rank:i+1};
   }).filter(item=>item.name||item.image_url);
   if(items.length){
     const {error}=await db.from('podium_items').insert(items);
