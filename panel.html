@@ -285,11 +285,13 @@ async function init() {
 }
 
 async function loadQuestions() {
-  const { data, error } = await db.from('panel_questions').select('*, panel_answers(*)').order('sort_order');
-  if (error) { showToast('Erreur : ' + error.message); return; }
-  questions = (data || []).map(q => ({
+  const { data: qData, error: qErr } = await db.from('panel_questions').select('*').order('sort_order');
+  if (qErr) { showToast('Erreur questions : ' + qErr.message); console.error(qErr); return; }
+  const { data: aData, error: aErr } = await db.from('panel_answers').select('*').order('sort_order');
+  if (aErr) { showToast('Erreur réponses : ' + aErr.message); console.error(aErr); return; }
+  questions = (qData || []).map(q => ({
     ...q,
-    panel_answers: (q.panel_answers || []).sort((a,b) => b.points - a.points)
+    panel_answers: (aData || []).filter(a => a.question_id === q.id).sort((a,b) => b.points - a.points)
   }));
   renderSelector();
   renderAdmin();
