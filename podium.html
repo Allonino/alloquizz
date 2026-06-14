@@ -2,1264 +2,795 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlloQuizz — Le Podium</title>
 <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,700;0,800;1,800&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-height:100vh;overflow-x:hidden}
-
-/* ── LOADING ── */
-#loading-overlay{position:fixed;inset:0;background:#06060d;z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .4s}
-#loading-overlay.hidden{opacity:0;pointer-events:none}
+body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-height:100vh;display:flex;flex-direction:column}
+#loading{position:fixed;inset:0;background:#06060d;z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#loading.hidden{display:none}
 .spinner{width:32px;height:32px;border:3px solid rgba(244,114,182,0.2);border-top-color:#f472b6;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-/* ── TOAST ── */
-#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e1e2e;border:1px solid rgba(255,255,255,0.12);color:#f0f0f5;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;transition:all .25s;z-index:9999;white-space:nowrap;pointer-events:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e1e2e;border:1px solid rgba(255,255,255,0.12);color:#f0f0f5;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;transition:all .25s;z-index:9999;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ── NAV ── */
-.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(6,6,13,0.95);border-bottom:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(16px)}
-.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#f0f0f5;padding:14px 0;letter-spacing:-.02em}
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(6,6,13,.95);border-bottom:1px solid rgba(255,255,255,.07);backdrop-filter:blur(16px)}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#f0f0f5;padding:14px 0;letter-spacing:-.02em;text-decoration:none}
 .nav-logo span{color:#f472b6}
-.nav-right{display:flex;gap:8px;align-items:center}
-
-/* ── VIEWS ── */
-.view{display:none;flex-direction:column;min-height:calc(100vh - 49px)}
-.view.active{display:flex}
-#view-master.active{flex-direction:row;height:calc(100vh - 49px);min-height:unset}
-
-/* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;transition:filter .2s,transform .15s;font-family:'DM Sans',sans-serif}
-.btn:hover{filter:brightness(1.15)}
+.nav-right{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;transition:filter .2s,transform .15s;font-family:'DM Sans',sans-serif}
 .btn:active{transform:scale(.97)}
 .btn-pink{background:#f472b6;color:#fff}
-.btn-ghost{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1)}
-.btn-ghost:hover{background:rgba(255,255,255,0.1);color:#fff}
-.btn-sm{padding:7px 14px;font-size:11px}
+.btn-pink:hover{filter:brightness(1.1)}
+.btn-ghost{background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.1)}
+.btn-ghost:hover{background:rgba(255,255,255,.1);color:#fff}
+.btn-sm{padding:6px 12px;font-size:11px}
 
-/* ── MODAL ── */
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal-box{background:#0f0f1a;border:1px solid rgba(255,255,255,0.1);border-radius:20px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
-.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.07)}
-.modal-title{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
-.modal-close{background:none;border:none;color:rgba(255,255,255,0.3);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color .2s}
-.modal-close:hover{color:#fff}
-.modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
-.modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid rgba(255,255,255,0.07)}
-.modal-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:6px;display:block}
-.modal-input{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;font-size:14px;color:#f0f0f5;font-family:'DM Sans',sans-serif;width:100%;outline:none;transition:border-color .2s}
-.modal-input:focus{border-color:rgba(244,114,182,0.5)}
+/* VIEWS */
+.view{display:none;flex-direction:column;flex:1}
+.view.active{display:flex}
 
-/* ════════════════════════════
-   HOME VIEW
-════════════════════════════ */
-#view-home{padding:32px 40px 48px;gap:28px;max-width:960px;margin:0 auto;width:100%}
-.home-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
-.home-title{font-family:'Exo 2',sans-serif;font-size:32px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
+/* ══ HOME ══ */
+#v-home{padding:32px 40px;gap:24px;max-width:960px;width:100%;margin:0 auto}
+.home-title{font-family:'Exo 2',sans-serif;font-size:30px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
 .home-title span{color:#f472b6}
-.home-actions{display:flex;gap:10px;flex-wrap:wrap}
+.sessions{display:flex;flex-direction:column;gap:10px}
+.sess-card{display:flex;align-items:center;gap:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 18px;cursor:pointer;transition:border-color .2s,background .2s}
+.sess-card:hover{background:rgba(244,114,182,.06);border-color:rgba(244,114,182,.3)}
+.sess-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sess-dot.active{background:#f472b6;box-shadow:0 0 6px rgba(244,114,182,.6)}
+.sess-dot.done{background:rgba(255,255,255,.2)}
+.sess-info{flex:1}
+.sess-code{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6;letter-spacing:.06em}
+.sess-meta{font-size:12px;color:rgba(255,255,255,.3);margin-top:2px}
+.empty{text-align:center;padding:48px;color:rgba(255,255,255,.2);font-size:14px}
+.sec-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3)}
 
-.sessions-list{display:flex;flex-direction:column;gap:10px}
-.session-card{display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px 20px;transition:border-color .2s,background .2s;cursor:pointer}
-.session-card:hover{background:rgba(244,114,182,0.06);border-color:rgba(244,114,182,0.3)}
-.session-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.session-dot.waiting,.session-dot.playing{background:#f472b6;box-shadow:0 0 6px rgba(244,114,182,0.6)}
-.session-dot.finished{background:rgba(255,255,255,0.2)}
-.session-info{flex:1;min-width:0}
-.session-code{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6;letter-spacing:.06em}
-.session-meta{font-size:12px;color:rgba(255,255,255,0.3);margin-top:3px}
-.session-teams{font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px}
-.empty-state{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.2);font-size:14px}
-
-.section-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.3)}
-
-/* ════════════════════════════
-   MASTER VIEW
-════════════════════════════ */
-#view-master{flex-direction:row;height:calc(100vh - 49px)}
-
-.master-sidebar{width:320px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;overflow:hidden}
-.master-sidebar-top{padding:20px;border-bottom:1px solid rgba(255,255,255,0.07)}
-.master-code{font-family:'Exo 2',sans-serif;font-size:28px;font-weight:800;font-style:italic;color:#f472b6;letter-spacing:.1em}
-.master-code-label{font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
-.master-teams{flex:1;overflow-y:auto;padding:16px}
-.master-team-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:8px}
-.master-team-name{flex:1;font-size:13px;font-weight:600}
-.master-team-score{font-family:'Exo 2',sans-serif;font-size:20px;font-weight:800;font-style:italic;color:#f472b6}
-.master-team-status{font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700;letter-spacing:.06em}
-.master-team-status.submitted{background:rgba(79,206,143,0.15);color:#4fce8f}
-.master-team-status.waiting{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.3)}
+/* ══ MASTER ══ */
+#v-master{flex-direction:row;height:calc(100vh - 49px)}
+.sidebar{width:300px;flex-shrink:0;border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;overflow:hidden}
+.sb-top{padding:18px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sb-code-lbl{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.sb-code{font-family:'Exo 2',sans-serif;font-size:32px;font-weight:800;font-style:italic;color:#f472b6;letter-spacing:.1em}
+.sb-qr{display:flex;justify-content:center;margin:10px 0 6px}
+.sb-hint{font-size:11px;color:rgba(255,255,255,.2);text-align:center}
+.sb-teams{flex:1;overflow-y:auto;padding:14px}
+.team-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);margin-bottom:8px;transition:border-color .3s}
+.team-row.ready{border-color:rgba(79,206,143,.4);background:rgba(79,206,143,.05)}
+.team-name{flex:1;font-size:13px;font-weight:600}
+.team-score{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6}
+.team-badge{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:10px}
+.team-badge.ready{background:rgba(79,206,143,.15);color:#4fce8f;border:1px solid rgba(79,206,143,.3)}
+.team-badge.wait{background:rgba(255,255,255,.06);color:rgba(255,255,255,.3)}
+.sb-bottom{padding:12px;border-top:1px solid rgba(255,255,255,.07);display:flex;gap:8px;flex-wrap:wrap}
 
 .master-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.master-topbar{padding:16px 24px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.master-q-text{flex:1;font-size:15px;font-weight:600;color:#f0f0f5}
-.master-content{flex:1;overflow-y:auto;padding:20px 24px}
-.master-controls{padding:16px 24px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.master-top{padding:14px 22px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.master-q-text{flex:1;font-size:15px;font-weight:600}
+.timer-display{font-family:'Exo 2',sans-serif;font-size:40px;font-weight:800;font-style:italic;font-variant-numeric:tabular-nums;transition:color .3s;display:none}
+.timer-display.ok{color:#4fce8f}.timer-display.warn{color:#fb923c}.timer-display.urgent{color:#f87171;animation:pulse .5s infinite}
+.ready-count{font-size:12px;color:rgba(255,255,255,.3);white-space:nowrap}
+.master-content{flex:1;overflow-y:auto;padding:18px 22px}
+.master-controls{padding:12px 22px;border-top:1px solid rgba(255,255,255,.07);display:flex;gap:10px;flex-wrap:wrap;align-items:center;flex-shrink:0}
 
-.q-picker-list{display:flex;flex-direction:column;gap:8px}
-.q-pick-card{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 18px;cursor:pointer;transition:border-color .2s,background .2s}
-.q-pick-card:hover{background:rgba(244,114,182,0.06);border-color:rgba(244,114,182,0.35)}
-.q-pick-card.done{opacity:.4;cursor:default}
-.q-pick-num{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(244,114,182,0.4);width:28px}
-.q-pick-text{flex:1;font-size:14px;font-weight:500}
-.q-pick-badge{font-size:10px;font-weight:700;letter-spacing:.08em;color:rgba(79,206,143,0.7)}
+/* Q picker */
+.q-list{display:flex;flex-direction:column;gap:8px}
+.q-card{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;cursor:pointer;transition:border-color .2s,background .2s}
+.q-card:hover{background:rgba(244,114,182,.06);border-color:rgba(244,114,182,.35)}
+.q-card.done{opacity:.4;cursor:default}
+.q-num{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;color:rgba(244,114,182,.4);width:26px}
+.q-text{flex:1;font-size:14px;font-weight:500}
+.q-done-badge{font-size:10px;font-weight:700;color:rgba(79,206,143,.7);letter-spacing:.08em}
 
-/* Timer circle */
-.timer-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
-.timer-num{font-family:'Exo 2',sans-serif;font-size:42px;font-weight:800;font-style:italic;font-variant-numeric:tabular-nums;transition:color .3s}
-.timer-num.ok{color:#4fce8f}.timer-num.warn{color:#fb923c}.timer-num.urgent{color:#f87171;animation:pulse .5s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.timer-label{font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.1em}
+/* Timer setup */
+.timer-setup{display:none;align-items:center;gap:8px}
+.timer-val-disp{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6;min-width:48px;text-align:center}
 
-/* Submit progress */
-.submit-progress{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.submit-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.15);transition:background .3s}
-.submit-dot.done{background:#4fce8f}
-
-/* ════════════════════════════
-   REVEAL VIEW
-════════════════════════════ */
-#view-reveal{padding:24px 32px 40px;gap:20px;max-width:1100px;margin:0 auto;width:100%}
-.reveal-question{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em;color:#f0f0f5;text-align:center}
-.reveal-podium{display:flex;gap:10px;margin:0 auto;max-width:800px;width:100%}
-.podium-slot{flex:1;display:flex;flex-direction:column;gap:8px}
-.podium-rank-label{text-align:center;font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;font-style:italic;color:rgba(255,255,255,0.3);letter-spacing:.1em;text-transform:uppercase}
-.podium-card{
-  border-radius:14px;overflow:hidden;
-  border:2px solid rgba(255,255,255,0.08);
-  background:rgba(255,255,255,0.03);
-  min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  transition:all .5s cubic-bezier(.16,1,.3,1);
-  position:relative;
-}
-.podium-card.revealed{border-color:rgba(244,114,182,0.5);background:rgba(244,114,182,0.1)}
-.podium-card img{width:100%;height:70px;object-fit:cover}
-.podium-card-name{font-size:13px;font-weight:700;text-align:center;padding:8px 6px;color:#f0f0f5}
-.podium-card-hidden{color:rgba(255,255,255,0.1);font-size:24px}
-
-/* Team answers below */
+/* ══ REVEAL ══ */
+#v-reveal{padding:20px 36px 32px;gap:18px;max-width:1100px;width:100%;margin:0 auto;overflow-y:auto}
+.reveal-q{font-family:'Exo 2',sans-serif;font-size:20px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em;text-align:center}
+.reveal-slots{display:flex;gap:10px}
+.reveal-slot{flex:1;display:flex;flex-direction:column;gap:6px;align-items:center}
+.slot-rank{font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;font-style:italic;color:rgba(255,255,255,.25);letter-spacing:.1em;text-transform:uppercase}
+.slot-card{width:100%;border-radius:12px;border:2px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;transition:all .5s cubic-bezier(.16,1,.3,1)}
+.slot-card.revealed{border-color:rgba(244,114,182,.5);background:rgba(244,114,182,.08)}
+.slot-card img{width:100%;height:72px;object-fit:cover}
+.slot-name{font-size:13px;font-weight:700;text-align:center;padding:6px 4px;color:#f0f0f5}
+.slot-detail{font-size:11px;color:rgba(244,114,182,.7);font-weight:600;text-align:center;padding:0 4px 6px}
+.slot-hidden{font-size:32px;color:rgba(255,255,255,.08)}
 .reveal-teams{display:flex;flex-direction:column;gap:10px}
-.reveal-team-row{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden}
-.reveal-team-header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06)}
-.reveal-team-name{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
-.reveal-team-score{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6;margin-left:auto}
-.reveal-team-cards{display:flex;gap:8px;padding:10px 16px}
-.reveal-mini-card{
-  flex:1;min-height:52px;border-radius:10px;
-  border:2px solid rgba(255,255,255,0.08);
-  background:rgba(255,255,255,0.03);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-size:11px;font-weight:600;text-align:center;padding:6px 4px;
-  transition:all .4s cubic-bezier(.16,1,.3,1);
-  position:relative;overflow:hidden;
-}
-.reveal-mini-card img{width:100%;height:36px;object-fit:cover;border-radius:6px;margin-bottom:4px}
-.reveal-mini-card.correct{border-color:#4fce8f;background:rgba(79,206,143,0.12);color:#4fce8f}
-.reveal-mini-card.wrong{border-color:#f87171;background:rgba(248,113,113,0.1);color:#f87171}
-.reveal-mini-card.perfect{border-color:#fbbf24;background:rgba(251,191,36,0.12);color:#fbbf24}
-.reveal-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding-top:8px}
+.rt-row{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden}
+.rt-header{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.rt-name{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em;flex:1}
+.rt-pts{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6}
+.rt-cards{display:flex;gap:8px;padding:10px 16px}
+.mini{flex:1;border-radius:10px;border:2px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:600;text-align:center;padding:6px 4px;min-height:52px;transition:all .4s cubic-bezier(.16,1,.3,1);overflow:hidden}
+.mini img{width:100%;height:34px;object-fit:cover;border-radius:6px;margin-bottom:3px}
+.mini.correct{border-color:#4fce8f;background:rgba(79,206,143,.12);color:#4fce8f}
+.mini.wrong{border-color:#f87171;background:rgba(248,113,113,.1);color:#f87171}
+.reveal-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 
-/* ════════════════════════════
-   TEAM JOIN VIEW
-════════════════════════════ */
-#view-join{align-items:center;justify-content:center;padding:40px 20px}
-.join-box{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:32px;max-width:400px;width:100%;display:flex;flex-direction:column;gap:20px}
-.join-title{font-family:'Exo 2',sans-serif;font-size:24px;font-weight:800;font-style:italic;text-transform:uppercase;text-align:center}
-.join-title span{color:#f472b6}
-.join-input{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px 18px;font-size:20px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#f0f0f5;font-family:'Exo 2',sans-serif;width:100%;outline:none;text-align:center;transition:border-color .2s}
-.join-input:focus{border-color:rgba(244,114,182,0.5)}
-.join-error{color:#f87171;font-size:13px;text-align:center;display:none}
+/* ══ ADMIN ══ */
+#v-admin{padding:28px 36px;gap:20px;max-width:900px;width:100%;margin:0 auto}
+.admin-title{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
+.admin-list{display:flex;flex-direction:column;gap:10px}
+.admin-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.admin-num{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;color:rgba(244,114,182,.4);width:26px}
+.admin-text{flex:1;font-size:14px;font-weight:600}
+.admin-count{font-size:12px;color:rgba(255,255,255,.3)}
 
-/* ════════════════════════════
-   TEAM GAME VIEW
-════════════════════════════ */
-#view-team{padding:0;gap:0}
-.team-top{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.team-name-badge{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;color:#f472b6;text-transform:uppercase;letter-spacing:.06em}
-.team-score-badge{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;color:#f0f0f5}
-.team-question{padding:16px 20px 8px;text-align:center;font-size:15px;font-weight:600;color:#f0f0f5;flex-shrink:0}
-.team-timer{text-align:center;font-family:'Exo 2',sans-serif;font-size:36px;font-weight:800;font-style:italic;padding:4px 0;flex-shrink:0;transition:color .3s}
-.team-timer.ok{color:#4fce8f}.team-timer.warn{color:#fb923c}.team-timer.urgent{color:#f87171;animation:pulse .5s infinite}
+/* ══ MODAL ══ */
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#0f0f1a;border:1px solid rgba(255,255,255,.1);border-radius:18px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,.07)}
+.modal-title{font-family:'Exo 2',sans-serif;font-size:17px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
+.modal-x{background:none;border:none;color:rgba(255,255,255,.3);font-size:18px;cursor:pointer;padding:2px 6px}
+.modal-x:hover{color:#fff}
+.modal-body{padding:18px 22px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid rgba(255,255,255,.07)}
+.mlabel{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:5px;display:block}
+.minput{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;font-size:14px;color:#f0f0f5;font-family:'DM Sans',sans-serif;width:100%;outline:none;transition:border-color .2s}
+.minput:focus{border-color:rgba(244,114,182,.5)}
+.item-row{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px 12px}
+.item-rank{font-family:'Exo 2',sans-serif;font-size:15px;font-weight:800;font-style:italic;color:#f472b6;width:20px;flex-shrink:0}
+.iname{flex:2;background:transparent;border:none;font-size:13px;color:#f0f0f5;font-family:'DM Sans',sans-serif;outline:none;min-width:0}
+.idetail{flex:1.2;background:transparent;border:none;font-size:12px;color:rgba(255,255,255,.4);font-family:'DM Sans',sans-serif;outline:none;min-width:0}
+.iname::placeholder,.idetail::placeholder{color:rgba(255,255,255,.2)}
+.iimg-btn{font-size:11px;color:rgba(244,114,182,.7);background:none;border:1px solid rgba(244,114,182,.3);border-radius:6px;padding:3px 7px;cursor:pointer;flex-shrink:0;font-family:'DM Sans',sans-serif}
+.iimg-preview{width:30px;height:30px;border-radius:5px;object-fit:cover;flex-shrink:0}
 
-/* Drag & drop cards */
-.drag-area{flex:1;display:flex;flex-direction:column;gap:10px;padding:12px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.drag-hint{font-size:11px;color:rgba(255,255,255,0.25);text-align:center;padding:4px 0}
-.drag-card{
-  background:rgba(255,255,255,0.05);
-  border:1.5px solid rgba(255,255,255,0.1);
-  border-radius:14px;padding:14px 16px;
-  display:flex;align-items:center;gap:12px;
-  cursor:grab;user-select:none;
-  transition:transform .15s,box-shadow .15s,border-color .15s,background .15s;
-  touch-action:none;
-}
-.drag-card:active{cursor:grabbing}
-.drag-card.dragging{opacity:.5;transform:scale(.98)}
-.drag-card.drag-over{border-color:#f472b6;background:rgba(244,114,182,0.1);transform:scale(1.02)}
-.drag-rank{font-family:'Exo 2',sans-serif;font-size:20px;font-weight:800;font-style:italic;color:rgba(244,114,182,0.5);width:28px;flex-shrink:0;text-align:center}
-.drag-card img{width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0}
-.drag-card-name{flex:1;font-size:15px;font-weight:600;color:#f0f0f5}
-.drag-handle{color:rgba(255,255,255,0.2);font-size:18px;flex-shrink:0}
+/* New session modal */
+.tc-opt{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);padding:8px 16px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;transition:all .15s}
+.tc-opt.sel{background:rgba(244,114,182,.15);border-color:rgba(244,114,182,.5);color:#f472b6}
+.team-name-input{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:9px 12px;font-size:13px;color:#f0f0f5;font-family:'DM Sans',sans-serif;width:100%;outline:none}
+.team-name-input:focus{border-color:rgba(244,114,182,.4)}
 
-.team-submit-bar{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0}
-.team-submitted-msg{text-align:center;padding:20px;color:rgba(255,255,255,0.4);font-size:14px;font-style:italic}
-
-/* ════════════════════════════
-   ADMIN VIEW
-════════════════════════════ */
-#view-admin{padding:32px 40px 48px;gap:24px;max-width:900px;margin:0 auto;width:100%}
-.admin-title{font-family:'Exo 2',sans-serif;font-size:24px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
-.admin-q-list{display:flex;flex-direction:column;gap:12px}
-.admin-q-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden}
-.admin-q-header{display:flex;align-items:center;gap:12px;padding:14px 18px}
-.admin-q-text{flex:1;font-size:14px;font-weight:600}
-.admin-q-count{font-size:12px;color:rgba(255,255,255,0.3)}
-.admin-items-preview{display:flex;gap:8px;padding:0 18px 14px;flex-wrap:wrap}
-.admin-item-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600}
-.admin-item-rank{font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;font-style:italic;color:rgba(244,114,182,0.6)}
-.admin-item-chip img{width:20px;height:20px;border-radius:4px;object-fit:cover}
-.add-q-form{display:flex;gap:10px;background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.1);border-radius:14px;padding:16px 18px}
-.add-q-input{flex:1;background:transparent;border:none;font-size:14px;color:#f0f0f5;font-family:'DM Sans',sans-serif;outline:none}
-.add-q-input::placeholder{color:rgba(255,255,255,0.2)}
-
-/* Items modal */
-.items-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.item-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px}
-.item-rank-badge{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:#f472b6;width:22px;text-align:center;flex-shrink:0}
-.item-name-input{flex:1;background:transparent;border:none;font-size:13px;color:#f0f0f5;font-family:'DM Sans',sans-serif;outline:none}
-.item-img-preview{width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;display:none}
-.item-img-btn{font-size:11px;color:rgba(244,114,182,0.7);background:none;border:1px solid rgba(244,114,182,0.3);border-radius:6px;padding:4px 8px;cursor:pointer;flex-shrink:0;font-family:'DM Sans',sans-serif}
-.item-img-btn:hover{background:rgba(244,114,182,0.1)}
-
-@media(max-width:600px){
-  #view-home,#view-admin{padding:20px 16px 40px}
-  #view-master{flex-direction:column;height:auto}
-  .master-sidebar{width:100%;height:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,0.07)}
-  .reveal-podium{gap:6px}
-  .podium-card{min-height:70px}
-  .podium-card img{height:50px}
-  #view-reveal{padding:16px}
+@media(max-width:700px){
+  #v-master{flex-direction:column;height:auto}
+  .sidebar{width:100%;height:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,.07)}
+  #v-home,#v-admin{padding:20px 16px}
+  #v-reveal{padding:16px}
 }
 </style>
 </head>
 <body>
-<div id="loading-overlay"><div class="spinner"></div><div style="font-size:13px;color:rgba(255,255,255,0.3)">Chargement…</div></div>
+<div id="loading"><div class="spinner"></div><div style="font-size:13px;color:rgba(255,255,255,.3)">Chargement…</div></div>
 <div id="toast"></div>
 
 <nav class="nav">
-  <a href="index.html" class="nav-logo" style="text-decoration:none">Allo<span>Quizz</span> <span style="color:rgba(255,255,255,0.2);font-size:13px;font-weight:400;margin-left:6px">Le Podium</span></a>
-  <div class="nav-right" id="nav-right">
-    <button class="btn btn-ghost btn-sm" onclick="showView('admin')">⚙ Questions</button>
-    <button class="btn btn-ghost btn-sm" onclick="showView('home')">🏠 Accueil</button>
-    <button class="btn btn-ghost btn-sm" onclick="showView('join')">📱 Rejoindre</button>
-    <button class="btn btn-ghost btn-sm" onclick="openSpectatorWindow()">📺 Écran TV</button>
+  <a href="index.html" class="nav-logo">Allo<span>Quizz</span> <span style="color:rgba(255,255,255,.2);font-size:13px;font-weight:400;margin-left:6px">Le Podium</span></a>
+  <div class="nav-right">
+    <button class="btn btn-ghost btn-sm" onclick="goAdmin()">⚙ Questions</button>
+    <button class="btn btn-ghost btn-sm" onclick="goHome()">🏠 Accueil</button>
+    <button class="btn btn-ghost btn-sm" onclick="openTV()">📺 Écran TV</button>
     <a class="btn btn-ghost btn-sm" href="index.html">← Retour</a>
   </div>
 </nav>
 
-<!-- ══ HOME ══ -->
-<div class="view" id="view-home">
-  <div class="home-hero">
-    <div>
-      <div class="home-title">Le <span>Podium</span></div>
-      <div style="font-size:13px;color:rgba(255,255,255,0.35);margin-top:6px">Classez, révélez, triomphez</div>
-    </div>
-    <div class="home-actions">
-      <button class="btn btn-ghost" onclick="showView('join')">📱 Rejoindre une partie</button>
-      <button class="btn btn-pink" onclick="openNewSessionModal()">+ Nouvelle partie</button>
-    </div>
+<!-- HOME -->
+<div class="view" id="v-home">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div class="home-title">Le <span>Podium</span></div>
+    <button class="btn btn-pink" onclick="openNewSession()">+ Nouvelle partie</button>
   </div>
   <div>
-    <div class="section-label" style="margin-bottom:12px">Parties récentes</div>
-    <div class="sessions-list" id="sessions-list"><div class="empty-state">Aucune partie — créez-en une !</div></div>
+    <div class="sec-label" style="margin-bottom:10px">Parties récentes</div>
+    <div class="sessions" id="sessions-list"><div class="empty">Aucune partie</div></div>
   </div>
 </div>
 
-<!-- ══ MASTER ══ -->
-<div class="view" id="view-master">
-  <div class="master-sidebar">
-    <div class="master-sidebar-top">
-      <div class="master-code-label">Code de session</div>
-      <div class="master-code" id="master-code">—</div>
-      <div id="master-qr" style="margin-top:12px;display:flex;justify-content:center"></div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:8px;text-align:center">Scannez ou tapez le code sur cette page</div>
-      <button class="btn btn-ghost btn-sm" onclick="openSpectatorWindow()" style="margin-top:10px;width:100%;justify-content:center">📺 Ouvrir écran TV</button>
+<!-- MASTER -->
+<div class="view" id="v-master">
+  <div class="sidebar">
+    <div class="sb-top">
+      <div class="sb-code-lbl">Code de session</div>
+      <div class="sb-code" id="sb-code">—</div>
+      <div class="sb-qr" id="sb-qr"></div>
+      <div class="sb-hint">Rejoindre sur cette page</div>
     </div>
-    <div class="master-teams" id="master-teams">
-      <div style="font-size:12px;color:rgba(255,255,255,0.25);text-align:center;padding:20px 0">En attente des équipes…</div>
-    </div>
-    <div style="padding:14px 16px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-ghost btn-sm" onclick="confirmEndSession()">Terminer ✓</button>
-      <button class="btn btn-ghost btn-sm" onclick="openScoreEditModal()">✏ Scores</button>
+    <div class="sb-teams" id="sb-teams"><div style="font-size:12px;color:rgba(255,255,255,.25);text-align:center;padding:20px">En attente des équipes…</div></div>
+    <div class="sb-bottom">
+      <button class="btn btn-ghost btn-sm" onclick="openScoreEdit()">✏ Scores</button>
+      <button class="btn btn-ghost btn-sm" onclick="endSession()">Terminer ✓</button>
     </div>
   </div>
   <div class="master-main">
-    <div class="master-topbar">
+    <div class="master-top">
       <div class="master-q-text" id="master-q-text">Choisissez une question →</div>
-      <div class="timer-wrap" id="master-timer-wrap" style="display:none">
-        <div class="timer-num ok" id="master-timer">—</div>
-        <div class="timer-label">secondes</div>
-      </div>
-      <div class="submit-progress" id="submit-progress"></div>
+      <div class="ready-count" id="ready-count"></div>
+      <div class="timer-display ok" id="timer-disp"></div>
     </div>
-    <div class="master-content" id="master-content">
-      <div class="q-picker-list" id="q-picker-list"></div>
-    </div>
+    <div class="master-content" id="master-content"></div>
     <div class="master-controls" id="master-controls">
-      <button class="btn btn-ghost btn-sm" onclick="showQPicker()">☰ Changer de question</button>
-      <div id="timer-setup" style="display:none;align-items:center;gap:8px">
-        <button class="btn btn-ghost btn-sm" onclick="adjustRoundTimer(-10)">−10s</button>
-        <button class="btn btn-ghost btn-sm" onclick="adjustRoundTimer(-5)">−5s</button>
-        <div style="font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6;min-width:52px;text-align:center" id="timer-setup-val">60s</div>
-        <button class="btn btn-ghost btn-sm" onclick="adjustRoundTimer(5)">+5s</button>
-        <button class="btn btn-ghost btn-sm" onclick="adjustRoundTimer(10)">+10s</button>
-        <button class="btn btn-pink btn-sm" id="btn-start-timer" onclick="startRound()">▶ Lancer</button>
+      <button class="btn btn-ghost btn-sm" onclick="showQPicker()">☰ Questions</button>
+      <div class="timer-setup" id="timer-setup">
+        <button class="btn btn-ghost btn-sm" onclick="adjTimer(-10)">−10s</button>
+        <button class="btn btn-ghost btn-sm" onclick="adjTimer(-5)">−5s</button>
+        <div class="timer-val-disp" id="timer-pending">60s</div>
+        <button class="btn btn-ghost btn-sm" onclick="adjTimer(5)">+5s</button>
+        <button class="btn btn-ghost btn-sm" onclick="adjTimer(10)">+10s</button>
+        <button class="btn btn-pink btn-sm" onclick="startRound()">▶ Lancer</button>
       </div>
-      <button class="btn btn-ghost btn-sm" id="btn-add-time" onclick="addTime()" style="display:none">+30s</button>
-      <button class="btn btn-ghost btn-sm" id="btn-stop-round" onclick="stopRound()" style="display:none">⏹ Arrêter</button>
-      <button class="btn btn-pink btn-sm" id="btn-reveal" onclick="goToReveal()" style="display:none">Révéler les réponses →</button>
+      <button class="btn btn-ghost btn-sm" id="btn-addtime" onclick="addTime(30)" style="display:none">+30s</button>
+      <button class="btn btn-ghost btn-sm" id="btn-stop" onclick="stopRound()" style="display:none">⏹ Stopper</button>
+      <button class="btn btn-pink btn-sm" id="btn-reveal" onclick="goReveal()" style="display:none">Révéler →</button>
     </div>
   </div>
 </div>
 
-<!-- ══ REVEAL ══ -->
-<div class="view" id="view-reveal">
-  <div class="reveal-question" id="reveal-question">—</div>
-  <div class="reveal-podium" id="reveal-podium"></div>
+<!-- REVEAL -->
+<div class="view" id="v-reveal">
+  <div class="reveal-q" id="reveal-q"></div>
+  <div class="reveal-slots" id="reveal-slots"></div>
   <div class="reveal-teams" id="reveal-teams"></div>
   <div class="reveal-controls">
-    <button class="btn btn-ghost" onclick="revealNext()" id="btn-reveal-next">Révéler suivant →</button>
-    <button class="btn btn-ghost" onclick="revealAll()" id="btn-reveal-all">Tout révéler</button>
-    <button class="btn btn-pink" onclick="showView('master')">← Retour maître</button>
+    <button class="btn btn-ghost" id="btn-rev-next" onclick="revealNext()">Révéler suivant →</button>
+    <button class="btn btn-ghost" onclick="revealAll()">Tout révéler</button>
+    <button class="btn btn-pink" onclick="backToMaster()">← Retour maître</button>
   </div>
 </div>
 
-<!-- ══ JOIN ══ -->
-<div class="view" id="view-join">
-  <div class="join-box">
-    <div class="join-title">Rejoindre <span>Le Podium</span></div>
-    <div id="join-step-code" style="display:flex;flex-direction:column;gap:16px">
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <label class="modal-label">Code de session</label>
-        <input class="join-input" id="join-code" maxlength="4" placeholder="ABCD" oninput="this.value=this.value.toUpperCase()">
-      </div>
-      <div class="join-error" id="join-error">Code invalide ou session introuvable</div>
-      <button class="btn btn-pink" onclick="lookupSession()" style="width:100%;justify-content:center">Continuer →</button>
-    </div>
-    <div id="join-step-team" style="display:none;flex-direction:column;gap:12px">
-      <div style="font-size:13px;color:rgba(255,255,255,0.4);text-align:center">Choisissez votre équipe</div>
-      <div id="join-teams-list" style="display:flex;flex-direction:column;gap:8px"></div>
+<!-- ADMIN -->
+<div class="view" id="v-admin">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div class="admin-title">Questions</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-pink btn-sm" onclick="openQModal(null)">+ Nouvelle question</button>
+      <button class="btn btn-ghost btn-sm" onclick="goHome()">← Retour</button>
     </div>
   </div>
+  <div class="admin-list" id="admin-list"><div class="empty">Aucune question</div></div>
 </div>
 
-<!-- ══ TEAM GAME ══ -->
-<div class="view" id="view-team">
-  <div class="team-top">
-    <div class="team-name-badge" id="team-name-disp">—</div>
-    <div class="team-score-badge" id="team-score-disp">0 pts</div>
-  </div>
-  <div class="team-question" id="team-question">En attente…</div>
-  <div class="team-timer ok" id="team-timer" style="display:none">—</div>
-  <div class="drag-hint">Glissez les cartes pour les classer</div>
-  <div class="drag-area" id="drag-area"></div>
-  <div class="team-submit-bar" id="team-submit-bar">
-    <button class="btn btn-pink" onclick="submitAnswer()" style="width:100%;justify-content:center">Valider mon classement →</button>
-  </div>
-</div>
-
-<!-- ══ NEW SESSION MODAL ══ -->
-<div class="modal-backdrop" id="new-session-modal" style="display:none" onclick="if(event.target===this)closeNewSessionModal()">
-  <div class="modal-box" style="max-width:420px">
-    <div class="modal-header">
-      <div class="modal-title">Nouvelle partie</div>
-      <button class="modal-close" onclick="closeNewSessionModal()">✕</button>
-    </div>
+<!-- MODAL: NEW SESSION -->
+<div class="modal-back" id="m-session" style="display:none" onclick="if(event.target===this)closeModal('m-session')">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Nouvelle partie</div><button class="modal-x" onclick="closeModal('m-session')">✕</button></div>
     <div class="modal-body">
       <div>
-        <label class="modal-label">Nombre d'équipes</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm team-count-opt selected" data-val="2" onclick="selectTeamCount(this)">2</button>
-          <button class="btn btn-ghost btn-sm team-count-opt" data-val="3" onclick="selectTeamCount(this)">3</button>
-          <button class="btn btn-ghost btn-sm team-count-opt" data-val="4" onclick="selectTeamCount(this)">4</button>
-          <button class="btn btn-ghost btn-sm team-count-opt" data-val="5" onclick="selectTeamCount(this)">5</button>
-          <button class="btn btn-ghost btn-sm team-count-opt" data-val="6" onclick="selectTeamCount(this)">6</button>
+        <span class="mlabel">Nombre d'équipes</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="tc-btns">
+          <button class="tc-opt sel" data-n="2" onclick="setTeamCount(this)">2</button>
+          <button class="tc-opt" data-n="3" onclick="setTeamCount(this)">3</button>
+          <button class="tc-opt" data-n="4" onclick="setTeamCount(this)">4</button>
+          <button class="tc-opt" data-n="5" onclick="setTeamCount(this)">5</button>
+          <button class="tc-opt" data-n="6" onclick="setTeamCount(this)">6</button>
         </div>
       </div>
       <div>
-        <label class="modal-label">Noms des équipes</label>
-        <div id="team-names-inputs" style="display:flex;flex-direction:column;gap:8px"></div>
+        <span class="mlabel">Noms des équipes</span>
+        <div id="team-names" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeNewSessionModal()">Annuler</button>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('m-session')">Annuler</button>
       <button class="btn btn-pink" onclick="createSession()">Créer →</button>
     </div>
   </div>
 </div>
 
-<!-- ══ QUESTION MODAL ══ -->
-<div class="modal-backdrop" id="items-modal" style="display:none" onclick="if(event.target===this)closeItemsModal()">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div class="modal-title" id="items-modal-title">Nouvelle question</div>
-      <button class="modal-close" onclick="closeItemsModal()">✕</button>
-    </div>
+<!-- MODAL: QUESTION -->
+<div class="modal-back" id="m-question" style="display:none" onclick="if(event.target===this)closeModal('m-question')">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="mq-title">Nouvelle question</div><button class="modal-x" onclick="closeModal('m-question')">✕</button></div>
     <div class="modal-body">
       <div>
-        <label class="modal-label">Question</label>
-        <input class="modal-input" id="modal-q-text" placeholder="ex: Classe ces 5 basketteurs par taille">
+        <span class="mlabel">Question</span>
+        <input class="minput" id="mq-text" placeholder="ex: Classe ces 5 basketteurs par taille" oninput="checkQValid()">
       </div>
-      <div style="font-size:12px;color:rgba(255,255,255,0.3)">Éléments dans l'ordre correct (1 = premier du classement)</div>
-      <div class="items-grid" id="items-grid"></div>
+      <div>
+        <span class="mlabel">Éléments — dans l'ordre correct (1 = premier)</span>
+        <div id="mq-items" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+      <div id="mq-hint" style="font-size:12px;color:rgba(255,255,255,.25);text-align:center"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeItemsModal()">Annuler</button>
-      <button class="btn btn-pink" id="items-modal-save" onclick="saveItems()" disabled>Enregistrer</button>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('m-question')">Annuler</button>
+      <button class="btn btn-pink" id="mq-save" onclick="saveQuestion()" disabled>Enregistrer</button>
     </div>
   </div>
 </div>
 
-<!-- ══ ADMIN ══ -->
-<div class="view" id="view-admin">
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-    <div class="admin-title">Questions</div>
-    <button class="btn btn-ghost btn-sm" onclick="showView('home')">← Retour</button>
-  </div>
-  <div class="admin-q-list" id="admin-questions"></div>
-  <button class="btn btn-pink" onclick="openNewQuestionModal()" style="align-self:flex-start">+ Nouvelle question</button>
-</div>
-
-<!-- ══ SCORE EDIT MODAL ══ -->
-<div class="modal-backdrop" id="score-edit-modal" style="display:none" onclick="if(event.target===this)closeScoreEditModal()">
-  <div class="modal-box" style="max-width:380px">
-    <div class="modal-header">
-      <div class="modal-title">Modifier les scores</div>
-      <button class="modal-close" onclick="closeScoreEditModal()">✕</button>
-    </div>
-    <div class="modal-body" id="score-edit-body"></div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeScoreEditModal()">Annuler</button>
-      <button class="btn btn-pink" onclick="applyScoreEdits()">Valider</button>
+<!-- MODAL: SCORE EDIT -->
+<div class="modal-back" id="m-scores" style="display:none" onclick="if(event.target===this)closeModal('m-scores')">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header"><div class="modal-title">Modifier les scores</div><button class="modal-x" onclick="closeModal('m-scores')">✕</button></div>
+    <div class="modal-body" id="m-scores-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('m-scores')">Annuler</button>
+      <button class="btn btn-pink" onclick="applyScores()">Valider</button>
     </div>
   </div>
 </div>
 
 <script>
-const SUPABASE_URL='https://tsneytqibltnjarajcll.supabase.co';
-const SUPABASE_KEY='sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
+const DB_URL='https://tsneytqibltnjarajcll.supabase.co';
+const DB_KEY='sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
 const {createClient}=supabase;
-const db=createClient(SUPABASE_URL,SUPABASE_KEY);
+const db=createClient(DB_URL,DB_KEY);
 
-// ── STATE ──
-let questions=[], currentSessionId=null, currentSession=null;
-let currentQuestionId=null, currentItems=[];
-let timerInterval=null, timerVal=0, roundDuration=30;
+let questions=[], sess=null, sessId=null;
+let currentQId=null, currentItems=[];
+let pendingTimer=60, timerVal=0, timerInterval=null;
 let revealIdx=0, revealItems=[], revealAnswers=[];
-let teamName='', teamSessionId=null, teamScore=0, teamDragOrder=[];
-let sessionSub=null, answerSub=null;
-let editingQId=null;
+let editingQId=null, teamCount=2;
+let pollInterval=null, tvWin=null;
+let bc=null; try{bc=new BroadcastChannel('podium_spectator');}catch(e){}
+let doneQIds=[];
 
 // ── INIT ──
 async function init(){
   await Promise.all([loadQuestions(), loadSessions()]);
-  document.getElementById('loading-overlay').classList.add('hidden');
-  // Auto-fill code from URL
-  const params=new URLSearchParams(location.search);
-  const code=params.get('code');
-  if(code){
-    document.getElementById('join-code').value=code.toUpperCase();
-    showView('join');
-    lookupSession();
-  } else {
-    showView('home');
-  }
+  document.getElementById('loading').classList.add('hidden');
+  showView('v-home');
 }
 
-// ── VIEWS ──
 function showView(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
-  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById(v).classList.add('active');
 }
+
+// ── NAV ──
+function goHome(){loadSessions();showView('v-home');}
+function goAdmin(){showView('v-admin');}
+function backToMaster(){showView('v-master');}
 
 // ── QUESTIONS ──
 async function loadQuestions(){
-  const {data}=await db.from('podium_questions').select('*, podium_items(*)').order('sort_order');
+  const {data}=await db.from('podium_questions').select('*,podium_items(*)').order('sort_order');
   questions=(data||[]).map(q=>({...q,podium_items:(q.podium_items||[]).sort((a,b)=>a.correct_rank-b.correct_rank)}));
   renderAdmin();
-  renderQPicker();
 }
 
-// ── SESSIONS ──
-async function loadSessions(){
-  const {data}=await db.from('podium_sessions').select('*').order('created_at',{ascending:false}).limit(15);
-  const list=document.getElementById('sessions-list');
-  if(!data||!data.length){list.innerHTML='<div class="empty-state">Aucune partie — créez-en une !</div>';return;}
-  list.innerHTML=data.map(s=>{
-    const date=new Date(s.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-    const teams=(s.teams||[]).map(t=>t.name).join(', ')||'Aucune équipe';
-    const active=s.status!=='finished';
-    return `<div class="session-card" onclick="${active?`resumeSession('${s.id}')`:''}" style="${!active?'opacity:.5;cursor:default':''}">
-      <div class="session-dot ${s.status}"></div>
-      <div class="session-info">
-        <div class="session-code">${s.code}</div>
-        <div class="session-meta">${date} · ${active?'En cours':'Terminée'}</div>
-        <div class="session-teams">${teams}</div>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteSession('${s.id}')">✕</button>
-    </div>`;
-  }).join('');
-}
-
-// ── NEW SESSION ──
-let selectedTeamCount=2;
-let pendingTimerVal=60;
-
-function openNewSessionModal(){
-  document.getElementById('new-session-modal').style.display='flex';
-  renderTeamNameInputs(selectedTeamCount);
-}
-function closeNewSessionModal(){document.getElementById('new-session-modal').style.display='none';}
-
-function selectTeamCount(el){
-  document.querySelectorAll('.team-count-opt').forEach(b=>b.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedTeamCount=parseInt(el.dataset.val);
-  renderTeamNameInputs(selectedTeamCount);
-}
-
-function renderTeamNameInputs(n){
-  const wrap=document.getElementById('team-names-inputs');
-  const defaults=['Équipe 1','Équipe 2','Équipe 3','Équipe 4','Équipe 5','Équipe 6'];
-  wrap.innerHTML=Array.from({length:n},(_,i)=>`
-    <input class="modal-input" id="tname-${i}" placeholder="${defaults[i]}" value="${defaults[i]}">
-  `).join('');
-}
-
-async function createSession(){
-  const code=Math.random().toString(36).substring(2,6).toUpperCase();
-  const teams=Array.from({length:selectedTeamCount},(_,i)=>{
-    const val=document.getElementById('tname-'+i)?.value.trim();
-    return {name:val||('Équipe '+(i+1)),score:0,submitted:false};
-  });
-  const {data,error}=await db.from('podium_sessions').insert({
-    code,status:'waiting',timer_duration:60,teams,reveal_rank:0
-  }).select().single();
-  if(error){showToast('Erreur : '+error.message);return;}
-  closeNewSessionModal();
-  currentSessionId=data.id;
-  currentSession=data;
-  document.getElementById('master-code').textContent=code;
-  document.getElementById('master-q-text').textContent='Choisissez une question →';
-  generateQR(code);
-  showQPicker();
-  subscribeToSession();
-  showView('master');
-  loadSessions();
-}
-
-function generateQR(code){
-  const url=`${location.origin}${location.pathname.replace('podium.html','podium-joueur.html')}?code=${code}`;
-  const qrEl=document.getElementById('master-qr');
-  if(!qrEl)return;
-  // Use QR server API
-  const img=document.createElement('img');
-  img.src=`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(url)}&bgcolor=0f0f1a&color=f472b6&margin=8`;
-  img.style.cssText='width:140px;height:140px;border-radius:10px';
-  qrEl.innerHTML='';
-  qrEl.appendChild(img);
-}
-
-async function resumeSession(id){
-  const {data}=await db.from('podium_sessions').select('*').eq('id',id).single();
-  if(!data)return;
-  currentSessionId=id;
-  currentSession=data;
-  roundDuration=data.timer_duration||30;
-  document.getElementById('master-code').textContent=data.code;
-  generateQR(data.code);
-  renderMasterTeams(data.teams||[]);
-  if(data.current_question_id){
-    currentQuestionId=data.current_question_id;
-    const q=questions.find(x=>x.id===currentQuestionId);
-    if(q){
-      document.getElementById('master-q-text').textContent=q.question;
-      currentItems=q.podium_items||[];
-    }
-  }
-  showQPicker();
-  subscribeToSession();
-  showView('master');
-}
-
-async function deleteSession(id){
-  const pin=prompt('Code de suppression :');
-  if(pin!=='1234'){showToast('Code incorrect');return;}
-  await db.from('podium_sessions').delete().eq('id',id);
-  loadSessions();
-  showToast('Partie supprimée');
-}
-
-async function confirmEndSession(){
-  if(!confirm('Terminer cette partie ?'))return;
-  await db.from('podium_sessions').update({status:'finished'}).eq('id',currentSessionId);
-  loadSessions();
-  showView('home');
-}
-
-// ── SUBSCRIBE (master) ──
-function subscribeToSession(){
-  if(sessionSub)sessionSub.unsubscribe();
-  sessionSub=db.channel('podium-master-'+currentSessionId)
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'podium_sessions',filter:'id=eq.'+currentSessionId},
-      p=>{currentSession=p.new;renderMasterTeams(p.new.teams||[]);renderSubmitProgress();pushSpectator({view:'playing'});})
-    .subscribe();
-  if(window._masterPoll)clearInterval(window._masterPoll);
-  window._masterPoll=setInterval(async()=>{
-    const {data}=await db.from('podium_sessions').select('*').eq('id',currentSessionId).single();
-    if(data){
-      currentSession=data;
-      renderMasterTeams(data.teams||[]);
-      renderSubmitProgress();
-      if(currentQuestionId)pushSpectator({view:data.status==='playing'?'playing':'waiting'});
-    }
-  },2000);
-}
-
-// ── MASTER TEAMS ──
-function renderMasterTeams(teams){
-  const el=document.getElementById('master-teams');
-  if(!teams.length){el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.25);text-align:center;padding:20px 0">En attente des équipes…</div>';return;}
-  el.innerHTML=teams.map(t=>`
-    <div class="master-team-row">
-      <div class="master-team-name">${t.name}</div>
-      <div class="master-team-score">${t.score||0}</div>
-    </div>`).join('');
-}
-
-// ── Q PICKER ──
-function showQPicker(){
-  const content=document.getElementById('master-content');
-  const donedIds=(currentSession?.done_question_ids||[]);
-  content.innerHTML='<div class="q-picker-list">'+
-    (questions.length?questions.map((q,i)=>{
-      const done=donedIds.includes(q.id);
-      return `<div class="q-pick-card${done?' done':''}" onclick="${done?'':('selectQuestion('+q.id+')')}">
-        <div class="q-pick-num">${String(i+1).padStart(2,'0')}</div>
-        <div class="q-pick-text">${q.question}</div>
-        ${done?'<div class="q-pick-badge">✓ Faite</div>':'<div style="color:rgba(255,255,255,0.2)">›</div>'}
-      </div>`;
-    }).join(''):'<div class="empty-state">Aucune question — créez-en dans ⚙ Questions</div>')
-  +'</div>';
-  document.getElementById('timer-setup').style.display='none';
-  document.getElementById('btn-reveal').style.display='none';
-  document.getElementById('btn-stop-round').style.display='none';
-  document.getElementById('btn-add-time').style.display='none';
-}
-
-async function selectQuestion(id){
-  currentQuestionId=id;
-  const q=questions.find(x=>x.id===id);
-  if(!q)return;
-  currentItems=q.podium_items||[];
-  document.getElementById('master-q-text').textContent=q.question;
-  // Push to session
-  await db.from('podium_sessions').update({
-    current_question_id:id,status:'waiting',reveal_rank:0
-  }).eq('id',currentSessionId);
-  document.getElementById('master-content').innerHTML='<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.3)">Question sélectionnée. Lance le chrono quand tu es prêt.</div>';
-  document.getElementById('timer-setup').style.display='flex';
-  document.getElementById('btn-reveal').style.display='none';
-  document.getElementById('btn-stop-round').style.display='none';
-  document.getElementById('btn-add-time').style.display='none';
-  pendingTimerVal=60;
-  document.getElementById('timer-setup-val').textContent='60s';
-  pushSpectator({view:'playing'});
-  renderSubmitProgress();
-}
-
-function renderSubmitProgress(){
-  const teams=currentSession?.teams||[];
-  const el=document.getElementById('submit-progress');
-  el.innerHTML=teams.map(t=>`<div class="submit-dot ${t.submitted?'done':''}" title="${t.name}"></div>`).join('');
-}
-
-// ── ROUND ──
-function adjustRoundTimer(delta){
-  pendingTimerVal=Math.max(5,pendingTimerVal+delta);
-  document.getElementById('timer-setup-val').textContent=pendingTimerVal+'s';
-}
-
-function addTime(){
-  timerVal+=30;
-  const el=document.getElementById('master-timer');
-  if(el)el.textContent=timerVal;
-  showToast('+30s ajoutées');
-}
-
-async function startRound(){
-  if(!currentQuestionId){showToast('Choisissez une question');return;}
-  roundDuration=pendingTimerVal;
-  const teams=(currentSession?.teams||[]).map(t=>({...t,submitted:false}));
-  await db.from('podium_sessions').update({status:'playing',teams,timer_duration:roundDuration}).eq('id',currentSessionId);
-  currentSession={...currentSession,teams,status:'playing'};
-  document.getElementById('master-timer-wrap').style.display='flex';
-  document.getElementById('timer-setup').style.display='none';
-  document.getElementById('btn-add-time').style.display='';
-  document.getElementById('btn-stop-round').style.display='';
-  document.getElementById('btn-reveal').style.display='none';
-  pushSpectator({view:'playing'});
-  startTimer(roundDuration, ()=>{
-    showToast('Temps écoulé !');
-    document.getElementById('btn-reveal').style.display='';
-    document.getElementById('btn-stop-round').style.display='none';
-    document.getElementById('btn-add-time').style.display='none';
-    pushSpectator({view:'playing'});
-  });
-}
-
-function stopRound(){
-  clearInterval(timerInterval);
-  document.getElementById('btn-stop-round').style.display='none';
-  document.getElementById('btn-add-time').style.display='none';
-  document.getElementById('btn-reveal').style.display='';
-  db.from('podium_sessions').update({status:'stopped'}).eq('id',currentSessionId);
-}
-
-function startTimer(duration, onEnd){
-  timerVal=duration;
-  clearInterval(timerInterval);
-  const el=document.getElementById('master-timer');
-  const update=()=>{
-    if(!el)return;
-    el.textContent=timerVal;
-    el.className='timer-num '+(timerVal>duration*.5?'ok':timerVal>10?'warn':'urgent');
-  };
-  update();
-  timerInterval=setInterval(()=>{
-    timerVal--;
-    update();
-    if(timerVal<=0){clearInterval(timerInterval);onEnd();}
-  },1000);
-}
-
-// ── REVEAL ──
-async function goToReveal(){
-  if(!currentQuestionId)return;
-  clearInterval(timerInterval);
-  document.getElementById('master-timer-wrap').style.display='none';
-  const q=questions.find(x=>x.id===currentQuestionId);
-  revealItems=q?q.podium_items||[]:[];
-  // Load answers for this question in this session
-  const {data}=await db.from('podium_answers')
-    .select('*').eq('session_id',currentSessionId).eq('question_id',currentQuestionId);
-  revealAnswers=data||[];
-  revealIdx=0;
-  buildRevealScreen(q);
-  showView('reveal');
-  pushSpectator({view:'reveal',answers:revealAnswers,revealed_count:0});
-}
-
-function buildRevealScreen(q){
-  document.getElementById('reveal-question').textContent=q?q.question:'—';
-  // Podium slots
-  const podium=document.getElementById('reveal-podium');
-  podium.innerHTML=revealItems.map((item,i)=>`
-    <div class="podium-slot">
-      <div class="podium-rank-label">${i+1}</div>
-      <div class="podium-card" id="reveal-slot-${i}">
-        <div class="podium-card-hidden">?</div>
-      </div>
-    </div>`).join('');
-  // Team answers
-  const teams=currentSession?.teams||[];
-  const teamsEl=document.getElementById('reveal-teams');
-  teamsEl.innerHTML=teams.map(t=>{
-    const ans=revealAnswers.find(a=>a.team_name===t.name);
-    const ranking=ans?ans.rankings:[];
-    const cards=revealItems.map((_,i)=>{
-      const itemId=ranking[i];
-      const item=revealItems.find(x=>x.id===itemId)||revealItems[i];
-      return `<div class="reveal-mini-card" id="mini-${t.name.replace(/\s/g,'_')}-${i}">
-        ${item?.image_url?`<img src="${item.image_url}" alt="">`:'' }
-        <span>${item?.name||'?'}</span>
-      </div>`;
-    }).join('');
-    return `<div class="reveal-team-row">
-      <div class="reveal-team-header">
-        <div class="reveal-team-name">${t.name}</div>
-        <div class="reveal-team-score" id="reveal-score-${t.name.replace(/\s/g,'_')}">${t.score||0} pts</div>
-      </div>
-      <div class="reveal-team-cards">${cards}</div>
-    </div>`;
-  }).join('');
-}
-
-function revealNext(){
-  if(revealIdx>=revealItems.length){showToast('Tout est révélé');return;}
-  const item=revealItems[revealIdx];
-  // Show in podium
-  const slot=document.getElementById('reveal-slot-'+revealIdx);
-  slot.classList.add('revealed');
-  slot.innerHTML=`${item.image_url?`<img src="${item.image_url}" alt="">`:''}
-    <div class="podium-card-name">${item.name||''}</div>
-    ${item.detail?`<div style="font-size:11px;color:rgba(244,114,182,0.7);font-weight:600;padding:0 6px 6px;text-align:center">${item.detail}</div>`:''}`;
-  // Color team mini-cards
-  const teams=currentSession?.teams||[];
-  teams.forEach(t=>{
-    const ans=revealAnswers.find(a=>a.team_name===t.name);
-    if(!ans)return;
-    const ranking=ans.rankings||[];
-    const teamGuessAtRank=ranking[revealIdx];
-    const correct=teamGuessAtRank===item.id;
-    const key=t.name.replace(/\s/g,'_');
-    const mini=document.getElementById(`mini-${key}-${revealIdx}`);
-    if(mini)mini.classList.add(correct?'correct':'wrong');
-  });
-  revealIdx++;
-  // Push to spectator
-  const ans=revealAnswers;
-  pushSpectator({view:'reveal',answers:ans,revealed_count:revealIdx});
-  if(revealIdx===revealItems.length){
-    document.getElementById('btn-reveal-next').style.display='none';
-    updateScoresAfterReveal();
-  }
-}
-
-function revealAll(){
-  while(revealIdx<revealItems.length)revealNext();
-}
-
-async function updateScoresAfterReveal(){
-  const teams=currentSession?.teams||[];
-  const updatedTeams=teams.map(t=>{
-    const ans=revealAnswers.find(a=>a.team_name===t.name);
-    if(!ans)return t;
-    const ranking=ans.rankings||[];
-    let pts=0, allCorrect=true;
-    revealItems.forEach((item,i)=>{
-      if(ranking[i]===item.id)pts+=1;
-      else allCorrect=false;
-    });
-    if(allCorrect)pts+=5;
-    return {...t,score:(t.score||0)+pts};
-  });
-  await db.from('podium_sessions').update({
-    teams:updatedTeams,
-    done_question_ids:[...(currentSession?.done_question_ids||[]),currentQuestionId]
-  }).eq('id',currentSessionId);
-  currentSession={...currentSession,teams:updatedTeams};
-  // Update display
-  updatedTeams.forEach(t=>{
-    const key=t.name.replace(/\s/g,'_');
-    const el=document.getElementById('reveal-score-'+key);
-    if(el)el.textContent=(t.score||0)+' pts';
-  });
-  showToast('Scores mis à jour ✓');
-}
-
-// ── SCORE EDIT ──
-function openScoreEditModal(){
-  const teams=currentSession?.teams||[];
-  const body=document.getElementById('score-edit-body');
-  body.innerHTML=teams.map(t=>`
-    <div style="display:flex;flex-direction:column;gap:6px">
-      <label class="modal-label" style="color:#f472b6">${t.name}</label>
-      <input class="modal-input" id="se-${t.name.replace(/\s/g,'_')}" type="number" min="0" value="${t.score||0}" style="font-size:24px;font-weight:800;text-align:center;color:#f472b6">
-    </div>`).join('');
-  document.getElementById('score-edit-modal').style.display='flex';
-}
-function closeScoreEditModal(){document.getElementById('score-edit-modal').style.display='none';}
-async function applyScoreEdits(){
-  const teams=(currentSession?.teams||[]).map(t=>{
-    const val=parseInt(document.getElementById('se-'+t.name.replace(/\s/g,'_'))?.value)||0;
-    return {...t,score:val};
-  });
-  await db.from('podium_sessions').update({teams}).eq('id',currentSessionId);
-  currentSession={...currentSession,teams};
-  renderMasterTeams(teams);
-  closeScoreEditModal();
-  showToast('Scores mis à jour ✓');
-}
-
-// ── JOIN (team) ──
-async function lookupSession(){
-  const code=document.getElementById('join-code').value.trim().toUpperCase();
-  if(!code){showToast('Entre un code');return;}
-  const {data}=await db.from('podium_sessions').select('*').eq('code',code).single();
-  if(!data){document.getElementById('join-error').style.display='block';return;}
-  document.getElementById('join-error').style.display='none';
-  // Store session data for next step
-  window._joinSession=data;
-  // Show team picker
-  const teams=data.teams||[];
-  document.getElementById('join-step-code').style.display='none';
-  document.getElementById('join-step-team').style.display='flex';
-  document.getElementById('join-teams-list').innerHTML=teams.map(t=>`
-    <button class="btn btn-ghost" onclick="pickTeam('${t.name}')" style="justify-content:center;font-size:15px;font-weight:700;padding:14px;width:100%">
-      ${t.name}
-    </button>`).join('');
-}
-
-async function pickTeam(name){
-  const data=window._joinSession;
-  if(!data)return;
-  teamSessionId=data.id;
-  teamName=name;
-  teamScore=(data.teams||[]).find(t=>t.name===name)?.score||0;
-  document.getElementById('team-name-disp').textContent=name;
-  document.getElementById('team-score-disp').textContent=teamScore+' pts';
-  subscribeAsTeam(data);
-  showView('team');
-  // Reset join form
-  document.getElementById('join-step-code').style.display='flex';
-  document.getElementById('join-step-team').style.display='none';
-  document.getElementById('join-code').value='';
-}
-
-async function joinSession(){lookupSession();}
-
-function subscribeAsTeam(sess){
-  applySessionToTeam(sess);
-  if(sessionSub)sessionSub.unsubscribe();
-  sessionSub=db.channel('team-session-'+teamSessionId)
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'podium_sessions',filter:'id=eq.'+teamSessionId},
-      p=>applySessionToTeam(p.new))
-    .subscribe();
-}
-
-function applySessionToTeam(sess){
-  const myTeam=(sess.teams||[]).find(t=>t.name===teamName);
-  if(myTeam){
-    teamScore=myTeam.score||0;
-    document.getElementById('team-score-disp').textContent=teamScore+' pts';
-  }
-  if(sess.current_question_id){
-    const q=questions.find(x=>String(x.id)===String(sess.current_question_id));
-    if(q){
-      document.getElementById('team-question').textContent=q.question;
-      currentItems=q.podium_items||[];
-      if(!myTeam?.submitted)buildDragCards(q.podium_items||[]);
-      else showSubmitted();
-    } else {
-      // questions not loaded yet — reload and retry
-      loadQuestions().then(()=>{
-        const q2=questions.find(x=>String(x.id)===String(sess.current_question_id));
-        if(q2){
-          document.getElementById('team-question').textContent=q2.question;
-          currentItems=q2.podium_items||[];
-          if(!myTeam?.submitted)buildDragCards(q2.podium_items||[]);
-          else showSubmitted();
-        }
-      });
-    }
-  }
-  const timerEl=document.getElementById('team-timer');
-  if(sess.status==='playing'){
-    timerEl.style.display='block';
-    startTeamTimer(sess.timer_duration||30);
-  } else {
-    timerEl.style.display='none';
-    clearInterval(timerInterval);
-  }
-}
-
-let teamTimerStarted=false;
-function startTeamTimer(duration){
-  if(teamTimerStarted)return;
-  teamTimerStarted=true;
-  timerVal=duration;
-  const el=document.getElementById('team-timer');
-  clearInterval(timerInterval);
-  timerInterval=setInterval(()=>{
-    timerVal--;
-    el.textContent=timerVal;
-    el.className='team-timer '+(timerVal>duration*.5?'ok':timerVal>10?'warn':'urgent');
-    if(timerVal<=0){clearInterval(timerInterval);teamTimerStarted=false;}
-  },1000);
-}
-
-// ── DRAG & DROP ──
-function buildDragCards(items){
-  // Shuffle for the team
-  const shuffled=[...items].sort(()=>Math.random()-.5);
-  teamDragOrder=shuffled.map(i=>i.id);
-  const area=document.getElementById('drag-area');
-  area.innerHTML=shuffled.map((item,i)=>`
-    <div class="drag-card" id="dc-${item.id}" draggable="true"
-      ondragstart="dragStart(event,'${item.id}')"
-      ondragover="dragOver(event)"
-      ondrop="dragDrop(event,'${item.id}')"
-      ondragend="dragEnd(event)"
-      ontouchstart="touchStart(event,'${item.id}')"
-      ontouchmove="touchMove(event)"
-      ontouchend="touchEnd(event,'${item.id}')">
-      <div class="drag-rank" id="dr-${item.id}">${i+1}</div>
-      ${item.image_url?`<img src="${item.image_url}" alt="">`:''}
-      <div class="drag-card-name">${item.name||''}</div>
-      <div class="drag-handle">⠿</div>
-    </div>`).join('');
-  document.getElementById('team-submit-bar').style.display='block';
-  document.getElementById('drag-area').style.display='flex';
-  teamTimerStarted=false;
-}
-
-function showSubmitted(){
-  document.getElementById('drag-area').innerHTML='';
-  document.getElementById('team-submit-bar').innerHTML='<div class="team-submitted-msg">✓ Réponse envoyée ! En attente de la révélation…</div>';
-}
-
-// Drag & Drop
-let dragSrc=null;
-function dragStart(e,id){dragSrc=id;e.currentTarget.classList.add('dragging');}
-function dragEnd(e){e.currentTarget.classList.remove('dragging');}
-function dragOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
-function dragDrop(e,targetId){
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
-  if(!dragSrc||dragSrc===targetId)return;
-  swapCards(dragSrc,targetId);
-  dragSrc=null;
-}
-
-// Touch drag
-let touchDragId=null, touchClone=null;
-function touchStart(e,id){
-  touchDragId=id;
-  const card=document.getElementById('dc-'+id);
-  const rect=card.getBoundingClientRect();
-  touchClone=card.cloneNode(true);
-  touchClone.style.cssText=`position:fixed;top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;opacity:0.8;z-index:1000;pointer-events:none;transition:none`;
-  document.body.appendChild(touchClone);
-  card.style.opacity='0.3';
-}
-function touchMove(e){
-  if(!touchClone)return;
-  e.preventDefault();
-  const t=e.touches[0];
-  touchClone.style.top=(t.clientY-30)+'px';
-  touchClone.style.left=(t.clientX-touchClone.offsetWidth/2)+'px';
-}
-function touchEnd(e,id){
-  if(!touchClone)return;
-  const t=e.changedTouches[0];
-  document.querySelectorAll('.drag-card').forEach(card=>{
-    const rect=card.getBoundingClientRect();
-    if(t.clientX>=rect.left&&t.clientX<=rect.right&&t.clientY>=rect.top&&t.clientY<=rect.bottom){
-      const targetId=card.id.replace('dc-','');
-      if(targetId!==touchDragId)swapCards(touchDragId,targetId);
-    }
-  });
-  touchClone.remove();touchClone=null;
-  const src=document.getElementById('dc-'+touchDragId);
-  if(src)src.style.opacity='1';
-  touchDragId=null;
-}
-
-function swapCards(id1,id2){
-  const area=document.getElementById('drag-area');
-  const cards=[...area.children];
-  const el1=document.getElementById('dc-'+id1);
-  const el2=document.getElementById('dc-'+id2);
-  if(!el1||!el2)return;
-  const idx1=cards.indexOf(el1);
-  const idx2=cards.indexOf(el2);
-  if(idx1<idx2)el2.parentNode.insertBefore(el1,el2.nextSibling);
-  else el1.parentNode.insertBefore(el2,el1.nextSibling);
-  // Renumber
-  [...area.children].forEach((card,i)=>{
-    const rid=card.id.replace('dc-','');
-    const rankEl=document.getElementById('dr-'+rid);
-    if(rankEl)rankEl.textContent=i+1;
-  });
-  // Update teamDragOrder
-  teamDragOrder=[...area.children].map(c=>parseInt(c.id.replace('dc-','')));
-}
-
-async function submitAnswer(){
-  if(!teamDragOrder.length){showToast('Classez les cartes d\'abord');return;}
-  const {error}=await db.from('podium_answers').insert({
-    session_id:teamSessionId,
-    question_id:currentItems[0]?.question_id||null,
-    team_name:teamName,
-    rankings:teamDragOrder
-  });
-  if(error){showToast('Erreur : '+error.message);return;}
-  // Mark as submitted
-  const {data:sess}=await db.from('podium_sessions').select('teams').eq('id',teamSessionId).single();
-  const teams=(sess?.teams||[]).map(t=>t.name===teamName?{...t,submitted:true}:t);
-  await db.from('podium_sessions').update({teams}).eq('id',teamSessionId);
-  showSubmitted();
-  showToast('Classement envoyé ✓');
-}
-
-// ── ADMIN ──
 function renderAdmin(){
-  const container=document.getElementById('admin-questions');
-  if(!container)return;
-  if(!questions.length){container.innerHTML='<div class="empty-state" style="padding:30px 0">Aucune question.</div>';return;}
-  container.innerHTML=questions.map((q,i)=>`
-    <div class="admin-q-card">
-      <div class="admin-q-header">
-        <div class="admin-q-text">${q.question}</div>
-        <div class="admin-q-count">${(q.podium_items||[]).length}/5</div>
-        <button class="btn btn-ghost btn-sm" onclick="openItemsModal(${q.id})">✏ Éléments</button>
-        <button class="btn btn-ghost btn-sm" style="color:rgba(255,80,80,0.6);border-color:rgba(255,80,80,0.2)" onclick="deleteQuestion(${q.id})">✕</button>
-      </div>
-      ${(q.podium_items||[]).length?`<div class="admin-items-preview">${q.podium_items.map(item=>`
-        <div class="admin-item-chip">
-          <span class="admin-item-rank">#${item.correct_rank}</span>
-          ${item.image_url?`<img src="${item.image_url}" alt="">`:''}
-          <span>${item.name||''}</span>
-        </div>`).join('')}</div>`:''}
+  const el=document.getElementById('admin-list');
+  if(!questions.length){el.innerHTML='<div class="empty">Aucune question — créez-en une !</div>';return;}
+  el.innerHTML=questions.map((q,i)=>`
+    <div class="admin-card">
+      <div class="admin-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="admin-text">${q.question}</div>
+      <div class="admin-count">${(q.podium_items||[]).length}/5</div>
+      <button class="btn btn-ghost btn-sm" onclick="openQModal(${q.id})">✏</button>
+      <button class="btn btn-ghost btn-sm" style="color:rgba(255,80,80,.6)" onclick="deleteQ(${q.id})">✕</button>
     </div>`).join('');
 }
 
-async function addQuestion(){
-  const input=document.getElementById('new-q-input');
-  const text=input.value.trim();
-  if(!text)return;
-  const {error}=await db.from('podium_questions').insert({question:text,sort_order:questions.length});
-  if(error){showToast('Erreur : '+error.message);return;}
-  input.value='';
-  await loadQuestions();
-  showToast('Question ajoutée ✓');
-}
-
-async function deleteQuestion(id){
-  const pin=prompt('Code de suppression :');
-  if(pin!=='1234'){showToast('Code incorrect');return;}
-  await db.from('podium_questions').delete().eq('id',id);
-  await loadQuestions();
-}
-
-// ── ITEMS MODAL ──
-function buildItemsGrid(existing){
-  const grid=document.getElementById('items-grid');
-  grid.style.gridTemplateColumns='1fr';
-  grid.innerHTML=Array.from({length:5},(_,i)=>{
-    const item=existing[i]||{name:'',image_url:'',detail:'',correct_rank:i+1};
-    return `<div class="item-row" style="flex-wrap:wrap;gap:8px">
-      <div class="item-rank-badge">${i+1}</div>
-      <input class="item-name-input" id="iname-${i}" placeholder="Nom…" value="${item.name||''}" oninput="checkItemsValid()" style="min-width:120px;flex:2">
-      <input class="item-name-input" id="idetail-${i}" placeholder="Détail (ex: 2m20)…" value="${item.detail||''}" style="min-width:100px;flex:1.5;color:rgba(255,255,255,0.45);font-size:12px">
-      <img class="item-img-preview" id="iimg-${i}" src="${item.image_url||''}" style="${item.image_url?'display:block':'display:none'}">
-      <button class="item-img-btn" onclick="pasteImgUrl(${i})">+ img</button>
+function openQModal(id){
+  editingQId=id;
+  const q=id?questions.find(x=>x.id===id):null;
+  document.getElementById('mq-title').textContent=id?'Modifier':'Nouvelle question';
+  document.getElementById('mq-text').value=q?q.question:'';
+  const items=document.getElementById('mq-items');
+  items.innerHTML=Array.from({length:5},(_,i)=>{
+    const it=(q?.podium_items||[])[i]||{name:'',detail:'',image_url:''};
+    return `<div class="item-row">
+      <div class="item-rank">${i+1}</div>
+      <input class="iname" id="in-${i}" placeholder="Nom…" value="${it.name||''}" oninput="checkQValid()">
+      <input class="idetail" id="id-${i}" placeholder="Détail…" value="${it.detail||''}">
+      <img class="iimg-preview" id="ii-${i}" src="${it.image_url||''}" style="${it.image_url?'':'display:none'}">
+      <button class="iimg-btn" onclick="pickImg(${i})">img</button>
     </div>`;
   }).join('');
+  checkQValid();
+  document.getElementById('m-question').style.display='flex';
+  setTimeout(()=>document.getElementById('mq-text').focus(),50);
 }
 
-function checkItemsValid(){
-  const q=document.getElementById('modal-q-text').value.trim();
-  const filled=Array.from({length:5},(_,i)=>document.getElementById('iname-'+i)?.value.trim()).filter(Boolean);
-  const valid=!!q && filled.length===5;
-  document.getElementById('items-modal-save').disabled=!valid;
-}
-
-function openNewQuestionModal(){
-  editingQId=null;
-  document.getElementById('items-modal-title').textContent='Nouvelle question';
-  document.getElementById('modal-q-text').value='';
-  buildItemsGrid([]);
-  document.getElementById('items-modal-save').disabled=true;
-  document.getElementById('items-modal').style.display='flex';
-  setTimeout(()=>document.getElementById('modal-q-text').focus(),50);
-}
-
-function openItemsModal(qId){
-  editingQId=qId;
-  const q=questions.find(x=>x.id===qId);
-  document.getElementById('items-modal-title').textContent=q?q.question:'Éléments';
-  const grid=document.getElementById('items-grid');
-  grid.innerHTML=Array.from({length:5},(_,i)=>{
-    const item=(q?.podium_items||[])[i]||{name:'',image_url:'',correct_rank:i+1};
-    return `<div class="item-row" style="flex-wrap:wrap;gap:8px">
-      <div class="item-rank-badge">${i+1}</div>
-      <input class="item-name-input" id="iname-${i}" placeholder="Nom…" value="${item.name||''}" oninput="checkItemsValid()" style="min-width:120px;flex:2">
-      <input class="item-name-input" id="idetail-${i}" placeholder="Détail (ex: 2m20)…" value="${item.detail||''}" style="min-width:100px;flex:1.5;color:rgba(255,255,255,0.45);font-size:12px">
-      ${item.image_url?`<img class="item-img-preview" id="iimg-${i}" src="${item.image_url}" style="display:block">`:
-        `<img class="item-img-preview" id="iimg-${i}" src="">`}
-      <button class="item-img-btn" onclick="pasteImgUrl(${i})">+ URL img</button>
-    </div>`;
-  }).join('');
-  document.getElementById('items-modal').style.display='flex';
-}
-
-function closeItemsModal(){document.getElementById('items-modal').style.display='none';}
-
-function pasteImgUrl(i){
+function pickImg(i){
   const url=prompt('URL de l\'image :');
   if(!url)return;
-  const img=document.getElementById('iimg-'+i);
-  img.src=url;img.style.display='block';
+  document.getElementById('ii-'+i).src=url;
+  document.getElementById('ii-'+i).style.display='block';
 }
 
-async function saveItems(){
-  const qText=document.getElementById('modal-q-text').value.trim();
-  if(!qText){showToast('Entrez une question');return;}
+function checkQValid(){
+  const q=document.getElementById('mq-text').value.trim();
+  const all=Array.from({length:5},(_,i)=>document.getElementById('in-'+i)?.value.trim()).every(Boolean);
+  const ok=!!q&&all;
+  document.getElementById('mq-save').disabled=!ok;
+  document.getElementById('mq-hint').textContent=ok?'✓ Prêt à enregistrer':'Remplissez la question et les 5 éléments';
+  document.getElementById('mq-hint').style.color=ok?'rgba(79,206,143,.7)':'rgba(255,255,255,.25)';
+}
+
+async function saveQuestion(){
+  const qText=document.getElementById('mq-text').value.trim();
+  const itemsData=Array.from({length:5},(_,i)=>({
+    name:document.getElementById('in-'+i).value.trim(),
+    detail:document.getElementById('id-'+i)?.value.trim()||'',
+    image_url:(()=>{const el=document.getElementById('ii-'+i);return el&&el.style.display!=='none'&&el.src?el.src:null;})(),
+    correct_rank:i+1
+  }));
   let qId=editingQId;
   if(!qId){
-    // Create new question
     const {data,error}=await db.from('podium_questions').insert({question:qText,sort_order:questions.length}).select().single();
-    if(error){showToast('Erreur : '+error.message);return;}
+    if(error){toast('Erreur : '+error.message);return;}
     qId=data.id;
   } else {
     await db.from('podium_questions').update({question:qText}).eq('id',qId);
     await db.from('podium_items').delete().eq('question_id',qId);
   }
-  const items=Array.from({length:5},(_,i)=>{
-    const name=document.getElementById('iname-'+i).value.trim();
-    const detail=document.getElementById('idetail-'+i)?.value.trim()||'';
-    const imgEl=document.getElementById('iimg-'+i);
-    const image_url=imgEl&&imgEl.style.display!=='none'&&imgEl.src?imgEl.src:null;
-    return {question_id:qId,name,detail,image_url,correct_rank:i+1};
-  }).filter(item=>item.name||item.image_url);
-  if(items.length){
-    const {error}=await db.from('podium_items').insert(items);
-    if(error){showToast('Erreur : '+error.message);return;}
-  }
-  closeItemsModal();
+  await db.from('podium_items').insert(itemsData.map(it=>({...it,question_id:qId})));
+  closeModal('m-question');
   await loadQuestions();
-  showToast(editingQId?'Question mise à jour ✓':'Question ajoutée ✓');
+  toast(editingQId?'Mis à jour ✓':'Question ajoutée ✓');
 }
 
-function renderQPicker(){
-  const el=document.getElementById('q-picker-list');
-  if(!el)return;
+async function deleteQ(id){
+  const pin=prompt('Code :');
+  if(pin!=='1234'){toast('Code incorrect');return;}
+  await db.from('podium_questions').delete().eq('id',id);
+  await loadQuestions();
 }
 
-// ── SPECTATOR ──
-let spectatorWin=null;
-let bc=null;
-try{bc=new BroadcastChannel('podium_spectator');}catch(e){}
+// ── SESSIONS ──
+async function loadSessions(){
+  const {data}=await db.from('podium_sessions').select('*').order('created_at',{ascending:false}).limit(15);
+  const el=document.getElementById('sessions-list');
+  if(!data||!data.length){el.innerHTML='<div class="empty">Aucune partie — créez-en une !</div>';return;}
+  el.innerHTML=data.map(s=>{
+    const date=new Date(s.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const teams=(s.teams||[]).map(t=>t.name).join(', ')||'—';
+    const active=s.status!=='finished';
+    return `<div class="sess-card" onclick="${active?`resumeSession('${s.id}')`:''}" style="${!active?'opacity:.5;cursor:default':''}">
+      <div class="sess-dot ${active?'active':'done'}"></div>
+      <div class="sess-info">
+        <div class="sess-code">${s.code}</div>
+        <div class="sess-meta">${date} · ${teams} · ${active?'En cours':'Terminée'}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteSess('${s.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
 
-function pushSpectator(extra={}){
+// ── NEW SESSION ──
+let _teamCount=2;
+function openNewSession(){
+  _teamCount=2;
+  renderTeamNames(2);
+  document.getElementById('m-session').style.display='flex';
+}
+function setTeamCount(el){
+  document.querySelectorAll('.tc-opt').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  _teamCount=parseInt(el.dataset.n);
+  renderTeamNames(_teamCount);
+}
+function renderTeamNames(n){
+  const defaults=['Équipe 1','Équipe 2','Équipe 3','Équipe 4','Équipe 5','Équipe 6'];
+  document.getElementById('team-names').innerHTML=Array.from({length:n},(_,i)=>`
+    <input class="team-name-input" id="tn-${i}" value="${defaults[i]}" placeholder="${defaults[i]}">`).join('');
+}
+async function createSession(){
+  const code=Math.random().toString(36).substring(2,6).toUpperCase();
+  const teams=Array.from({length:_teamCount},(_,i)=>({
+    name:document.getElementById('tn-'+i)?.value.trim()||('Équipe '+(i+1)),
+    score:0,submitted:false
+  }));
+  const {data,error}=await db.from('podium_sessions').insert({code,status:'waiting',teams,timer_duration:60,reveal_rank:0}).select().single();
+  if(error){toast('Erreur : '+error.message);return;}
+  closeModal('m-session');
+  await loadSessions();
+  mountSession(data);
+}
+async function resumeSession(id){
+  const {data}=await db.from('podium_sessions').select('*').eq('id',id).single();
+  if(!data)return;
+  mountSession(data);
+}
+async function deleteSess(id){
+  const pin=prompt('Code :');
+  if(pin!=='1234'){toast('Code incorrect');return;}
+  await db.from('podium_sessions').delete().eq('id',id);
+  loadSessions();
+}
+
+function mountSession(data){
+  sess=data; sessId=data.id;
+  doneQIds=data.done_question_ids||[];
+  pendingTimer=60;
+  document.getElementById('sb-code').textContent=data.code;
+  generateQR(data.code);
+  renderTeams(data.teams||[]);
+  showQPicker();
+  startPoll();
+  pushTV({view:'waiting'});
+  showView('v-master');
+}
+
+async function endSession(){
+  if(!confirm('Terminer cette partie ?'))return;
+  if(pollInterval)clearInterval(pollInterval);
+  await db.from('podium_sessions').update({status:'finished'}).eq('id',sessId);
+  loadSessions();
+  showView('v-home');
+}
+
+// ── POLL ──
+function startPoll(){
+  if(pollInterval)clearInterval(pollInterval);
+  pollInterval=setInterval(async()=>{
+    if(!sessId)return;
+    const {data}=await db.from('podium_sessions').select('*').eq('id',sessId).single();
+    if(data){sess=data;renderTeams(data.teams||[]);updateReadyCount(data.teams||[]);}
+  },2000);
+}
+
+function renderTeams(teams){
+  document.getElementById('sb-teams').innerHTML=teams.length
+    ?teams.map(t=>`
+      <div class="team-row ${t.submitted?'ready':''}">
+        <div class="team-name">${t.name}</div>
+        <div class="team-score">${t.score||0}</div>
+        <div class="team-badge ${t.submitted?'ready':'wait'}">${t.submitted?'✓ Prêt':'—'}</div>
+      </div>`).join('')
+    :'<div style="font-size:12px;color:rgba(255,255,255,.25);text-align:center;padding:20px">En attente des équipes…</div>';
+}
+
+function updateReadyCount(teams){
+  const ready=teams.filter(t=>t.submitted).length;
+  const el=document.getElementById('ready-count');
+  el.textContent=teams.length?`${ready}/${teams.length} prêts`:'';
+  if(ready===teams.length&&teams.length>0)pushTV({view:'playing'});
+}
+
+// ── Q PICKER ──
+function showQPicker(){
+  document.getElementById('master-q-text').textContent='Choisissez une question →';
+  document.getElementById('master-content').innerHTML=`<div class="q-list">${
+    questions.length?questions.map((q,i)=>{
+      const done=doneQIds.includes(q.id);
+      return `<div class="q-card${done?' done':''}" onclick="${done?'':('pickQ('+q.id+')')}">
+        <div class="q-num">${String(i+1).padStart(2,'0')}</div>
+        <div class="q-text">${q.question}</div>
+        ${done?'<div class="q-done-badge">✓ Faite</div>':'<span style="color:rgba(255,255,255,.2)">›</span>'}
+      </div>`;
+    }).join('')
+    :'<div class="empty">Aucune question — créez-en dans ⚙ Questions</div>'
+  }</div>`;
+  document.getElementById('timer-setup').style.display='none';
+  document.getElementById('btn-reveal').style.display='none';
+  document.getElementById('btn-stop').style.display='none';
+  document.getElementById('btn-addtime').style.display='none';
+  document.getElementById('timer-disp').style.display='none';
+}
+
+async function pickQ(id){
+  currentQId=id;
+  const q=questions.find(x=>x.id===id);
+  if(!q)return;
+  currentItems=q.podium_items||[];
+  document.getElementById('master-q-text').textContent=q.question;
+  // Reset submissions
+  const teams=(sess?.teams||[]).map(t=>({...t,submitted:false}));
+  await db.from('podium_sessions').update({current_question_id:id,status:'waiting',teams}).eq('id',sessId);
+  sess={...sess,teams,current_question_id:id,status:'waiting'};
+  renderTeams(teams);
+  document.getElementById('master-content').innerHTML='<div style="text-align:center;padding:40px;color:rgba(255,255,255,.3)">Question sélectionnée — règle le chrono et lance !</div>';
+  pendingTimer=60;
+  document.getElementById('timer-pending').textContent='60s';
+  document.getElementById('timer-setup').style.display='flex';
+  document.getElementById('btn-reveal').style.display='none';
+  document.getElementById('btn-stop').style.display='none';
+  document.getElementById('btn-addtime').style.display='none';
+  document.getElementById('timer-disp').style.display='none';
+  pushTV({view:'playing'});
+}
+
+// ── TIMER ──
+function adjTimer(delta){
+  pendingTimer=Math.max(5,Math.min(300,pendingTimer+delta));
+  document.getElementById('timer-pending').textContent=pendingTimer+'s';
+}
+function addTime(s){
+  timerVal+=s;
+  toast('+'+s+'s ajoutées');
+}
+
+async function startRound(){
+  if(!currentQId){toast('Choisissez une question');return;}
+  const dur=pendingTimer;
+  const teams=(sess?.teams||[]).map(t=>({...t,submitted:false}));
+  await db.from('podium_sessions').update({status:'playing',teams,timer_duration:dur}).eq('id',sessId);
+  sess={...sess,status:'playing',teams};
+  renderTeams(teams);
+  document.getElementById('timer-setup').style.display='none';
+  document.getElementById('btn-stop').style.display='';
+  document.getElementById('btn-addtime').style.display='';
+  document.getElementById('btn-reveal').style.display='none';
+  timerVal=dur;
+  const el=document.getElementById('timer-disp');
+  el.style.display='block';
+  clearInterval(timerInterval);
+  const tick=()=>{
+    el.textContent=timerVal;
+    el.className='timer-display '+(timerVal>dur*.5?'ok':timerVal>10?'warn':'urgent');
+    if(timerVal<=0){
+      clearInterval(timerInterval);
+      document.getElementById('btn-stop').style.display='none';
+      document.getElementById('btn-addtime').style.display='none';
+      document.getElementById('btn-reveal').style.display='';
+      toast('Temps écoulé !');
+      pushTV({view:'playing'});
+    }
+  };
+  tick();
+  timerInterval=setInterval(()=>{timerVal--;tick();},1000);
+  pushTV({view:'playing'});
+}
+
+function stopRound(){
+  clearInterval(timerInterval);
+  document.getElementById('btn-stop').style.display='none';
+  document.getElementById('btn-addtime').style.display='none';
+  document.getElementById('btn-reveal').style.display='';
+  db.from('podium_sessions').update({status:'stopped'}).eq('id',sessId);
+  pushTV({view:'playing'});
+}
+
+// ── REVEAL ──
+async function goReveal(){
+  if(!currentQId)return;
+  clearInterval(timerInterval);
+  document.getElementById('timer-disp').style.display='none';
+  const q=questions.find(x=>x.id===currentQId);
+  revealItems=q?q.podium_items||[]:[];
+  const {data}=await db.from('podium_answers').select('*').eq('session_id',sessId).eq('question_id',currentQId);
+  revealAnswers=data||[];
+  revealIdx=0;
+  document.getElementById('reveal-q').textContent=q?q.question:'—';
+  buildRevealSlots();
+  buildRevealTeams();
+  showView('v-reveal');
+  pushTV({view:'reveal',answers:revealAnswers,revealed_count:0});
+}
+
+function buildRevealSlots(){
+  document.getElementById('reveal-slots').innerHTML=revealItems.map((it,i)=>`
+    <div class="reveal-slot">
+      <div class="slot-rank">${i+1}</div>
+      <div class="slot-card" id="rs-${i}"><div class="slot-hidden">?</div></div>
+    </div>`).join('');
+}
+
+function buildRevealTeams(){
+  const teams=sess?.teams||[];
+  document.getElementById('reveal-teams').innerHTML=teams.map(t=>{
+    const ans=revealAnswers.find(a=>a.team_name===t.name);
+    const ranking=ans?ans.rankings:[];
+    return `<div class="rt-row">
+      <div class="rt-header">
+        <div class="rt-name">${t.name}</div>
+        <div class="rt-pts" id="rpts-${t.name.replace(/\s/g,'_')}">${t.score||0} pts</div>
+      </div>
+      <div class="rt-cards">
+        ${revealItems.map((_,i)=>{
+          const itemId=ranking[i];
+          const item=revealItems.find(x=>String(x.id)===String(itemId))||{name:'?'};
+          return `<div class="mini" id="mini-${t.name.replace(/\s/g,'_')}-${i}">
+            ${item.image_url?`<img src="${item.image_url}" alt="">`:'' }
+            <span>${item.name||'?'}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function revealNext(){
+  if(revealIdx>=revealItems.length){toast('Tout révélé');return;}
+  const item=revealItems[revealIdx];
+  const slot=document.getElementById('rs-'+revealIdx);
+  slot.classList.add('revealed');
+  slot.innerHTML=(item.image_url?`<img src="${item.image_url}" alt="">`:'')+
+    `<div class="slot-name">${item.name}</div>`+
+    (item.detail?`<div class="slot-detail">${item.detail}</div>`:'');
+  // Color team mini-cards
+  const teams=sess?.teams||[];
+  teams.forEach(t=>{
+    const ans=revealAnswers.find(a=>a.team_name===t.name);
+    if(!ans)return;
+    const ranking=ans.rankings||[];
+    const teamItemId=ranking[revealIdx];
+    const correct=String(teamItemId)===String(item.id);
+    const key=t.name.replace(/\s/g,'_');
+    const mini=document.getElementById(`mini-${key}-${revealIdx}`);
+    if(mini)mini.classList.add(correct?'correct':'wrong');
+  });
+  revealIdx++;
+  pushTV({view:'reveal',answers:revealAnswers,revealed_count:revealIdx});
+  if(revealIdx===revealItems.length){
+    document.getElementById('btn-rev-next').style.display='none';
+    calcScores();
+  }
+}
+
+function revealAll(){while(revealIdx<revealItems.length)revealNext();}
+
+async function calcScores(){
+  const teams=sess?.teams||[];
+  const updated=teams.map(t=>{
+    const ans=revealAnswers.find(a=>a.team_name===t.name);
+    if(!ans)return t;
+    const ranking=ans.rankings||[];
+    let pts=0,allOk=true;
+    revealItems.forEach((item,i)=>{
+      if(String(ranking[i])===String(item.id))pts++;
+      else allOk=false;
+    });
+    if(allOk)pts+=5;
+    return {...t,score:(t.score||0)+pts};
+  });
+  doneQIds=[...doneQIds,currentQId];
+  await db.from('podium_sessions').update({teams:updated,done_question_ids:doneQIds}).eq('id',sessId);
+  sess={...sess,teams:updated};
+  renderTeams(updated);
+  updated.forEach(t=>{
+    const el=document.getElementById('rpts-'+t.name.replace(/\s/g,'_'));
+    if(el)el.textContent=(t.score||0)+' pts';
+  });
+  pushTV({view:'reveal',answers:revealAnswers,revealed_count:revealIdx,teams:updated});
+  toast('Scores calculés ✓');
+}
+
+// ── SCORE EDIT ──
+function openScoreEdit(){
+  const teams=sess?.teams||[];
+  document.getElementById('m-scores-body').innerHTML=teams.map(t=>`
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+      <label class="mlabel" style="color:#f472b6">${t.name}</label>
+      <input class="minput" id="se-${t.name.replace(/\s/g,'_')}" type="number" min="0" value="${t.score||0}" style="font-size:24px;font-weight:800;text-align:center;color:#f472b6">
+    </div>`).join('');
+  document.getElementById('m-scores').style.display='flex';
+}
+async function applyScores(){
+  const teams=(sess?.teams||[]).map(t=>{
+    const v=parseInt(document.getElementById('se-'+t.name.replace(/\s/g,'_'))?.value)||0;
+    return {...t,score:v};
+  });
+  await db.from('podium_sessions').update({teams}).eq('id',sessId);
+  sess={...sess,teams};
+  renderTeams(teams);
+  closeModal('m-scores');
+  toast('Scores mis à jour ✓');
+}
+
+// ── QR + TV ──
+function generateQR(code){
+  const url=`${location.origin}${location.pathname.replace('podium.html','podium-joueur.html')}?code=${code}`;
+  const img=document.createElement('img');
+  img.src=`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(url)}&bgcolor=06060d&color=f472b6&margin=6`;
+  img.style.cssText='width:130px;height:130px;border-radius:10px';
+  const el=document.getElementById('sb-qr');
+  el.innerHTML='';el.appendChild(img);
+}
+
+function openTV(){
+  pushTV({view:currentQId?'playing':'waiting'});
+  tvWin=window.open('podium-spectateur.html','podium_tv','width=1280,height=720,toolbar=0,menubar=0,location=0');
+  if(!tvWin){toast('Pop-up bloquée');return;}
+  toast('Écran TV ouvert');
+  setTimeout(()=>pushTV({view:currentQId?'playing':'waiting'}),800);
+}
+
+function pushTV(extra={}){
   const state={
-    code:currentSession?.code||'',
-    teams:currentSession?.teams||[],
-    question_id:currentQuestionId,
+    code:sess?.code||'',
+    teams:sess?.teams||[],
+    question_id:currentQId,
     ...extra
   };
   try{localStorage.setItem('podium_spectator',JSON.stringify(state));}catch(e){}
   if(bc)try{bc.postMessage(state);}catch(e){}
-  if(spectatorWin&&!spectatorWin.closed&&spectatorWin.applyState)
-    try{spectatorWin.applyState(state);}catch(e){}
-}
-
-function openSpectatorWindow(){
-  pushSpectator({view:'waiting'});
-  spectatorWin=window.open('podium-spectateur.html','podium_tv','width=1280,height=720,toolbar=0,menubar=0,location=0');
-  if(!spectatorWin){showToast('Pop-up bloquée');return;}
-  showToast('Écran TV ouvert');
-  setTimeout(()=>pushSpectator({view:currentQuestionId?'playing':'waiting'}),800);
+  if(tvWin&&!tvWin.closed&&tvWin.applyState)try{tvWin.applyState(state);}catch(e){}
 }
 
 // ── UTILS ──
-function showToast(msg){
+function closeModal(id){document.getElementById(id).style.display='none';}
+function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2000);
