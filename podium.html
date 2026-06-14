@@ -284,7 +284,8 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
     <div class="master-sidebar-top">
       <div class="master-code-label">Code de session</div>
       <div class="master-code" id="master-code">—</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:4px">Les équipes rejoignent sur cette page</div>
+      <div id="master-qr" style="margin-top:12px;display:flex;justify-content:center"></div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:8px;text-align:center">Scannez ou tapez le code sur cette page</div>
     </div>
     <div class="master-teams" id="master-teams">
       <div style="font-size:12px;color:rgba(255,255,255,0.25);text-align:center;padding:20px 0">En attente des équipes…</div>
@@ -308,7 +309,15 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
     </div>
     <div class="master-controls" id="master-controls">
       <button class="btn btn-ghost btn-sm" onclick="showQPicker()">☰ Changer de question</button>
-      <button class="btn btn-ghost btn-sm" id="btn-start-timer" onclick="startRound()" style="display:none">▶ Lancer</button>
+      <div id="timer-setup" style="display:none;align-items:center;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="adjustRoundTimer(-10)">−10s</button>
+        <button class="btn btn-ghost btn-sm" onclick="adjustRoundTimer(-5)">−5s</button>
+        <div style="font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6;min-width:52px;text-align:center" id="timer-setup-val">60s</div>
+        <button class="btn btn-ghost btn-sm" onclick="adjustRoundTimer(5)">+5s</button>
+        <button class="btn btn-ghost btn-sm" onclick="adjustRoundTimer(10)">+10s</button>
+        <button class="btn btn-pink btn-sm" id="btn-start-timer" onclick="startRound()">▶ Lancer</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btn-add-time" onclick="addTime()" style="display:none">+30s</button>
       <button class="btn btn-ghost btn-sm" id="btn-stop-round" onclick="stopRound()" style="display:none">⏹ Arrêter</button>
       <button class="btn btn-pink btn-sm" id="btn-reveal" onclick="goToReveal()" style="display:none">Révéler les réponses →</button>
     </div>
@@ -331,16 +340,18 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 <div class="view" id="view-join">
   <div class="join-box">
     <div class="join-title">Rejoindre <span>Le Podium</span></div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <label class="modal-label">Code de session</label>
-      <input class="join-input" id="join-code" maxlength="4" placeholder="ABCD" oninput="this.value=this.value.toUpperCase()">
+    <div id="join-step-code" style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <label class="modal-label">Code de session</label>
+        <input class="join-input" id="join-code" maxlength="4" placeholder="ABCD" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="join-error" id="join-error">Code invalide ou session introuvable</div>
+      <button class="btn btn-pink" onclick="lookupSession()" style="width:100%;justify-content:center">Continuer →</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <label class="modal-label">Nom de votre équipe</label>
-      <input class="modal-input" id="join-team-name" placeholder="ex: Les Sharks" maxlength="20">
+    <div id="join-step-team" style="display:none;flex-direction:column;gap:12px">
+      <div style="font-size:13px;color:rgba(255,255,255,0.4);text-align:center">Choisissez votre équipe</div>
+      <div id="join-teams-list" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
-    <div class="join-error" id="join-error">Code invalide ou session introuvable</div>
-    <button class="btn btn-pink" onclick="joinSession()" style="width:100%;justify-content:center">Rejoindre →</button>
   </div>
 </div>
 
@@ -368,13 +379,18 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
     </div>
     <div class="modal-body">
       <div>
-        <label class="modal-label">Durée par manche</label>
+        <label class="modal-label">Nombre d'équipes</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm timer-opt selected" data-val="30" onclick="selectTimer(this)">30s</button>
-          <button class="btn btn-ghost btn-sm timer-opt" data-val="45" onclick="selectTimer(this)">45s</button>
-          <button class="btn btn-ghost btn-sm timer-opt" data-val="60" onclick="selectTimer(this)">60s</button>
-          <button class="btn btn-ghost btn-sm timer-opt" data-val="90" onclick="selectTimer(this)">90s</button>
+          <button class="btn btn-ghost btn-sm team-count-opt selected" data-val="2" onclick="selectTeamCount(this)">2</button>
+          <button class="btn btn-ghost btn-sm team-count-opt" data-val="3" onclick="selectTeamCount(this)">3</button>
+          <button class="btn btn-ghost btn-sm team-count-opt" data-val="4" onclick="selectTeamCount(this)">4</button>
+          <button class="btn btn-ghost btn-sm team-count-opt" data-val="5" onclick="selectTeamCount(this)">5</button>
+          <button class="btn btn-ghost btn-sm team-count-opt" data-val="6" onclick="selectTeamCount(this)">6</button>
         </div>
+      </div>
+      <div>
+        <label class="modal-label">Noms des équipes</label>
+        <div id="team-names-inputs" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -450,7 +466,16 @@ let editingQId=null;
 async function init(){
   await Promise.all([loadQuestions(), loadSessions()]);
   document.getElementById('loading-overlay').classList.add('hidden');
-  showView('home');
+  // Auto-fill code from URL
+  const params=new URLSearchParams(location.search);
+  const code=params.get('code');
+  if(code){
+    document.getElementById('join-code').value=code.toUpperCase();
+    showView('join');
+    lookupSession();
+  } else {
+    showView('home');
+  }
 }
 
 // ── VIEWS ──
@@ -489,20 +514,38 @@ async function loadSessions(){
 }
 
 // ── NEW SESSION ──
-let selectedTimer=30;
-function openNewSessionModal(){document.getElementById('new-session-modal').style.display='flex';}
+let selectedTeamCount=2;
+let pendingTimerVal=60;
+
+function openNewSessionModal(){
+  document.getElementById('new-session-modal').style.display='flex';
+  renderTeamNameInputs(selectedTeamCount);
+}
 function closeNewSessionModal(){document.getElementById('new-session-modal').style.display='none';}
-function selectTimer(el){
-  document.querySelectorAll('.timer-opt').forEach(b=>b.classList.remove('selected'));
+
+function selectTeamCount(el){
+  document.querySelectorAll('.team-count-opt').forEach(b=>b.classList.remove('selected'));
   el.classList.add('selected');
-  selectedTimer=parseInt(el.dataset.val);
+  selectedTeamCount=parseInt(el.dataset.val);
+  renderTeamNameInputs(selectedTeamCount);
+}
+
+function renderTeamNameInputs(n){
+  const wrap=document.getElementById('team-names-inputs');
+  const defaults=['Équipe 1','Équipe 2','Équipe 3','Équipe 4','Équipe 5','Équipe 6'];
+  wrap.innerHTML=Array.from({length:n},(_,i)=>`
+    <input class="modal-input" id="tname-${i}" placeholder="${defaults[i]}" value="${defaults[i]}">
+  `).join('');
 }
 
 async function createSession(){
   const code=Math.random().toString(36).substring(2,6).toUpperCase();
-  roundDuration=selectedTimer;
+  const teams=Array.from({length:selectedTeamCount},(_,i)=>{
+    const val=document.getElementById('tname-'+i)?.value.trim();
+    return {name:val||('Équipe '+(i+1)),score:0,submitted:false};
+  });
   const {data,error}=await db.from('podium_sessions').insert({
-    code,status:'waiting',timer_duration:selectedTimer,teams:[],reveal_rank:0
+    code,status:'waiting',timer_duration:60,teams,reveal_rank:0
   }).select().single();
   if(error){showToast('Erreur : '+error.message);return;}
   closeNewSessionModal();
@@ -510,10 +553,23 @@ async function createSession(){
   currentSession=data;
   document.getElementById('master-code').textContent=code;
   document.getElementById('master-q-text').textContent='Choisissez une question →';
+  generateQR(code);
   showQPicker();
   subscribeToSession();
   showView('master');
   loadSessions();
+}
+
+function generateQR(code){
+  const url=`${location.origin}${location.pathname}?code=${code}`;
+  const qrEl=document.getElementById('master-qr');
+  if(!qrEl)return;
+  // Use QR server API
+  const img=document.createElement('img');
+  img.src=`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(url)}&bgcolor=0f0f1a&color=f472b6&margin=8`;
+  img.style.cssText='width:140px;height:140px;border-radius:10px';
+  qrEl.innerHTML='';
+  qrEl.appendChild(img);
 }
 
 async function resumeSession(id){
@@ -523,6 +579,7 @@ async function resumeSession(id){
   currentSession=data;
   roundDuration=data.timer_duration||30;
   document.getElementById('master-code').textContent=data.code;
+  generateQR(data.code);
   renderMasterTeams(data.teams||[]);
   if(data.current_question_id){
     currentQuestionId=data.current_question_id;
@@ -586,9 +643,10 @@ function showQPicker(){
       </div>`;
     }).join(''):'<div class="empty-state">Aucune question — créez-en dans ⚙ Questions</div>')
   +'</div>';
-  document.getElementById('btn-start-timer').style.display='none';
+  document.getElementById('timer-setup').style.display='none';
   document.getElementById('btn-reveal').style.display='none';
   document.getElementById('btn-stop-round').style.display='none';
+  document.getElementById('btn-add-time').style.display='none';
 }
 
 async function selectQuestion(id){
@@ -602,9 +660,12 @@ async function selectQuestion(id){
     current_question_id:id,status:'waiting',reveal_rank:0
   }).eq('id',currentSessionId);
   document.getElementById('master-content').innerHTML='<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.3)">Question sélectionnée. Lance le chrono quand tu es prêt.</div>';
-  document.getElementById('btn-start-timer').style.display='';
+  document.getElementById('timer-setup').style.display='flex';
   document.getElementById('btn-reveal').style.display='none';
   document.getElementById('btn-stop-round').style.display='none';
+  document.getElementById('btn-add-time').style.display='none';
+  pendingTimerVal=60;
+  document.getElementById('timer-setup-val').textContent='60s';
   renderSubmitProgress();
 }
 
@@ -615,25 +676,38 @@ function renderSubmitProgress(){
 }
 
 // ── ROUND ──
+function adjustRoundTimer(delta){
+  pendingTimerVal=Math.max(5,pendingTimerVal+delta);
+  document.getElementById('timer-setup-val').textContent=pendingTimerVal+'s';
+}
+
+function addTime(){
+  timerVal+=30;
+  showToast('+30s ajoutées');
+}
+
 async function startRound(){
   if(!currentQuestionId){showToast('Choisissez une question');return;}
-  // Reset submissions for this round
+  roundDuration=pendingTimerVal;
   const teams=(currentSession?.teams||[]).map(t=>({...t,submitted:false}));
-  await db.from('podium_sessions').update({status:'playing',teams}).eq('id',currentSessionId);
+  await db.from('podium_sessions').update({status:'playing',teams,timer_duration:roundDuration}).eq('id',currentSessionId);
   document.getElementById('master-timer-wrap').style.display='flex';
-  document.getElementById('btn-start-timer').style.display='none';
+  document.getElementById('timer-setup').style.display='none';
+  document.getElementById('btn-add-time').style.display='';
   document.getElementById('btn-stop-round').style.display='';
   document.getElementById('btn-reveal').style.display='none';
   startTimer(roundDuration, ()=>{
     showToast('Temps écoulé !');
     document.getElementById('btn-reveal').style.display='';
     document.getElementById('btn-stop-round').style.display='none';
+    document.getElementById('btn-add-time').style.display='none';
   });
 }
 
 function stopRound(){
   clearInterval(timerInterval);
   document.getElementById('btn-stop-round').style.display='none';
+  document.getElementById('btn-add-time').style.display='none';
   document.getElementById('btn-reveal').style.display='';
   db.from('podium_sessions').update({status:'stopped'}).eq('id',currentSessionId);
 }
@@ -791,27 +865,41 @@ async function applyScoreEdits(){
 }
 
 // ── JOIN (team) ──
-async function joinSession(){
+async function lookupSession(){
   const code=document.getElementById('join-code').value.trim().toUpperCase();
-  const name=document.getElementById('join-team-name').value.trim();
-  if(!code||!name){showToast('Remplis les deux champs');return;}
+  if(!code){showToast('Entre un code');return;}
   const {data}=await db.from('podium_sessions').select('*').eq('code',code).single();
   if(!data){document.getElementById('join-error').style.display='block';return;}
+  document.getElementById('join-error').style.display='none';
+  // Store session data for next step
+  window._joinSession=data;
+  // Show team picker
+  const teams=data.teams||[];
+  document.getElementById('join-step-code').style.display='none';
+  document.getElementById('join-step-team').style.display='flex';
+  document.getElementById('join-teams-list').innerHTML=teams.map(t=>`
+    <button class="btn btn-ghost" onclick="pickTeam('${t.name}')" style="justify-content:center;font-size:15px;font-weight:700;padding:14px;width:100%">
+      ${t.name}
+    </button>`).join('');
+}
+
+async function pickTeam(name){
+  const data=window._joinSession;
+  if(!data)return;
   teamSessionId=data.id;
   teamName=name;
   teamScore=(data.teams||[]).find(t=>t.name===name)?.score||0;
-  // Add team if not present
-  const teams=data.teams||[];
-  if(!teams.find(t=>t.name===name)){
-    teams.push({name,score:0,submitted:false});
-    await db.from('podium_sessions').update({teams}).eq('id',data.id);
-  }
-  document.getElementById('join-error').style.display='none';
   document.getElementById('team-name-disp').textContent=name;
   document.getElementById('team-score-disp').textContent=teamScore+' pts';
   subscribeAsTeam(data);
   showView('team');
+  // Reset join form
+  document.getElementById('join-step-code').style.display='flex';
+  document.getElementById('join-step-team').style.display='none';
+  document.getElementById('join-code').value='';
 }
+
+async function joinSession(){lookupSession();}
 
 function subscribeAsTeam(sess){
   applySessionToTeam(sess);
