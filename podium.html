@@ -2,1244 +2,1080 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AlloQuizz — Le Panel</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>AlloQuizz — Le Podium</title>
 <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,700;0,800;1,800&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
-
-/* ── NAV ── */
-.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:rgba(6,6,13,0.95);border-bottom:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(16px)}
-.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#f0f0f5;padding:14px 0;letter-spacing:-.02em}
-.nav-logo span{color:#f87171}
-.nav-right{display:flex;gap:10px;align-items:center}
+body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-height:100vh;overflow-x:hidden}
 
 /* ── LOADING ── */
-#loading-overlay{position:fixed;inset:0;background:#06060d;z-index:999;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:rgba(255,255,255,0.3);transition:opacity .4s}
+#loading-overlay{position:fixed;inset:0;background:#06060d;z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .4s}
 #loading-overlay.hidden{opacity:0;pointer-events:none}
-
-/* ── VIEWS ── */
-.view{display:none;flex:1;flex-direction:column}
-.view.active{display:flex}
+.spinner{width:32px;height:32px;border:3px solid rgba(244,114,182,0.2);border-top-color:#f472b6;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── TOAST ── */
-#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e1e2e;border:1px solid rgba(255,255,255,0.12);color:#f0f0f5;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;transition:all .25s;z-index:9999;white-space:nowrap}
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e1e2e;border:1px solid rgba(255,255,255,0.12);color:#f0f0f5;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;transition:all .25s;z-index:9999;white-space:nowrap;pointer-events:none}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── NAV ── */
+.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(6,6,13,0.95);border-bottom:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(16px)}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#f0f0f5;padding:14px 0;letter-spacing:-.02em}
+.nav-logo span{color:#f472b6}
+.nav-right{display:flex;gap:8px;align-items:center}
+
+/* ── VIEWS ── */
+.view{display:none;flex-direction:column;min-height:calc(100vh - 49px)}
+.view.active{display:flex}
+#view-master.active{flex-direction:row;height:calc(100vh - 49px);min-height:unset}
 
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;transition:filter .2s,transform .15s;font-family:'DM Sans',sans-serif}
 .btn:hover{filter:brightness(1.15)}
 .btn:active{transform:scale(.97)}
-.btn-primary{background:#f87171;color:#fff}
+.btn-pink{background:#f472b6;color:#fff}
 .btn-ghost{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1)}
 .btn-ghost:hover{background:rgba(255,255,255,0.1);color:#fff}
-.btn-t1{background:rgba(79,158,255,0.15);border:1px solid #4f9eff;color:#4f9eff}
-.btn-t2{background:rgba(255,107,157,0.15);border:1px solid #ff6b9d;color:#ff6b9d}
 .btn-sm{padding:7px 14px;font-size:11px}
 
-/* ════════════════════════════
-   SELECTOR VIEW
-════════════════════════════ */
-#view-selector{padding:32px 40px 48px;gap:24px;max-width:900px;margin:0 auto;width:100%}
-.sel-title{font-family:'Exo 2',sans-serif;font-size:28px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em;color:#f0f0f5}
-.sel-title span{color:#f87171}
-.sel-subtitle{font-size:13px;color:rgba(255,255,255,0.35);margin-top:6px}
-
-.questions-list{display:flex;flex-direction:column;gap:10px;margin-top:8px}
-.q-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px 22px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:border-color .2s,background .2s}
-.q-card:hover{background:rgba(248,113,113,0.06);border-color:rgba(248,113,113,0.35)}
-.q-card-num{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:rgba(248,113,113,0.4);min-width:28px}
-.q-card-text{flex:1;font-size:15px;font-weight:500;color:#f0f0f5}
-.q-card-count{font-size:12px;color:rgba(255,255,255,0.25);flex-shrink:0}
-.q-card-arrow{color:rgba(255,255,255,0.2);font-size:18px}
-
-.sel-empty{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.25);font-size:14px}
-
-/* Team names */
-.team-setup{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
-.team-input-wrap{display:flex;flex-direction:column;gap:8px}
-.team-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
-.team-label.t1{color:#4f9eff}.team-label.t2{color:#ff6b9d}
-.team-input{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;color:#f0f0f5;font-family:'DM Sans',sans-serif;width:100%;outline:none;transition:border-color .2s}
-.team-input:focus{border-color:rgba(255,255,255,0.3)}
-
-.section-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0}
+/* ── MODAL ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:#0f0f1a;border:1px solid rgba(255,255,255,0.1);border-radius:20px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.modal-title{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
+.modal-close{background:none;border:none;color:rgba(255,255,255,0.3);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color .2s}
+.modal-close:hover{color:#fff}
+.modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid rgba(255,255,255,0.07)}
+.modal-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:6px;display:block}
+.modal-input{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;font-size:14px;color:#f0f0f5;font-family:'DM Sans',sans-serif;width:100%;outline:none;transition:border-color .2s}
+.modal-input:focus{border-color:rgba(244,114,182,0.5)}
 
 /* ════════════════════════════
-   GAME VIEW
+   HOME VIEW
 ════════════════════════════ */
-#view-game{padding:0;gap:0}
+#view-home{padding:32px 40px 48px;gap:28px;max-width:960px;margin:0 auto;width:100%}
+.home-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.home-title{font-family:'Exo 2',sans-serif;font-size:32px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
+.home-title span{color:#f472b6}
+.home-actions{display:flex;gap:10px;flex-wrap:wrap}
 
-/* Top bar */
-.game-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:16px 32px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;gap:16px}
-.team-score-block{display:flex;align-items:center;gap:14px}
-.team-score-block.t2{flex-direction:row-reverse}
-.team-name-disp{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em}
-.team-name-disp.t1{color:#4f9eff}.team-name-disp.t2{color:#ff6b9d}
-.team-score-disp{font-family:'Exo 2',sans-serif;font-size:42px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-.team-score-disp.t1{color:#4f9eff}.team-score-disp.t2{color:#ff6b9d}
-.team-score-disp.bump{animation:bump .3s ease-out}
-@keyframes bump{0%{transform:scale(1.4)}100%{transform:scale(1)}}
-@keyframes spin{to{transform:rotate(360deg)}}
-.game-q-center{text-align:center}
-.game-q-label{font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
-.game-q-text{font-size:15px;font-weight:600;color:#f0f0f5;max-width:340px;line-height:1.3}
+.sessions-list{display:flex;flex-direction:column;gap:10px}
+.session-card{display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px 20px;transition:border-color .2s,background .2s;cursor:pointer}
+.session-card:hover{background:rgba(244,114,182,0.06);border-color:rgba(244,114,182,0.3)}
+.session-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.session-dot.waiting,.session-dot.playing{background:#f472b6;box-shadow:0 0 6px rgba(244,114,182,0.6)}
+.session-dot.finished{background:rgba(255,255,255,0.2)}
+.session-info{flex:1;min-width:0}
+.session-code{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6;letter-spacing:.06em}
+.session-meta{font-size:12px;color:rgba(255,255,255,0.3);margin-top:3px}
+.session-teams{font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px}
+.empty-state{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.2);font-size:14px}
 
-/* Active team indicator */
-.turn-indicator{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 32px;flex-shrink:0}
-.turn-badge{padding:6px 18px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'Exo 2',sans-serif;font-style:italic;transition:all .3s}
-.turn-badge.t1{background:rgba(79,158,255,0.15);border:1px solid rgba(79,158,255,0.4);color:#4f9eff}
-.turn-badge.t2{background:rgba(255,107,157,0.15);border:1px solid rgba(255,107,157,0.4);color:#ff6b9d}
-.turn-badge.inactive{opacity:.3}
-.turn-sep{color:rgba(255,255,255,0.15);font-size:12px}
+.section-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.3)}
 
-/* Answers board */
-.answers-board{flex:1;display:flex;align-items:center;justify-content:center;padding:16px 40px}
-.answers-grid{width:100%;max-width:700px;display:flex;flex-direction:column;gap:0}
+/* ════════════════════════════
+   MASTER VIEW
+════════════════════════════ */
+#view-master{flex-direction:row;height:calc(100vh - 49px)}
 
-.answer-row{
-  display:flex;align-items:center;gap:0;
-  background:rgba(255,255,255,0.03);
-  border:1px solid rgba(255,255,255,0.08);
+.master-sidebar{width:320px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;overflow:hidden}
+.master-sidebar-top{padding:20px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.master-code{font-family:'Exo 2',sans-serif;font-size:28px;font-weight:800;font-style:italic;color:#f472b6;letter-spacing:.1em}
+.master-code-label{font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.master-teams{flex:1;overflow-y:auto;padding:16px}
+.master-team-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:8px}
+.master-team-name{flex:1;font-size:13px;font-weight:600}
+.master-team-score{font-family:'Exo 2',sans-serif;font-size:20px;font-weight:800;font-style:italic;color:#f472b6}
+.master-team-status{font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700;letter-spacing:.06em}
+.master-team-status.submitted{background:rgba(79,206,143,0.15);color:#4fce8f}
+.master-team-status.waiting{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.3)}
+
+.master-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.master-topbar{padding:16px 24px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.master-q-text{flex:1;font-size:15px;font-weight:600;color:#f0f0f5}
+.master-content{flex:1;overflow-y:auto;padding:20px 24px}
+.master-controls{padding:16px 24px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+.q-picker-list{display:flex;flex-direction:column;gap:8px}
+.q-pick-card{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 18px;cursor:pointer;transition:border-color .2s,background .2s}
+.q-pick-card:hover{background:rgba(244,114,182,0.06);border-color:rgba(244,114,182,0.35)}
+.q-pick-card.done{opacity:.4;cursor:default}
+.q-pick-num{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(244,114,182,0.4);width:28px}
+.q-pick-text{flex:1;font-size:14px;font-weight:500}
+.q-pick-badge{font-size:10px;font-weight:700;letter-spacing:.08em;color:rgba(79,206,143,0.7)}
+
+/* Timer circle */
+.timer-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.timer-num{font-family:'Exo 2',sans-serif;font-size:42px;font-weight:800;font-style:italic;font-variant-numeric:tabular-nums;transition:color .3s}
+.timer-num.ok{color:#4fce8f}.timer-num.warn{color:#fb923c}.timer-num.urgent{color:#f87171;animation:pulse .5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.timer-label{font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.1em}
+
+/* Submit progress */
+.submit-progress{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.submit-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.15);transition:background .3s}
+.submit-dot.done{background:#4fce8f}
+
+/* ════════════════════════════
+   REVEAL VIEW
+════════════════════════════ */
+#view-reveal{padding:24px 32px 40px;gap:20px;max-width:1100px;margin:0 auto;width:100%}
+.reveal-question{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em;color:#f0f0f5;text-align:center}
+.reveal-podium{display:flex;gap:10px;margin:0 auto;max-width:800px;width:100%}
+.podium-slot{flex:1;display:flex;flex-direction:column;gap:8px}
+.podium-rank-label{text-align:center;font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;font-style:italic;color:rgba(255,255,255,0.3);letter-spacing:.1em;text-transform:uppercase}
+.podium-card{
   border-radius:14px;overflow:hidden;
+  border:2px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.03);
+  min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:all .5s cubic-bezier(.16,1,.3,1);
+  position:relative;
+}
+.podium-card.revealed{border-color:rgba(244,114,182,0.5);background:rgba(244,114,182,0.1)}
+.podium-card img{width:100%;height:70px;object-fit:cover}
+.podium-card-name{font-size:13px;font-weight:700;text-align:center;padding:8px 6px;color:#f0f0f5}
+.podium-card-hidden{color:rgba(255,255,255,0.1);font-size:24px}
+
+/* Team answers below */
+.reveal-teams{display:flex;flex-direction:column;gap:10px}
+.reveal-team-row{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden}
+.reveal-team-header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.reveal-team-name{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
+.reveal-team-score{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6;margin-left:auto}
+.reveal-team-cards{display:flex;gap:8px;padding:10px 16px}
+.reveal-mini-card{
+  flex:1;min-height:52px;border-radius:10px;
+  border:2px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.03);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;text-align:center;padding:6px 4px;
   transition:all .4s cubic-bezier(.16,1,.3,1);
-  cursor:pointer;
-  min-height:62px;
+  position:relative;overflow:hidden;
 }
-.answer-row:hover{border-color:rgba(255,255,255,0.15)}
-.answer-row.revealed-t1{background:rgba(79,158,255,0.12);border-color:rgba(79,158,255,0.4)}
-.answer-row.revealed-t2{background:rgba(255,107,157,0.12);border-color:rgba(255,107,157,0.4)}
-.answer-row.revealed-t1 .ans-rank{color:#4f9eff}
-.answer-row.revealed-t2 .ans-rank{color:#ff6b9d}
+.reveal-mini-card img{width:100%;height:36px;object-fit:cover;border-radius:6px;margin-bottom:4px}
+.reveal-mini-card.correct{border-color:#4fce8f;background:rgba(79,206,143,0.12);color:#4fce8f}
+.reveal-mini-card.wrong{border-color:#f87171;background:rgba(248,113,113,0.1);color:#f87171}
+.reveal-mini-card.perfect{border-color:#fbbf24;background:rgba(251,191,36,0.12);color:#fbbf24}
+.reveal-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding-top:8px}
 
-.ans-rank{width:52px;text-align:center;font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:rgba(255,255,255,0.15);flex-shrink:0;transition:color .3s}
-.ans-text{flex:1;font-size:16px;font-weight:600;color:#f0f0f5;padding:0 8px;transition:opacity .3s}
-.ans-text.hidden-text{opacity:0}
-.ans-points{
-  width:72px;text-align:center;flex-shrink:0;
-  font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;
-  padding:0 12px;
-  transition:opacity .3s;
+/* ════════════════════════════
+   TEAM JOIN VIEW
+════════════════════════════ */
+#view-join{align-items:center;justify-content:center;padding:40px 20px}
+.join-box{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:32px;max-width:400px;width:100%;display:flex;flex-direction:column;gap:20px}
+.join-title{font-family:'Exo 2',sans-serif;font-size:24px;font-weight:800;font-style:italic;text-transform:uppercase;text-align:center}
+.join-title span{color:#f472b6}
+.join-input{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px 18px;font-size:20px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#f0f0f5;font-family:'Exo 2',sans-serif;width:100%;outline:none;text-align:center;transition:border-color .2s}
+.join-input:focus{border-color:rgba(244,114,182,0.5)}
+.join-error{color:#f87171;font-size:13px;text-align:center;display:none}
+
+/* ════════════════════════════
+   TEAM GAME VIEW
+════════════════════════════ */
+#view-team{padding:0;gap:0}
+.team-top{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.team-name-badge{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;color:#f472b6;text-transform:uppercase;letter-spacing:.06em}
+.team-score-badge{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;color:#f0f0f5}
+.team-question{padding:16px 20px 8px;text-align:center;font-size:15px;font-weight:600;color:#f0f0f5;flex-shrink:0}
+.team-timer{text-align:center;font-family:'Exo 2',sans-serif;font-size:36px;font-weight:800;font-style:italic;padding:4px 0;flex-shrink:0;transition:color .3s}
+.team-timer.ok{color:#4fce8f}.team-timer.warn{color:#fb923c}.team-timer.urgent{color:#f87171;animation:pulse .5s infinite}
+
+/* Drag & drop cards */
+.drag-area{flex:1;display:flex;flex-direction:column;gap:10px;padding:12px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.drag-hint{font-size:11px;color:rgba(255,255,255,0.25);text-align:center;padding:4px 0}
+.drag-card{
+  background:rgba(255,255,255,0.05);
+  border:1.5px solid rgba(255,255,255,0.1);
+  border-radius:14px;padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+  cursor:grab;user-select:none;
+  transition:transform .15s,box-shadow .15s,border-color .15s,background .15s;
+  touch-action:none;
 }
-.ans-points.hidden-pts{opacity:0}
-.ans-points.t1{color:#4f9eff}.ans-points.t2{color:#ff6b9d}
-.ans-points.neutral{color:rgba(255,255,255,0.3)}
+.drag-card:active{cursor:grabbing}
+.drag-card.dragging{opacity:.5;transform:scale(.98)}
+.drag-card.drag-over{border-color:#f472b6;background:rgba(244,114,182,0.1);transform:scale(1.02)}
+.drag-rank{font-family:'Exo 2',sans-serif;font-size:20px;font-weight:800;font-style:italic;color:rgba(244,114,182,0.5);width:28px;flex-shrink:0;text-align:center}
+.drag-card img{width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.drag-card-name{flex:1;font-size:15px;font-weight:600;color:#f0f0f5}
+.drag-handle{color:rgba(255,255,255,0.2);font-size:18px;flex-shrink:0}
 
-/* Controls */
-.game-controls{padding:16px 32px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-top:1px solid rgba(255,255,255,0.06);gap:16px;flex-wrap:wrap}
-.ctrl-left{display:flex;gap:10px;align-items:center}
-.ctrl-right{display:flex;gap:10px;align-items:center}
-.ctrl-center{display:flex;gap:10px;align-items:center}
+.team-submit-bar{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+.team-submitted-msg{text-align:center;padding:20px;color:rgba(255,255,255,0.4);font-size:14px;font-style:italic}
 
 /* ════════════════════════════
    ADMIN VIEW
 ════════════════════════════ */
 #view-admin{padding:32px 40px 48px;gap:24px;max-width:900px;margin:0 auto;width:100%}
 .admin-title{font-family:'Exo 2',sans-serif;font-size:24px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
-
-.admin-questions{display:flex;flex-direction:column;gap:16px}
-.admin-q-block{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden}
-.admin-q-header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.admin-q-list{display:flex;flex-direction:column;gap:12px}
+.admin-q-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden}
+.admin-q-header{display:flex;align-items:center;gap:12px;padding:14px 18px}
 .admin-q-text{flex:1;font-size:14px;font-weight:600}
-.admin-q-actions{display:flex;gap:8px}
-.admin-answers-list{padding:12px 18px;display:flex;flex-direction:column;gap:8px}
-.admin-ans-row{display:flex;align-items:center;gap:10px}
-.admin-ans-text{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;font-size:13px;color:#f0f0f5;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
-.admin-ans-text:focus{border-color:rgba(255,255,255,0.25)}
-.admin-ans-pts{width:70px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;font-size:13px;color:#f87171;font-family:'DM Sans',sans-serif;outline:none;text-align:center;transition:border-color .2s}
-.admin-ans-pts:focus{border-color:rgba(248,113,113,0.4)}
-.admin-ans-del{background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:16px;padding:4px 6px;border-radius:6px;transition:color .2s,background .2s}
-.admin-ans-del:hover{color:#f87171;background:rgba(248,113,113,0.1)}
-
-.add-q-form{background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.1);border-radius:14px;padding:18px 20px;display:flex;gap:12px;align-items:center}
+.admin-q-count{font-size:12px;color:rgba(255,255,255,0.3)}
+.admin-items-preview{display:flex;gap:8px;padding:0 18px 14px;flex-wrap:wrap}
+.admin-item-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600}
+.admin-item-rank{font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;font-style:italic;color:rgba(244,114,182,0.6)}
+.admin-item-chip img{width:20px;height:20px;border-radius:4px;object-fit:cover}
+.add-q-form{display:flex;gap:10px;background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.1);border-radius:14px;padding:16px 18px}
 .add-q-input{flex:1;background:transparent;border:none;font-size:14px;color:#f0f0f5;font-family:'DM Sans',sans-serif;outline:none}
 .add-q-input::placeholder{color:rgba(255,255,255,0.2)}
 
+/* Items modal */
+.items-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.item-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px}
+.item-rank-badge{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:#f472b6;width:22px;text-align:center;flex-shrink:0}
+.item-name-input{flex:1;background:transparent;border:none;font-size:13px;color:#f0f0f5;font-family:'DM Sans',sans-serif;outline:none}
+.item-img-preview{width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;display:none}
+.item-img-btn{font-size:11px;color:rgba(244,114,182,0.7);background:none;border:1px solid rgba(244,114,182,0.3);border-radius:6px;padding:4px 8px;cursor:pointer;flex-shrink:0;font-family:'DM Sans',sans-serif}
+.item-img-btn:hover{background:rgba(244,114,182,0.1)}
 
-/* ════ MODAL ════ */
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal-box{background:#0f0f1a;border:1px solid rgba(255,255,255,0.1);border-radius:20px;width:100%;max-width:640px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
-.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.07)}
-.modal-title{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
-.modal-close{background:none;border:none;color:rgba(255,255,255,0.3);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color .2s}
-.modal-close:hover{color:#fff}
-.modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto}
-.modal-field{display:flex;flex-direction:column;gap:8px}
-.modal-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.35)}
-.modal-input{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;font-size:14px;color:#f0f0f5;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;width:100%}
-.modal-input:focus{border-color:rgba(248,113,113,0.5)}
-.modal-answers-grid{display:flex;flex-direction:column;gap:8px}
-.modal-ans-row{display:flex;align-items:center;gap:10px}
-.modal-ans-num{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;color:rgba(248,113,113,0.4);width:22px;flex-shrink:0;text-align:center}
-.modal-ans-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:9px 12px;font-size:13px;color:#f0f0f5;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
-.modal-ans-input:focus{border-color:rgba(255,255,255,0.25)}
-.modal-ans-pts{width:72px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.2);border-radius:8px;padding:9px 10px;font-size:13px;color:#f87171;font-family:'DM Sans',sans-serif;outline:none;text-align:center;transition:border-color .2s}
-.modal-ans-pts:focus{border-color:rgba(248,113,113,0.5)}
-.modal-hint{font-size:12px;color:rgba(255,255,255,0.25);text-align:center;padding:4px 0}
-.modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid rgba(255,255,255,0.07)}
-
-/* ════ MASTER SHEET ════ */
-.master-sheet{
-  margin:0 40px 0;padding:12px 18px;
-  background:rgba(255,200,0,0.04);
-  border:1px solid rgba(255,200,0,0.15);
-  border-radius:12px;display:none;
-  transition:all .3s;
+@media(max-width:600px){
+  #view-home,#view-admin{padding:20px 16px 40px}
+  #view-master{flex-direction:column;height:auto}
+  .master-sidebar{width:100%;height:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,0.07)}
+  .reveal-podium{gap:6px}
+  .podium-card{min-height:70px}
+  .podium-card img{height:50px}
+  #view-reveal{padding:16px}
 }
-.master-sheet.visible{display:block}
-.master-sheet-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,200,0,0.5);margin-bottom:8px}
-.master-answers{display:flex;flex-wrap:wrap;gap:8px}
-.master-ans-chip{
-  display:flex;align-items:center;gap:6px;
-  padding:5px 12px;border-radius:20px;
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
-  font-size:12px;font-weight:500;color:rgba(255,255,255,0.5);
-}
-.master-ans-chip.revealed{opacity:.35;text-decoration:line-through}
-.answer-row.revealed-t0{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.15)}
-.answer-row.revealed-t0 .ans-rank{color:rgba(255,255,255,0.3)}
-.answer-row.revealed-t0 .ans-points{color:rgba(255,255,255,0.25)}
-.session-row{display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px 18px;transition:border-color .2s,background .2s}
-.session-row:hover{background:rgba(248,113,113,0.06);border-color:rgba(248,113,113,0.3)}
-.session-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.session-dot.in_progress{background:#fb923c;box-shadow:0 0 6px rgba(251,146,60,0.6)}
-.session-dot.finished{background:rgba(255,255,255,0.2)}
-.session-info{flex:1;min-width:0}
-.session-themes{font-size:13px;font-weight:600;color:#f0f0f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.session-meta{font-size:11px;color:rgba(255,255,255,0.3);margin-top:3px}
-.session-scores{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;flex-shrink:0}
-.session-score-t1{color:#4f9eff}.session-score-t2{color:#ff6b9d}
-.session-actions{display:flex;gap:8px;flex-shrink:0}
-.btn-resume{padding:7px 14px;border-radius:7px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.5);color:#f87171;cursor:pointer;transition:filter .2s}
-.btn-resume:hover{filter:brightness(1.3)}
-.btn-del-sess{padding:7px 10px;border-radius:7px;font-size:11px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.25);cursor:pointer;transition:border-color .2s,color .2s}
-.btn-del-sess:hover{border-color:rgba(255,80,80,0.5);color:#ff5050}
-.q-card.done{opacity:.45}
-.q-card.done .q-card-arrow{color:rgba(79,206,143,0.6)}
-.q-card-done-badge{font-size:10px;color:rgba(79,206,143,0.7);font-weight:700;letter-spacing:.08em;flex-shrink:0}
-.master-ans-pts{font-family:'Exo 2',sans-serif;font-weight:800;font-style:italic;color:rgba(255,200,0,0.6);font-size:13px}
-
-/* ════ REVEAL ANIMATION ════ */
-@keyframes wrongShake {
-  0%,100% { transform: translateX(0); }
-  20%      { transform: translateX(-8px); }
-  40%      { transform: translateX(8px); }
-  60%      { transform: translateX(-5px); }
-  80%      { transform: translateX(5px); }
-}
-.wrong-shake { animation: wrongShake .4s ease both; }
-
-/* 3D card flip */
-.ans-scene { perspective: 600px; width:100%; height:62px; }
-.ans-card-inner {
-  width:100%;height:62px;
-  position:relative;
-  transform-style:preserve-3d;
-  transition:transform 0.5s cubic-bezier(.16,1,.3,1);
-}
-.ans-card-inner.flipped { transform: rotateX(180deg); }
-.ans-face {
-  position:absolute;inset:0;
-  backface-visibility:hidden;-webkit-backface-visibility:hidden;
-  border-radius:14px;
-  display:flex;align-items:center;
-  overflow:hidden;
-}
-.ans-face-back {
-  background:rgba(255,255,255,0.03);
-  border:1px solid rgba(255,255,255,0.08);
-}
-.ans-face-front {
-  transform:rotateX(180deg);
-  border:1px solid rgba(255,255,255,0.08);
-}
-.ans-face-front.revealed-t1{background:rgba(79,158,255,0.12);border-color:rgba(79,158,255,0.4)}
-.ans-face-front.revealed-t2{background:rgba(255,107,157,0.12);border-color:rgba(255,107,157,0.4)}
-.ans-face-front.revealed-t0{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.15)}
-.start-reminder {
-  text-align:center;padding:10px 0 0;
-  font-size:12px;color:rgba(255,255,255,0.3);
-  font-style:italic;
-}
-.start-reminder span { font-weight:700; font-style:normal; }
-.start-reminder.t1 span { color:#4f9eff; }
-.start-reminder.t2 span { color:#ff6b9d; }
-/* ════════════════════════════
-   SPECTATOR WINDOW STYLES (injected)
-════════════════════════════ */
 </style>
 </head>
 <body>
-<div id="loading-overlay"><div style="display:flex;flex-direction:column;align-items:center;gap:14px"><div style="width:32px;height:32px;border:3px solid rgba(248,113,113,0.2);border-top-color:#f87171;border-radius:50%;animation:spin .7s linear infinite"></div><div style="font-size:13px">Chargement…</div></div></div>
+<div id="loading-overlay"><div class="spinner"></div><div style="font-size:13px;color:rgba(255,255,255,0.3)">Chargement…</div></div>
 <div id="toast"></div>
 
 <nav class="nav">
-  <div class="nav-logo">Allo<span>Quizz</span> <span style="color:rgba(255,255,255,0.2);font-size:13px;font-weight:400;margin-left:6px">Le Panel</span></div>
-  <div class="nav-right">
-    <button class="btn btn-ghost btn-sm" onclick="goToAdmin()" id="btn-nav-admin">⚙ Questions</button>
-    <button class="btn btn-ghost btn-sm" onclick="goToSelector()" id="btn-nav-play">▶ Jouer</button>
-    <button class="btn btn-ghost btn-sm" onclick="openSpectator()">📺 Écran TV</button>
-    <a class="btn btn-ghost btn-sm" href="index.html">← Accueil</a>
+  <div class="nav-logo">Allo<span>Quizz</span> <span style="color:rgba(255,255,255,0.2);font-size:13px;font-weight:400;margin-left:6px">Le Podium</span></div>
+  <div class="nav-right" id="nav-right">
+    <button class="btn btn-ghost btn-sm" onclick="showView('admin')">⚙ Questions</button>
+    <button class="btn btn-ghost btn-sm" onclick="showView('home')">🏠 Accueil</button>
+    <button class="btn btn-ghost btn-sm" onclick="showView('join')">📱 Rejoindre</button>
+    <a class="btn btn-ghost btn-sm" href="index.html">← Retour</a>
   </div>
 </nav>
 
-<!-- ══ SELECTOR ══ -->
-<div class="view" id="view-selector">
-  <div style="display:flex;flex-direction:column;gap:24px;width:100%">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-      <div>
-        <div class="sel-title">Le <span>Panel</span></div>
-        <div class="sel-subtitle">Parties en cours et passées</div>
-      </div>
-      <button class="btn btn-primary" onclick="openNewGameModal()">+ Nouvelle partie</button>
-    </div>
-
+<!-- ══ HOME ══ -->
+<div class="view" id="view-home">
+  <div class="home-hero">
     <div>
-      <div class="section-label" style="margin-bottom:10px">Sessions</div>
-      <div id="sessions-list-panel">
-        <div class="sel-empty">Aucune partie pour l'instant.</div>
+      <div class="home-title">Le <span>Podium</span></div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.35);margin-top:6px">Classez, révélez, triomphez</div>
+    </div>
+    <div class="home-actions">
+      <button class="btn btn-ghost" onclick="showView('join')">📱 Rejoindre une partie</button>
+      <button class="btn btn-pink" onclick="openNewSessionModal()">+ Nouvelle partie</button>
+    </div>
+  </div>
+  <div>
+    <div class="section-label" style="margin-bottom:12px">Parties récentes</div>
+    <div class="sessions-list" id="sessions-list"><div class="empty-state">Aucune partie — créez-en une !</div></div>
+  </div>
+</div>
+
+<!-- ══ MASTER ══ -->
+<div class="view" id="view-master">
+  <div class="master-sidebar">
+    <div class="master-sidebar-top">
+      <div class="master-code-label">Code de session</div>
+      <div class="master-code" id="master-code">—</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:4px">Les équipes rejoignent sur cette page</div>
+    </div>
+    <div class="master-teams" id="master-teams">
+      <div style="font-size:12px;color:rgba(255,255,255,0.25);text-align:center;padding:20px 0">En attente des équipes…</div>
+    </div>
+    <div style="padding:14px 16px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="confirmEndSession()">Terminer ✓</button>
+      <button class="btn btn-ghost btn-sm" onclick="openScoreEditModal()">✏ Scores</button>
+    </div>
+  </div>
+  <div class="master-main">
+    <div class="master-topbar">
+      <div class="master-q-text" id="master-q-text">Choisissez une question →</div>
+      <div class="timer-wrap" id="master-timer-wrap" style="display:none">
+        <div class="timer-num ok" id="master-timer">—</div>
+        <div class="timer-label">secondes</div>
       </div>
+      <div class="submit-progress" id="submit-progress"></div>
+    </div>
+    <div class="master-content" id="master-content">
+      <div class="q-picker-list" id="q-picker-list"></div>
+    </div>
+    <div class="master-controls" id="master-controls">
+      <button class="btn btn-ghost btn-sm" onclick="showQPicker()">☰ Changer de question</button>
+      <button class="btn btn-ghost btn-sm" id="btn-start-timer" onclick="startRound()" style="display:none">▶ Lancer</button>
+      <button class="btn btn-ghost btn-sm" id="btn-stop-round" onclick="stopRound()" style="display:none">⏹ Arrêter</button>
+      <button class="btn btn-pink btn-sm" id="btn-reveal" onclick="goToReveal()" style="display:none">Révéler les réponses →</button>
     </div>
   </div>
 </div>
 
-<!-- ══ NEW GAME MODAL ══ -->
-<div class="modal-backdrop" id="new-game-modal" style="display:none" onclick="if(event.target===this)closeNewGameModal()">
+<!-- ══ REVEAL ══ -->
+<div class="view" id="view-reveal">
+  <div class="reveal-question" id="reveal-question">—</div>
+  <div class="reveal-podium" id="reveal-podium"></div>
+  <div class="reveal-teams" id="reveal-teams"></div>
+  <div class="reveal-controls">
+    <button class="btn btn-ghost" onclick="revealNext()" id="btn-reveal-next">Révéler suivant →</button>
+    <button class="btn btn-ghost" onclick="revealAll()" id="btn-reveal-all">Tout révéler</button>
+    <button class="btn btn-pink" onclick="showView('master')">← Retour maître</button>
+  </div>
+</div>
+
+<!-- ══ JOIN ══ -->
+<div class="view" id="view-join">
+  <div class="join-box">
+    <div class="join-title">Rejoindre <span>Le Podium</span></div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <label class="modal-label">Code de session</label>
+      <input class="join-input" id="join-code" maxlength="4" placeholder="ABCD" oninput="this.value=this.value.toUpperCase()">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <label class="modal-label">Nom de votre équipe</label>
+      <input class="modal-input" id="join-team-name" placeholder="ex: Les Sharks" maxlength="20">
+    </div>
+    <div class="join-error" id="join-error">Code invalide ou session introuvable</div>
+    <button class="btn btn-pink" onclick="joinSession()" style="width:100%;justify-content:center">Rejoindre →</button>
+  </div>
+</div>
+
+<!-- ══ TEAM GAME ══ -->
+<div class="view" id="view-team">
+  <div class="team-top">
+    <div class="team-name-badge" id="team-name-disp">—</div>
+    <div class="team-score-badge" id="team-score-disp">0 pts</div>
+  </div>
+  <div class="team-question" id="team-question">En attente…</div>
+  <div class="team-timer ok" id="team-timer" style="display:none">—</div>
+  <div class="drag-hint">Glissez les cartes pour les classer</div>
+  <div class="drag-area" id="drag-area"></div>
+  <div class="team-submit-bar" id="team-submit-bar">
+    <button class="btn btn-pink" onclick="submitAnswer()" style="width:100%;justify-content:center">Valider mon classement →</button>
+  </div>
+</div>
+
+<!-- ══ NEW SESSION MODAL ══ -->
+<div class="modal-backdrop" id="new-session-modal" style="display:none" onclick="if(event.target===this)closeNewSessionModal()">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-header">
       <div class="modal-title">Nouvelle partie</div>
-      <button class="modal-close" onclick="closeNewGameModal()">✕</button>
+      <button class="modal-close" onclick="closeNewSessionModal()">✕</button>
     </div>
-    <div class="modal-body" style="gap:16px">
-      <div class="modal-field">
-        <label class="modal-label" style="color:#4f9eff">Équipe 1</label>
-        <input class="modal-input" id="team1-name" value="Équipe 1" maxlength="20">
-      </div>
-      <div class="modal-field">
-        <label class="modal-label" style="color:#ff6b9d">Équipe 2</label>
-        <input class="modal-input" id="team2-name" value="Équipe 2" maxlength="20">
+    <div class="modal-body">
+      <div>
+        <label class="modal-label">Durée par manche</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm timer-opt selected" data-val="30" onclick="selectTimer(this)">30s</button>
+          <button class="btn btn-ghost btn-sm timer-opt" data-val="45" onclick="selectTimer(this)">45s</button>
+          <button class="btn btn-ghost btn-sm timer-opt" data-val="60" onclick="selectTimer(this)">60s</button>
+          <button class="btn btn-ghost btn-sm timer-opt" data-val="90" onclick="selectTimer(this)">90s</button>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeNewGameModal()">Annuler</button>
-      <button class="btn btn-primary" onclick="createNewGame()">Créer →</button>
+      <button class="btn btn-ghost" onclick="closeNewSessionModal()">Annuler</button>
+      <button class="btn btn-pink" onclick="createSession()">Créer →</button>
     </div>
   </div>
 </div>
 
-<!-- ══ GAME ══ -->
-<div class="view" id="view-game">
-  <div class="game-top">
-    <div class="team-score-block">
-      <div class="team-score-disp t1" id="score-t1">0</div>
-      <div class="team-name-disp t1" id="name-t1">Équipe 1</div>
-    </div>
-    <div class="game-q-center">
-      <div class="game-q-label">Question</div>
-      <div class="game-q-text" id="game-q-text">—</div>
-    </div>
-    <div class="team-score-block t2">
-      <div class="team-score-disp t2" id="score-t2">0</div>
-      <div class="team-name-disp t2" id="name-t2">Équipe 2</div>
-    </div>
-  </div>
-
-  <!-- Turn selector — click to pick which team plays -->
-  <div class="turn-indicator">
-    <div class="turn-badge t1" id="turn-t1" onclick="setTurn(1)" style="cursor:pointer" title="Équipe 1 joue">Équipe 1</div>
-    <div class="turn-sep">joue</div>
-    <div class="turn-badge t2 inactive" id="turn-t2" onclick="setTurn(2)" style="cursor:pointer" title="Équipe 2 joue">Équipe 2</div>
-  </div>
-  <div class="start-reminder" id="start-reminder"></div>
-
-  <div class="answers-board">
-    <div class="answers-grid" id="answers-grid"></div>
-  </div>
-
-  <!-- Master cheat sheet — hidden answers -->
-  <div class="master-sheet" id="master-sheet">
-    <div class="master-sheet-title">👁 Réponses (maître)</div>
-    <div class="master-answers" id="master-answers"></div>
-  </div>
-
-  <div class="game-controls">
-    <div class="ctrl-left">
-      <button class="btn btn-ghost btn-sm" onclick="confirmBack()">← Quitter</button>
-    </div>
-    <div class="ctrl-center">
-      <button class="btn btn-ghost btn-sm" onclick="toggleMasterSheet()">👁 Réponses</button>
-      <button class="btn btn-sm" style="background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.35);color:#ff5050" onclick="wrongAnswer()">✗ Mauvaise réponse</button>
-      <button class="btn btn-ghost btn-sm" onclick="openScoreModal()">✏ Scores</button>
-      <button class="btn btn-ghost btn-sm" onclick="revealNoTeam()">Révéler (personne)</button>
-      <button class="btn btn-ghost btn-sm" onclick="endCurrentQuestion()">Terminer ✓</button>
-      <button class="btn btn-ghost btn-sm" onclick="nextQuestion()">Question suivante →</button>
-    </div>
-    <div class="ctrl-right">
-      <button class="btn btn-ghost btn-sm" onclick="saveSession()">💾 Sauvegarder</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ NEXT QUESTION MODAL ══ -->
-<div class="modal-backdrop" id="next-modal" style="display:none" onclick="if(event.target===this)closeNextModal()">
+<!-- ══ ITEMS MODAL ══ -->
+<div class="modal-backdrop" id="items-modal" style="display:none" onclick="if(event.target===this)closeItemsModal()">
   <div class="modal-box">
     <div class="modal-header">
-      <div class="modal-title">Question suivante</div>
-      <button class="modal-close" onclick="closeNextModal()">✕</button>
+      <div class="modal-title" id="items-modal-title">Éléments</div>
+      <button class="modal-close" onclick="closeItemsModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="section-label" style="margin-bottom:10px">Choisir une question</div>
-      <div class="questions-list" id="next-questions-list"></div>
-      <div style="border-top:1px solid rgba(255,255,255,0.07);margin-top:16px;padding-top:16px">
-        <div class="add-q-form">
-          <input class="add-q-input" id="next-new-q-input" placeholder="Ou créer une nouvelle question…" onkeydown="if(event.key==='Enter')openAddModalFromNext()">
-          <button class="btn btn-primary btn-sm" onclick="openAddModalFromNext()">+ Créer</button>
-        </div>
-      </div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:4px">Renseignez les 5 éléments dans l'ordre du classement correct (1 = premier)</div>
+      <div class="items-grid" id="items-grid"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeItemsModal()">Annuler</button>
+      <button class="btn btn-pink" onclick="saveItems()">Enregistrer</button>
     </div>
   </div>
 </div>
 
 <!-- ══ ADMIN ══ -->
 <div class="view" id="view-admin">
-  <div style="display:flex;justify-content:space-between;align-items:center">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
     <div class="admin-title">Questions</div>
-    <button class="btn btn-ghost btn-sm" onclick="showView('selector')">← Retour</button>
+    <button class="btn btn-ghost btn-sm" onclick="showView('home')">← Retour</button>
   </div>
-  <div class="admin-questions" id="admin-questions"></div>
+  <div class="admin-q-list" id="admin-questions"></div>
   <div class="add-q-form">
-    <input class="add-q-input" id="new-q-input" placeholder="Nouvelle question… (ex: Super-héros préférés)" onkeydown="if(event.key==='Enter')openAddModal()">
-    <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Ajouter</button>
+    <input class="add-q-input" id="new-q-input" placeholder="Nouvelle question… (ex: Classe ces 5 basketteurs par taille)" onkeydown="if(event.key==='Enter')addQuestion()">
+    <button class="btn btn-pink btn-sm" onclick="addQuestion()">+ Ajouter</button>
   </div>
 </div>
 
-<!-- ══ QUESTION MODAL ══ -->
-<div class="modal-backdrop" id="q-modal" style="display:none" onclick="if(event.target===this)closeQModal()">
-  <div class="modal-box">
+<!-- ══ SCORE EDIT MODAL ══ -->
+<div class="modal-backdrop" id="score-edit-modal" style="display:none" onclick="if(event.target===this)closeScoreEditModal()">
+  <div class="modal-box" style="max-width:380px">
     <div class="modal-header">
-      <div class="modal-title" id="modal-title">Nouvelle question</div>
-      <button class="modal-close" onclick="closeQModal()">✕</button>
+      <div class="modal-title">Modifier les scores</div>
+      <button class="modal-close" onclick="closeScoreEditModal()">✕</button>
     </div>
-    <div class="modal-body">
-      <div class="modal-field">
-        <label class="modal-label">Question</label>
-        <input class="modal-input" id="modal-q-text" placeholder="Ex: Super-héros préférés">
-      </div>
-      <div class="modal-answers-grid" id="modal-answers-grid">
-        <!-- 6 answer rows injected by JS -->
-      </div>
-      <div class="modal-hint" id="modal-hint">Remplissez les 6 réponses avec leurs points pour enregistrer.</div>
-    </div>
+    <div class="modal-body" id="score-edit-body"></div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeQModal()">Annuler</button>
-      <button class="btn btn-primary" id="modal-save-btn" onclick="saveQModal()" disabled>Enregistrer</button>
+      <button class="btn btn-ghost" onclick="closeScoreEditModal()">Annuler</button>
+      <button class="btn btn-pink" onclick="applyScoreEdits()">Valider</button>
     </div>
   </div>
 </div>
 
 <script>
-const SUPABASE_URL = 'https://tsneytqibltnjarajcll.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL='https://tsneytqibltnjarajcll.supabase.co';
+const SUPABASE_KEY='sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
+const {createClient}=supabase;
+const db=createClient(SUPABASE_URL,SUPABASE_KEY);
 
-let questions = [];
-let currentQuestion = null;
-let currentAnswers = []; // [{...answer, revealedBy: null|1|2}]
-let scores = [0, 0];
-let currentTeam = 1;
-let spectatorWin = null;
-let bc = null;
-try { bc = new BroadcastChannel('panel_spectator'); } catch(e) {}
+// ── STATE ──
+let questions=[], currentSessionId=null, currentSession=null;
+let currentQuestionId=null, currentItems=[];
+let timerInterval=null, timerVal=0, roundDuration=30;
+let revealIdx=0, revealItems=[], revealAnswers=[];
+let teamName='', teamSessionId=null, teamScore=0, teamDragOrder=[];
+let sessionSub=null, answerSub=null;
+let editingQId=null;
 
-// ══ NAV ══
-function goToAdmin() {
-  // Always go to admin — session stays active in background
-  showView('admin');
-}
-
-function goToSelector() {
-  if (currentSessionId) {
-    if (!confirm('Quitter la partie en cours ?')) return;
-    currentSessionId = null;
-    pushClearSpectator();
-  }
-  loadSessions();
-  showView('selector');
-}
-
-// ══ INIT ══
-async function init() {
+// ── INIT ──
+async function init(){
   await Promise.all([loadQuestions(), loadSessions()]);
   document.getElementById('loading-overlay').classList.add('hidden');
-  showView('selector');
+  showView('home');
 }
 
-async function loadQuestions() {
-  const [qRes, aRes] = await Promise.all([
-    db.from('panel_questions').select('*').order('sort_order'),
-    db.from('panel_answers').select('*').order('sort_order')
-  ]);
-  if (qRes.error) { showToast('Erreur questions : ' + qRes.error.message); return; }
-  if (aRes.error) { showToast('Erreur réponses : ' + aRes.error.message); return; }
-  questions = (qRes.data || []).map(q => ({
-    ...q,
-    panel_answers: (aRes.data || []).filter(a => a.question_id === q.id).sort((a,b) => b.points - a.points)
-  }));
+// ── VIEWS ──
+function showView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+}
+
+// ── QUESTIONS ──
+async function loadQuestions(){
+  const {data}=await db.from('podium_questions').select('*, podium_items(*)').order('sort_order');
+  questions=(data||[]).map(q=>({...q,podium_items:(q.podium_items||[]).sort((a,b)=>a.correct_rank-b.correct_rank)}));
   renderAdmin();
+  renderQPicker();
 }
 
-// ══ VIEWS ══
-function showView(v) {
-  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-  document.getElementById('view-' + v).classList.add('active');
-}
-
-// ══ SELECTOR ══
-function renderSelector() {
-  // Sessions list is handled by loadSessions() — nothing to do here
-}
-
-// ══ NEW GAME MODAL ══
-function openNewGameModal() {
-  document.getElementById('new-game-modal').style.display = 'flex';
-  document.getElementById('team1-name').focus();
-}
-function closeNewGameModal() {
-  document.getElementById('new-game-modal').style.display = 'none';
-}
-async function createNewGame() {
-  const t1 = document.getElementById('team1-name').value.trim() || 'Équipe 1';
-  const t2 = document.getElementById('team2-name').value.trim() || 'Équipe 2';
-  closeNewGameModal();
-  // Create session in Supabase
-  const { data, error } = await db.from('panel_sessions').insert({
-    team_names: [t1, t2], scores: [0, 0], question_ids: [], done_question_ids: [], status: 'in_progress'
-  }).select().single();
-  if (error) { showToast('Erreur : ' + error.message); return; }
-  currentSessionId = data.id;
-  scores = [0, 0];
-  currentTeam = 1;
-  startingTeam = 1;
-  questionCount = 0;
-  doneQuestionIds = new Set();
-  currentQuestion = null;
-  currentAnswers = [];
-  // Update UI names
-  ['t1','t2'].forEach((t,i) => {
-    const name = i===0 ? t1 : t2;
-    document.getElementById('name-'+t).textContent = name;
-    document.getElementById('turn-'+t).textContent = name;
-  });
-  document.getElementById('score-t1').textContent = 0;
-  document.getElementById('score-t2').textContent = 0;
-  document.getElementById('game-q-text').textContent = 'Choisissez une question →';
-  updateTurnUI();
-  showView('game');
-  // Auto-open question picker
-  nextQuestion();
-}
-
-// ══ SESSIONS LIST ══
-async function loadSessions() {
-  const { data, error } = await db.from('panel_sessions').select('*').order('created_at', { ascending: false }).limit(20);
-  const list = document.getElementById('sessions-list-panel');
-  if (error || !data || !data.length) {
-    list.innerHTML = '<div class="sel-empty">Aucune partie pour l\'instant — créez-en une !</div>';
-    return;
-  }
-  list.innerHTML = data.map(s => {
-    const date = new Date(s.created_at).toLocaleDateString('fr-FR', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-    const names = (s.team_names || ['Équipe 1','Équipe 2']);
-    const sc = s.scores || [0,0];
-    const done = (s.done_question_ids||[]).length;
-    const ongoing = s.status === 'in_progress';
-    return `<div class="session-row">
+// ── SESSIONS ──
+async function loadSessions(){
+  const {data}=await db.from('podium_sessions').select('*').order('created_at',{ascending:false}).limit(15);
+  const list=document.getElementById('sessions-list');
+  if(!data||!data.length){list.innerHTML='<div class="empty-state">Aucune partie — créez-en une !</div>';return;}
+  list.innerHTML=data.map(s=>{
+    const date=new Date(s.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const teams=(s.teams||[]).map(t=>t.name).join(', ')||'Aucune équipe';
+    const active=s.status!=='finished';
+    return `<div class="session-card" onclick="${active?`resumeSession('${s.id}')`:''}" style="${!active?'opacity:.5;cursor:default':''}">
       <div class="session-dot ${s.status}"></div>
       <div class="session-info">
-        <div class="session-themes">${names[0]} vs ${names[1]}</div>
-        <div class="session-meta">${date} · ${done} question${done>1?'s':''} jouée${done>1?'s':''} · ${ongoing?'En cours':'Terminée'}</div>
+        <div class="session-code">${s.code}</div>
+        <div class="session-meta">${date} · ${active?'En cours':'Terminée'}</div>
+        <div class="session-teams">${teams}</div>
       </div>
-      <div class="session-scores">
-        <span class="session-score-t1">${sc[0]}</span>
-        <span style="color:rgba(255,255,255,0.2)"> — </span>
-        <span class="session-score-t2">${sc[1]}</span>
-      </div>
-      <div class="session-actions">
-        ${ongoing ? `<button class="btn-resume" onclick="resumeSession('${s.id}')">Reprendre →</button>` : `<button class="btn-resume" style="opacity:.5;cursor:default">Terminée</button>`}
-        <button class="btn-del-sess" onclick="deleteSession('${s.id}')">✕</button>
-      </div>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteSession('${s.id}')">✕</button>
     </div>`;
   }).join('');
 }
 
-async function resumeSession(id) {
-  const { data, error } = await db.from('panel_sessions').select('*').eq('id', id).single();
-  if (error || !data) { showToast('Session introuvable'); return; }
-  currentSessionId = id;
-  scores = data.scores || [0,0];
-  doneQuestionIds = new Set(data.done_question_ids || []);
-  questionCount = doneQuestionIds.size;
-  startingTeam = questionCount % 2 === 0 ? 1 : 2;
-  currentTeam = startingTeam;
-  currentQuestion = null;
-  currentAnswers = [];
-  const names = data.team_names || ['Équipe 1','Équipe 2'];
-  ['t1','t2'].forEach((t,i) => {
-    document.getElementById('name-'+t).textContent = names[i];
-    document.getElementById('turn-'+t).textContent = names[i];
-  });
-  document.getElementById('score-t1').textContent = scores[0];
-  document.getElementById('score-t2').textContent = scores[1];
-  document.getElementById('game-q-text').textContent = 'Choisissez une question →';
-  updateTurnUI();
-  showView('game');
-  nextQuestion();
-  showToast('Partie reprise ✓');
+// ── NEW SESSION ──
+let selectedTimer=30;
+function openNewSessionModal(){document.getElementById('new-session-modal').style.display='flex';}
+function closeNewSessionModal(){document.getElementById('new-session-modal').style.display='none';}
+function selectTimer(el){
+  document.querySelectorAll('.timer-opt').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedTimer=parseInt(el.dataset.val);
 }
 
-async function deleteSession(id) {
-  const pin = prompt('Code de suppression :');
-  if (pin !== '1234') { showToast('Code incorrect'); return; }
-  await db.from('panel_sessions').delete().eq('id', id);
+async function createSession(){
+  const code=Math.random().toString(36).substring(2,6).toUpperCase();
+  roundDuration=selectedTimer;
+  const {data,error}=await db.from('podium_sessions').insert({
+    code,status:'waiting',timer_duration:selectedTimer,teams:[],reveal_rank:0
+  }).select().single();
+  if(error){showToast('Erreur : '+error.message);return;}
+  closeNewSessionModal();
+  currentSessionId=data.id;
+  currentSession=data;
+  document.getElementById('master-code').textContent=code;
+  document.getElementById('master-q-text').textContent='Choisissez une question →';
+  showQPicker();
+  subscribeToSession();
+  showView('master');
+  loadSessions();
+}
+
+async function resumeSession(id){
+  const {data}=await db.from('podium_sessions').select('*').eq('id',id).single();
+  if(!data)return;
+  currentSessionId=id;
+  currentSession=data;
+  roundDuration=data.timer_duration||30;
+  document.getElementById('master-code').textContent=data.code;
+  renderMasterTeams(data.teams||[]);
+  if(data.current_question_id){
+    currentQuestionId=data.current_question_id;
+    const q=questions.find(x=>x.id===currentQuestionId);
+    if(q){
+      document.getElementById('master-q-text').textContent=q.question;
+      currentItems=q.podium_items||[];
+    }
+  }
+  showQPicker();
+  subscribeToSession();
+  showView('master');
+}
+
+async function deleteSession(id){
+  const pin=prompt('Code de suppression :');
+  if(pin!=='1234'){showToast('Code incorrect');return;}
+  await db.from('podium_sessions').delete().eq('id',id);
   loadSessions();
   showToast('Partie supprimée');
 }
 
-// ══ GAME ══
-function startGame(questionId) {
-  // Called from question picker during a game
-  switchQuestion(questionId);
+async function confirmEndSession(){
+  if(!confirm('Terminer cette partie ?'))return;
+  await db.from('podium_sessions').update({status:'finished'}).eq('id',currentSessionId);
+  loadSessions();
+  showView('home');
 }
 
-function renderAnswers() {
-  const grid = document.getElementById('answers-grid');
-  grid.innerHTML = currentAnswers.map((a, i) => {
-    const revealed = a.revealedBy !== null;
-    const tc = revealed ? 'revealed-t'+a.revealedBy : '';
-    const ptsClass = revealed ? (a.revealedBy === 0 ? 'neutral' : 't'+a.revealedBy) : 'neutral';
-    return `<div class="ans-scene" id="ans-scene-${i}" onclick="revealAnswer(${i})" style="cursor:pointer;margin-bottom:10px">
-      <div class="ans-card-inner${revealed?' flipped':''}" id="ans-card-${i}">
-        <div class="ans-face ans-face-back">
-          <div class="ans-rank" style="width:52px;text-align:center;font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:rgba(255,255,255,0.12)">${String(i+1).padStart(2,'0')}</div>
-          <div style="flex:1;height:2px;background:rgba(255,255,255,0.06);border-radius:2px;margin-right:20px"></div>
-        </div>
-        <div class="ans-face ans-face-front ${tc}" id="ans-front-${i}">
-          <div class="ans-rank" style="width:52px;text-align:center;font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:${a.revealedBy===1?'#4f9eff':a.revealedBy===2?'#ff6b9d':'rgba(255,255,255,0.3)'}">${String(i+1).padStart(2,'0')}</div>
-          <div class="ans-text" style="flex:1;font-size:16px;font-weight:600;color:#f0f0f5;padding:0 8px">${a.answer}</div>
-          <div class="ans-points ${ptsClass}" style="width:72px;text-align:center;font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;padding:0 12px;color:${a.revealedBy===1?'#4f9eff':a.revealedBy===2?'#ff6b9d':'rgba(255,255,255,0.25)'}">${a.points}</div>
-        </div>
+// ── SUBSCRIBE (master) ──
+function subscribeToSession(){
+  if(sessionSub)sessionSub.unsubscribe();
+  sessionSub=db.channel('session-'+currentSessionId)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'podium_sessions',filter:'id=eq.'+currentSessionId},
+      p=>{currentSession=p.new;renderMasterTeams(p.new.teams||[]);})
+    .subscribe();
+}
+
+// ── MASTER TEAMS ──
+function renderMasterTeams(teams){
+  const el=document.getElementById('master-teams');
+  if(!teams.length){el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.25);text-align:center;padding:20px 0">En attente des équipes…</div>';return;}
+  el.innerHTML=teams.map(t=>`
+    <div class="master-team-row">
+      <div class="master-team-name">${t.name}</div>
+      <div class="master-team-score">${t.score||0}</div>
+    </div>`).join('');
+}
+
+// ── Q PICKER ──
+function showQPicker(){
+  const content=document.getElementById('master-content');
+  const donedIds=(currentSession?.done_question_ids||[]);
+  content.innerHTML='<div class="q-picker-list">'+
+    (questions.length?questions.map((q,i)=>{
+      const done=donedIds.includes(q.id);
+      return `<div class="q-pick-card${done?' done':''}" onclick="${done?'':('selectQuestion('+q.id+')')}">
+        <div class="q-pick-num">${String(i+1).padStart(2,'0')}</div>
+        <div class="q-pick-text">${q.question}</div>
+        ${done?'<div class="q-pick-badge">✓ Faite</div>':'<div style="color:rgba(255,255,255,0.2)">›</div>'}
+      </div>`;
+    }).join(''):'<div class="empty-state">Aucune question — créez-en dans ⚙ Questions</div>')
+  +'</div>';
+  document.getElementById('btn-start-timer').style.display='none';
+  document.getElementById('btn-reveal').style.display='none';
+  document.getElementById('btn-stop-round').style.display='none';
+}
+
+async function selectQuestion(id){
+  currentQuestionId=id;
+  const q=questions.find(x=>x.id===id);
+  if(!q)return;
+  currentItems=q.podium_items||[];
+  document.getElementById('master-q-text').textContent=q.question;
+  // Push to session
+  await db.from('podium_sessions').update({
+    current_question_id:id,status:'waiting',reveal_rank:0
+  }).eq('id',currentSessionId);
+  document.getElementById('master-content').innerHTML='<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.3)">Question sélectionnée. Lance le chrono quand tu es prêt.</div>';
+  document.getElementById('btn-start-timer').style.display='';
+  document.getElementById('btn-reveal').style.display='none';
+  document.getElementById('btn-stop-round').style.display='none';
+  renderSubmitProgress();
+}
+
+function renderSubmitProgress(){
+  const teams=currentSession?.teams||[];
+  const el=document.getElementById('submit-progress');
+  el.innerHTML=teams.map(t=>`<div class="submit-dot ${t.submitted?'done':''}" title="${t.name}"></div>`).join('');
+}
+
+// ── ROUND ──
+async function startRound(){
+  if(!currentQuestionId){showToast('Choisissez une question');return;}
+  // Reset submissions for this round
+  const teams=(currentSession?.teams||[]).map(t=>({...t,submitted:false}));
+  await db.from('podium_sessions').update({status:'playing',teams}).eq('id',currentSessionId);
+  document.getElementById('master-timer-wrap').style.display='flex';
+  document.getElementById('btn-start-timer').style.display='none';
+  document.getElementById('btn-stop-round').style.display='';
+  document.getElementById('btn-reveal').style.display='none';
+  startTimer(roundDuration, ()=>{
+    showToast('Temps écoulé !');
+    document.getElementById('btn-reveal').style.display='';
+    document.getElementById('btn-stop-round').style.display='none';
+  });
+}
+
+function stopRound(){
+  clearInterval(timerInterval);
+  document.getElementById('btn-stop-round').style.display='none';
+  document.getElementById('btn-reveal').style.display='';
+  db.from('podium_sessions').update({status:'stopped'}).eq('id',currentSessionId);
+}
+
+function startTimer(duration, onEnd){
+  timerVal=duration;
+  clearInterval(timerInterval);
+  const el=document.getElementById('master-timer');
+  const update=()=>{
+    el.textContent=timerVal;
+    el.className='timer-num '+(timerVal>duration*.5?'ok':timerVal>10?'warn':'urgent');
+  };
+  update();
+  timerInterval=setInterval(()=>{
+    timerVal--;
+    update();
+    if(timerVal<=0){clearInterval(timerInterval);onEnd();}
+  },1000);
+}
+
+// ── REVEAL ──
+async function goToReveal(){
+  if(!currentQuestionId)return;
+  clearInterval(timerInterval);
+  document.getElementById('master-timer-wrap').style.display='none';
+  const q=questions.find(x=>x.id===currentQuestionId);
+  revealItems=q?q.podium_items||[]:[];
+  // Load answers for this question in this session
+  const {data}=await db.from('podium_answers')
+    .select('*').eq('session_id',currentSessionId).eq('question_id',currentQuestionId);
+  revealAnswers=data||[];
+  revealIdx=0;
+  buildRevealScreen(q);
+  showView('reveal');
+}
+
+function buildRevealScreen(q){
+  document.getElementById('reveal-question').textContent=q?q.question:'—';
+  // Podium slots
+  const podium=document.getElementById('reveal-podium');
+  podium.innerHTML=revealItems.map((item,i)=>`
+    <div class="podium-slot">
+      <div class="podium-rank-label">${i+1}</div>
+      <div class="podium-card" id="reveal-slot-${i}">
+        <div class="podium-card-hidden">?</div>
       </div>
-    </div>`;
-  }).join('');
-}
-
-function revealAnswer(idx) {
-  if (currentAnswers[idx].revealedBy !== null) return;
-  currentAnswers[idx].revealedBy = currentTeam;
-
-  // Update front face colors
-  const front = document.getElementById('ans-front-'+idx);
-  const color = currentTeam === 1 ? '#4f9eff' : '#ff6b9d';
-  front.classList.add('revealed-t'+currentTeam);
-  front.querySelectorAll('.ans-rank,.ans-points').forEach(el => el.style.color = color);
-
-  // Flip!
-  document.getElementById('ans-card-'+idx).classList.add('flipped');
-
-  // Sound
-  playGoodSound();
-
-  scores[currentTeam-1] += currentAnswers[idx].points;
-  updateScoreUI();
-  renderMasterSheet();
-  showToast('✓ +' + currentAnswers[idx].points + ' pts');
-  pushSpectator();
-}
-
-function givePoint(team) {
-  scores[team-1]++;
-  updateScoreUI();
-  showToast('+1 → ' + document.getElementById('name-t'+team).textContent);
-  pushSpectator();
-}
-
-function setTurn(team) {
-  currentTeam = team;
-  updateTurnUI();
-  pushSpectator();
-}
-
-function switchTurn() {
-  setTurn(currentTeam === 1 ? 2 : 1);
-}
-
-function toggleMasterSheet() {
-  const sheet = document.getElementById('master-sheet');
-  sheet.classList.toggle('visible');
-}
-
-function renderMasterSheet() {
-  const el = document.getElementById('master-answers');
-  el.innerHTML = currentAnswers.map((a, i) => `
-    <div class="master-ans-chip ${a.revealedBy !== null ? 'revealed' : ''}">
-      <span>${i+1}. ${a.answer}</span>
-      <span class="master-ans-pts">${a.points}</span>
-    </div>
-  `).join('');
-}
-
-function nextQuestion() {
-  const list = document.getElementById('next-questions-list');
-  const others = questions.filter(q => q.id !== (currentQuestion ? currentQuestion.id : -1));
-  if (!others.length) {
-    list.innerHTML = '<div class="sel-empty">Aucune autre question disponible.</div>';
-  } else {
-    // Sort: not done first, done last
-    const sorted = [...others].sort((a,b) => {
-      const ad = doneQuestionIds.has(a.id) ? 1 : 0;
-      const bd = doneQuestionIds.has(b.id) ? 1 : 0;
-      return ad - bd;
-    });
-    list.innerHTML = sorted.map((q, i) => {
-      const done = doneQuestionIds.has(q.id);
-      return `<div class="q-card${done?' done':''}" onclick="${done?'':('switchQuestion('+q.id+')')}">
-        <div class="q-card-num">${String(i+1).padStart(2,'0')}</div>
-        <div class="q-card-text">${q.question}</div>
-        <div class="q-card-count">${(q.panel_answers||[]).length} réponses</div>
-        ${done ? '<div class="q-card-done-badge">✓ Faite</div>' : '<div class="q-card-arrow">›</div>'}
+    </div>`).join('');
+  // Team answers
+  const teams=currentSession?.teams||[];
+  const teamsEl=document.getElementById('reveal-teams');
+  teamsEl.innerHTML=teams.map(t=>{
+    const ans=revealAnswers.find(a=>a.team_name===t.name);
+    const ranking=ans?ans.rankings:[];
+    const cards=revealItems.map((_,i)=>{
+      const itemId=ranking[i];
+      const item=revealItems.find(x=>x.id===itemId)||revealItems[i];
+      return `<div class="reveal-mini-card" id="mini-${t.name.replace(/\s/g,'_')}-${i}">
+        ${item?.image_url?`<img src="${item.image_url}" alt="">`:'' }
+        <span>${item?.name||'?'}</span>
       </div>`;
     }).join('');
-  }
-  document.getElementById('next-modal').style.display = 'flex';
-}
-
-function closeNextModal() {
-  document.getElementById('next-modal').style.display = 'none';
-}
-
-function switchQuestion(questionId) {
-  closeNextModal();
-  // Mark current as done automatically
-  if (currentQuestion) doneQuestionIds.add(currentQuestion.id);
-  currentQuestion = questions.find(q => q.id === questionId);
-  if (!currentQuestion) return;
-  currentAnswers = currentQuestion.panel_answers.map(a => ({...a, revealedBy: null}));
-  document.getElementById('game-q-text').textContent = currentQuestion.question;
-  // Alternate starting team
-  startingTeam = getNextStartingTeam();
-  questionCount++;
-  currentTeam = startingTeam;
-  updateTurnUI();
-  renderAnswers();
-  renderMasterSheet();
-  renderStartReminder();
-  pushSpectator();
-  showToast('Nouvelle question chargée');
-}
-
-function openAddModalFromNext() {
-  const input = document.getElementById('next-new-q-input');
-  document.getElementById('new-q-input').value = input.value;
-  closeNextModal();
-  openAddModal();
-}
-
-// Reveal next unrevealed answer for nobody (grey)
-function revealNoTeam() {
-  const idx = currentAnswers.findIndex(a => a.revealedBy === null);
-  if (idx === -1) { showToast('Toutes les réponses sont révélées'); return; }
-  currentAnswers[idx].revealedBy = 0;
-
-  const front = document.getElementById('ans-front-'+idx);
-  front.classList.add('revealed-t0');
-
-  // Flip
-  document.getElementById('ans-card-'+idx).classList.add('flipped');
-  playRevealNoTeamSound();
-
-  renderMasterSheet();
-  pushSpectator();
-  showToast('Réponse révélée (sans équipe)');
-}
-
-let doneQuestionIds = new Set();
-
-function endCurrentQuestion() {
-  if (currentQuestion) {
-    doneQuestionIds.add(currentQuestion.id);
-    showToast('Question marquée comme terminée ✓');
-  }
-}
-
-let currentSessionId = null;
-
-async function saveSession() {
-  const payload = {
-    team_names: [
-      document.getElementById('name-t1').textContent,
-      document.getElementById('name-t2').textContent
-    ],
-    scores: scores,
-    question_ids: questions.map(q => q.id),
-    status: 'in_progress'
-  };
-  payload.done_question_ids = [...doneQuestionIds];
-  if (currentSessionId) {
-    await db.from('panel_sessions').update(payload).eq('id', currentSessionId);
-    showToast('Partie sauvegardée ✓');
-    loadSessions();
-  } else {
-    showToast('Pas de session active');
-  }
-}
-
-function updateTurnUI() {
-  const t1 = document.getElementById('turn-t1');
-  const t2 = document.getElementById('turn-t2');
-  if (currentTeam === 1) { t1.classList.remove('inactive'); t2.classList.add('inactive'); }
-  else { t2.classList.remove('inactive'); t1.classList.add('inactive'); }
-}
-
-function updateScoreUI() {
-  [1,2].forEach(t => {
-    const el = document.getElementById('score-t'+t);
-    el.textContent = scores[t-1];
-    el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
-  });
-}
-
-function confirmBack() {
-  if (confirm('Quitter la partie en cours ?')) {
-    loadSessions();
-    showView('selector');
-    pushClearSpectator();
-  }
-}
-
-// ══ SPECTATOR ══
-function getSpectatorState() {
-  return {
-    question: currentQuestion ? currentQuestion.question : null,
-    answers: currentAnswers,
-    scores,
-    team1Name: document.getElementById('name-t1')?.textContent || 'Équipe 1',
-    team2Name: document.getElementById('name-t2')?.textContent || 'Équipe 2',
-    currentTeam,
-    active: true
-  };
-}
-
-function pushSpectator() {
-  const state = getSpectatorState();
-  if (bc) try { bc.postMessage(state); } catch(e) {}
-  try { localStorage.setItem('panel_spectator', JSON.stringify(state)); } catch(e) {}
-  if (spectatorWin && !spectatorWin.closed && spectatorWin.applyPanelState) {
-    try { spectatorWin.applyPanelState(state); } catch(e) {}
-  }
-}
-
-function pushClearSpectator() {
-  const state = { active: false };
-  if (bc) try { bc.postMessage(state); } catch(e) {}
-  try { localStorage.setItem('panel_spectator', JSON.stringify(state)); } catch(e) {}
-}
-
-function openSpectator() {
-  pushSpectator();
-  spectatorWin = window.open('', 'panel_spectator', 'width=1280,height=720,toolbar=0,menubar=0,location=0');
-  if (!spectatorWin) { showToast('Pop-up bloquée'); return; }
-  spectatorWin.document.write(buildSpectatorHTML());
-  spectatorWin.document.close();
-  showToast('Écran joueurs ouvert');
-  setTimeout(() => pushSpectator(), 600);
-  setTimeout(() => pushSpectator(), 1600);
-}
-
-function buildSpectatorHTML() {
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Le Panel — Joueurs</title>
-<link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,700;0,800;1,800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#06060d;color:#f0f0f5;font-family:'DM Sans',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-.sp-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:20px 48px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;background:rgba(255,255,255,0.02)}
-.sp-score-block{display:flex;align-items:center;gap:16px}
-.sp-score-block.t2{flex-direction:row-reverse;justify-self:end}
-.sp-score{font-family:'Exo 2',sans-serif;font-size:64px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-.sp-score.t1{color:#4f9eff}.sp-score.t2{color:#ff6b9d}
-.sp-score.bump{animation:bump .3s ease-out}
-@keyframes bump{0%{transform:scale(1.35)}100%{transform:scale(1)}}
-.sp-name{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em}
-.sp-name.t1{color:#4f9eff}.sp-name.t2{color:#ff6b9d}
-.sp-q-center{text-align:center}
-.sp-q-label{font-size:10px;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px}
-.sp-q-text{font-size:18px;font-weight:600;color:#f0f0f5;max-width:400px;line-height:1.3}
-.sp-turn{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 0;flex-shrink:0}
-.sp-turn-badge{padding:5px 16px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'Exo 2',sans-serif;font-style:italic;transition:all .3s}
-.sp-turn-badge.t1{background:rgba(79,158,255,0.15);border:1px solid rgba(79,158,255,0.4);color:#4f9eff}
-.sp-turn-badge.t2{background:rgba(255,107,157,0.15);border:1px solid rgba(255,107,157,0.4);color:#ff6b9d}
-.sp-turn-badge.inactive{opacity:.25}
-.sp-sep{color:rgba(255,255,255,0.15);font-size:11px}
-.sp-board{flex:1;display:flex;align-items:center;justify-content:center;padding:16px 80px}
-.sp-grid{width:100%;max-width:800px;display:flex;flex-direction:column;gap:12px}
-.sp-row{display:flex;align-items:center;gap:0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;min-height:68px;transition:all .4s cubic-bezier(.16,1,.3,1)}
-.sp-row.revealed-t1{background:rgba(79,158,255,0.1);border-color:rgba(79,158,255,0.4)}
-.sp-row.revealed-t2{background:rgba(255,107,157,0.1);border-color:rgba(255,107,157,0.4)}
-.sp-rank{width:60px;text-align:center;font-family:'Exo 2',sans-serif;font-size:20px;font-weight:800;font-style:italic;color:rgba(255,255,255,0.15);flex-shrink:0;transition:color .3s}
-.sp-row.revealed-t1 .sp-rank{color:#4f9eff}
-.sp-row.revealed-t2 .sp-rank{color:#ff6b9d}
-.sp-ans{flex:1;font-size:20px;font-weight:700;color:#f0f0f5;padding:0 8px;transition:opacity .4s}
-.sp-ans.hidden{opacity:0}
-.sp-pts{width:80px;text-align:center;font-family:'Exo 2',sans-serif;font-size:26px;font-weight:800;font-style:italic;padding:0 14px;transition:opacity .4s}
-.sp-pts.hidden{opacity:0}
-.sp-pts.t1{color:#4f9eff}.sp-pts.t2{color:#ff6b9d}.sp-pts.neutral{color:rgba(255,255,255,0.25)}
-.sp-waiting{display:flex;align-items:center;justify-content:center;flex:1;color:rgba(255,255,255,0.2);font-size:18px;font-weight:600}
-</style></head><body>
-<div class="sp-top">
-  <div class="sp-score-block">
-    <div class="sp-score t1" id="sp-s1">0</div>
-    <div class="sp-name t1" id="sp-n1">Équipe 1</div>
-  </div>
-  <div class="sp-q-center">
-    <div class="sp-q-label">Question</div>
-    <div class="sp-q-text" id="sp-q">En attente…</div>
-  </div>
-  <div class="sp-score-block t2">
-    <div class="sp-score t2" id="sp-s2">0</div>
-    <div class="sp-name t2" id="sp-n2">Équipe 2</div>
-  </div>
-</div>
-<div class="sp-turn">
-  <div class="sp-turn-badge t1" id="sp-turn-t1">Équipe 1</div>
-  <div class="sp-sep">joue</div>
-  <div class="sp-turn-badge t2 inactive" id="sp-turn-t2">Équipe 2</div>
-</div>
-<div class="sp-board" id="sp-board">
-  <div class="sp-waiting">En attente du maître du jeu…</div>
-</div>
-<script>
-let pScores=[0,0];
-function applyPanelState(s){
-  if(!s||!s.active){document.getElementById('sp-board').innerHTML='<div class="sp-waiting">En attente du maître du jeu…</div>';return;}
-  document.getElementById('sp-q').textContent=s.question||'—';
-  document.getElementById('sp-n1').textContent=s.team1Name||'Équipe 1';
-  document.getElementById('sp-n2').textContent=s.team2Name||'Équipe 2';
-  document.getElementById('sp-turn-t1').textContent=s.team1Name||'Équipe 1';
-  document.getElementById('sp-turn-t2').textContent=s.team2Name||'Équipe 2';
-  // Scores with bump
-  [1,2].forEach(t=>{
-    const el=document.getElementById('sp-s'+t);
-    const v=s.scores[t-1]||0;
-    if(v!==pScores[t-1]){el.textContent=v;el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');pScores[t-1]=v;}
-    else{el.textContent=v;}
-  });
-  // Turn
-  const tb1=document.getElementById('sp-turn-t1'),tb2=document.getElementById('sp-turn-t2');
-  if(s.currentTeam===1){tb1.classList.remove('inactive');tb2.classList.add('inactive');}
-  else{tb2.classList.remove('inactive');tb1.classList.add('inactive');}
-  // Board
-  if(!s.answers||!s.answers.length){document.getElementById('sp-board').innerHTML='<div class="sp-waiting">En attente…</div>';return;}
-  const grid=s.answers.map((a,i)=>{
-    const rev=a.revealedBy!==null;
-    const tc=rev?'revealed-t'+a.revealedBy:'';
-    const pc=rev?'t'+a.revealedBy:'neutral';
-    return '<div class="sp-row '+tc+'"><div class="sp-rank">'+String(i+1).padStart(2,'0')+'</div><div class="sp-ans'+(rev?'':' hidden')+'">'+a.answer+'</div><div class="sp-pts '+pc+(rev?'':' hidden')+'">'+a.points+'</div></div>';
-  }).join('');
-  document.getElementById('sp-board').innerHTML='<div class="sp-grid">'+grid+'</div>';
-}
-try{const bc2=new BroadcastChannel('panel_spectator');bc2.onmessage=e=>applyPanelState(e.data);}catch(e){}
-setInterval(()=>{try{const r=localStorage.getItem('panel_spectator');if(r)applyPanelState(JSON.parse(r));}catch(e){}},600);
-try{applyPanelState(JSON.parse(localStorage.getItem('panel_spectator')));}catch(e){}
-<\/script></body></html>`;
-}
-
-// ══ ADMIN ══
-function renderAdmin() {
-  const container = document.getElementById('admin-questions');
-  if (!questions.length) {
-    container.innerHTML = '<div class="sel-empty" style="padding:30px 0">Aucune question pour l\'instant.</div>';
-    return;
-  }
-  container.innerHTML = questions.map((q, i) => `
-    <div class="q-card" style="cursor:default">
-      <div class="q-card-num">${String(i+1).padStart(2,'0')}</div>
-      <div class="q-card-text">${q.question}</div>
-      <div class="q-card-count">${(q.panel_answers||[]).length}/6 réponses</div>
-      <button class="btn btn-ghost btn-sm" onclick="openEditModal(${q.id})" style="flex-shrink:0">✏ Modifier</button>
-      <button class="btn btn-sm btn-ghost" onclick="deleteQuestion(${q.id})" style="flex-shrink:0;color:rgba(255,80,80,0.6);border-color:rgba(255,80,80,0.2)">✕</button>
-    </div>
-  `).join('');
-}
-
-let modalEditId = null;
-
-function openAddModal() {
-  const input = document.getElementById('new-q-input');
-  const text = input.value.trim();
-  modalEditId = null;
-  document.getElementById('modal-title').textContent = 'Nouvelle question';
-  document.getElementById('modal-q-text').value = text;
-  input.value = '';
-  buildModalAnswers([]);
-  document.getElementById('q-modal').style.display = 'flex';
-  checkModalValid();
-}
-
-function openEditModal(id) {
-  const q = questions.find(x => x.id === id);
-  if (!q) return;
-  modalEditId = id;
-  document.getElementById('modal-title').textContent = 'Modifier la question';
-  document.getElementById('modal-q-text').value = q.question;
-  buildModalAnswers(q.panel_answers || []);
-  document.getElementById('q-modal').style.display = 'flex';
-  checkModalValid();
-}
-
-function buildModalAnswers(existing) {
-  const grid = document.getElementById('modal-answers-grid');
-  grid.innerHTML = Array.from({length:6}, (_,i) => {
-    const a = existing[i] || {answer:'', points:''};
-    return `<div class="modal-ans-row">
-      <div class="modal-ans-num">${i+1}</div>
-      <input class="modal-ans-input" id="mans-${i}" placeholder="Réponse ${i+1}…" value="${a.answer}" oninput="checkModalValid()">
-      <input class="modal-ans-pts" id="mpts-${i}" type="number" placeholder="pts" value="${a.points||''}" min="1" max="100" oninput="checkModalValid()">
+    return `<div class="reveal-team-row">
+      <div class="reveal-team-header">
+        <div class="reveal-team-name">${t.name}</div>
+        <div class="reveal-team-score" id="reveal-score-${t.name.replace(/\s/g,'_')}">${t.score||0} pts</div>
+      </div>
+      <div class="reveal-team-cards">${cards}</div>
     </div>`;
   }).join('');
 }
 
-function checkModalValid() {
-  const qText = document.getElementById('modal-q-text').value.trim();
-  let allFilled = !!qText;
-  for (let i = 0; i < 6; i++) {
-    const ans = document.getElementById('mans-'+i)?.value.trim();
-    const pts = document.getElementById('mpts-'+i)?.value.trim();
-    if (!ans || !pts || parseInt(pts) < 1) { allFilled = false; break; }
+function revealNext(){
+  if(revealIdx>=revealItems.length){showToast('Tout est révélé');return;}
+  const item=revealItems[revealIdx];
+  // Show in podium
+  const slot=document.getElementById('reveal-slot-'+revealIdx);
+  slot.classList.add('revealed');
+  slot.innerHTML=`${item.image_url?`<img src="${item.image_url}" alt="">`:''}
+    <div class="podium-card-name">${item.name||''}</div>`;
+  // Color team mini-cards
+  const teams=currentSession?.teams||[];
+  teams.forEach(t=>{
+    const ans=revealAnswers.find(a=>a.team_name===t.name);
+    if(!ans)return;
+    const ranking=ans.rankings||[];
+    const teamGuessAtRank=ranking[revealIdx];
+    const correct=teamGuessAtRank===item.id;
+    const key=t.name.replace(/\s/g,'_');
+    const mini=document.getElementById(`mini-${key}-${revealIdx}`);
+    if(mini)mini.classList.add(correct?'correct':'wrong');
+  });
+  revealIdx++;
+  // If all revealed, update scores
+  if(revealIdx===revealItems.length){
+    document.getElementById('btn-reveal-next').style.display='none';
+    updateScoresAfterReveal();
   }
-  document.getElementById('modal-save-btn').disabled = !allFilled;
-  document.getElementById('modal-hint').textContent = allFilled
-    ? 'Tout est rempli ✓'
-    : 'Remplissez la question et les 6 réponses avec leurs points.';
-  document.getElementById('modal-hint').style.color = allFilled ? 'rgba(79,206,143,0.7)' : 'rgba(255,255,255,0.25)';
 }
 
-function closeQModal() {
-  document.getElementById('q-modal').style.display = 'none';
-  modalEditId = null;
+function revealAll(){
+  while(revealIdx<revealItems.length)revealNext();
 }
 
-async function saveQModal() {
-  const qText = document.getElementById('modal-q-text').value.trim();
-  if (!qText) return;
-  const answers = Array.from({length:6}, (_,i) => ({
-    answer: document.getElementById('mans-'+i).value.trim(),
-    points: parseInt(document.getElementById('mpts-'+i).value) || 0
-  }));
-
-  if (modalEditId) {
-    const { error: qErr } = await db.from('panel_questions').update({ question: qText }).eq('id', modalEditId);
-    if (qErr) { showToast('Erreur : ' + qErr.message); return; }
-    await db.from('panel_answers').delete().eq('question_id', modalEditId);
-    const { error: aErr } = await db.from('panel_answers').insert(
-      answers.map((a,i) => ({ question_id: modalEditId, answer: a.answer, points: a.points, sort_order: i }))
-    );
-    if (aErr) { showToast('Erreur réponses : ' + aErr.message); return; }
-    showToast('Question mise à jour ✓');
-  } else {
-    const { data: qData, error: qErr } = await db.from('panel_questions')
-      .insert({ question: qText, sort_order: questions.length })
-      .select().single();
-    if (qErr) { showToast('Erreur : ' + qErr.message); return; }
-    const { error: aErr } = await db.from('panel_answers').insert(
-      answers.map((a,i) => ({ question_id: qData.id, answer: a.answer, points: a.points, sort_order: i }))
-    );
-    if (aErr) { showToast('Erreur réponses : ' + aErr.message); return; }
-    showToast('Question ajoutée ✓');
-  }
-  closeQModal();
-  await loadQuestions();
-}
-
-async function deleteQuestion(id) {
-  const pin = prompt('Code de suppression :');
-  if (pin !== '1234') { showToast('Code incorrect'); return; }
-  await db.from('panel_questions').delete().eq('id', id);
-  await loadQuestions();
-  showToast('Question supprimée');
-}
-
-
-// ══ UTILS ══
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 1800);
-}
-
-// ══ SCORE EDIT ══
-function openScoreModal() {
-  document.getElementById('score-modal-lbl1').textContent = document.getElementById('name-t1').textContent;
-  document.getElementById('score-modal-lbl2').textContent = document.getElementById('name-t2').textContent;
-  document.getElementById('score-modal-t1').value = scores[0];
-  document.getElementById('score-modal-t2').value = scores[1];
-  document.getElementById('score-modal').style.display = 'flex';
-  document.getElementById('score-modal-t1').focus();
-  document.getElementById('score-modal-t1').select();
-}
-
-function closeScoreModal() {
-  document.getElementById('score-modal').style.display = 'none';
-}
-
-function applyScores() {
-  const s1 = parseInt(document.getElementById('score-modal-t1').value) || 0;
-  const s2 = parseInt(document.getElementById('score-modal-t2').value) || 0;
-  scores = [s1, s2];
-  updateScoreUI();
-  pushSpectator();
-  closeScoreModal();
+async function updateScoresAfterReveal(){
+  const teams=currentSession?.teams||[];
+  const updatedTeams=teams.map(t=>{
+    const ans=revealAnswers.find(a=>a.team_name===t.name);
+    if(!ans)return t;
+    const ranking=ans.rankings||[];
+    let pts=0, allCorrect=true;
+    revealItems.forEach((item,i)=>{
+      if(ranking[i]===item.id)pts+=1;
+      else allCorrect=false;
+    });
+    if(allCorrect)pts+=5;
+    return {...t,score:(t.score||0)+pts};
+  });
+  await db.from('podium_sessions').update({
+    teams:updatedTeams,
+    done_question_ids:[...(currentSession?.done_question_ids||[]),currentQuestionId]
+  }).eq('id',currentSessionId);
+  currentSession={...currentSession,teams:updatedTeams};
+  // Update display
+  updatedTeams.forEach(t=>{
+    const key=t.name.replace(/\s/g,'_');
+    const el=document.getElementById('reveal-score-'+key);
+    if(el)el.textContent=(t.score||0)+' pts';
+  });
   showToast('Scores mis à jour ✓');
 }
 
-// ══ SOUND ENGINE ══
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let audioCtx = null;
-
-function getAudio() {
-  if (!audioCtx) audioCtx = new AudioCtx();
-  return audioCtx;
+// ── SCORE EDIT ──
+function openScoreEditModal(){
+  const teams=currentSession?.teams||[];
+  const body=document.getElementById('score-edit-body');
+  body.innerHTML=teams.map(t=>`
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <label class="modal-label" style="color:#f472b6">${t.name}</label>
+      <input class="modal-input" id="se-${t.name.replace(/\s/g,'_')}" type="number" min="0" value="${t.score||0}" style="font-size:24px;font-weight:800;text-align:center;color:#f472b6">
+    </div>`).join('');
+  document.getElementById('score-edit-modal').style.display='flex';
+}
+function closeScoreEditModal(){document.getElementById('score-edit-modal').style.display='none';}
+async function applyScoreEdits(){
+  const teams=(currentSession?.teams||[]).map(t=>{
+    const val=parseInt(document.getElementById('se-'+t.name.replace(/\s/g,'_'))?.value)||0;
+    return {...t,score:val};
+  });
+  await db.from('podium_sessions').update({teams}).eq('id',currentSessionId);
+  currentSession={...currentSession,teams};
+  renderMasterTeams(teams);
+  closeScoreEditModal();
+  showToast('Scores mis à jour ✓');
 }
 
-function playGoodSound() {
-  try {
-    const ctx = getAudio();
-    const t = ctx.currentTime;
-    // Success fanfare: 3-note ascending chord ding
-    const notes = [
-      { freq: 523.25, delay: 0,    dur: 0.5 },  // C5
-      { freq: 659.25, delay: 0.1,  dur: 0.45 }, // E5
-      { freq: 783.99, delay: 0.2,  dur: 0.55 }, // G5
-      { freq: 1046.5, delay: 0.28, dur: 0.7 },  // C6 — top note
-    ];
-    notes.forEach(({ freq, delay, dur }) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      // Add slight harmonic for richness
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc2.connect(gain2); gain2.connect(ctx.destination);
-      osc.type = 'triangle';
-      osc2.type = 'sine';
-      osc.frequency.value = freq;
-      osc2.frequency.value = freq * 2;
-      gain.gain.setValueAtTime(0, t + delay);
-      gain.gain.linearRampToValueAtTime(0.22, t + delay + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + delay + dur);
-      gain2.gain.setValueAtTime(0, t + delay);
-      gain2.gain.linearRampToValueAtTime(0.07, t + delay + 0.015);
-      gain2.gain.exponentialRampToValueAtTime(0.001, t + delay + dur * 0.6);
-      osc.start(t + delay); osc.stop(t + delay + dur + 0.05);
-      osc2.start(t + delay); osc2.stop(t + delay + dur + 0.05);
-    });
-  } catch(e) {}
+// ── JOIN (team) ──
+async function joinSession(){
+  const code=document.getElementById('join-code').value.trim().toUpperCase();
+  const name=document.getElementById('join-team-name').value.trim();
+  if(!code||!name){showToast('Remplis les deux champs');return;}
+  const {data}=await db.from('podium_sessions').select('*').eq('code',code).single();
+  if(!data){document.getElementById('join-error').style.display='block';return;}
+  teamSessionId=data.id;
+  teamName=name;
+  teamScore=(data.teams||[]).find(t=>t.name===name)?.score||0;
+  // Add team if not present
+  const teams=data.teams||[];
+  if(!teams.find(t=>t.name===name)){
+    teams.push({name,score:0,submitted:false});
+    await db.from('podium_sessions').update({teams}).eq('id',data.id);
+  }
+  document.getElementById('join-error').style.display='none';
+  document.getElementById('team-name-disp').textContent=name;
+  document.getElementById('team-score-disp').textContent=teamScore+' pts';
+  subscribeAsTeam(data);
+  showView('team');
 }
 
-function playRevealNoTeamSound() {
-  try {
-    const ctx = getAudio();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(440, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.4);
-  } catch(e) {}
+function subscribeAsTeam(sess){
+  applySessionToTeam(sess);
+  if(sessionSub)sessionSub.unsubscribe();
+  sessionSub=db.channel('team-session-'+teamSessionId)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'podium_sessions',filter:'id=eq.'+teamSessionId},
+      p=>applySessionToTeam(p.new))
+    .subscribe();
 }
 
-function playWrongSound() {
-  try {
-    const ctx = getAudio();
-    const t = ctx.currentTime;
-    // Two descending buzzer tones — classic wrong answer sound
-    [0, 0.22].forEach((delay) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(180, t + delay);
-      osc.frequency.exponentialRampToValueAtTime(100, t + delay + 0.18);
-      gain.gain.setValueAtTime(0, t + delay);
-      gain.gain.linearRampToValueAtTime(0.25, t + delay + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.2);
-      osc.start(t + delay);
-      osc.stop(t + delay + 0.25);
-    });
-  } catch(e) {}
+function applySessionToTeam(sess){
+  const myTeam=(sess.teams||[]).find(t=>t.name===teamName);
+  if(myTeam){
+    teamScore=myTeam.score||0;
+    document.getElementById('team-score-disp').textContent=teamScore+' pts';
+  }
+  if(sess.current_question_id){
+    const q=questions.find(x=>x.id===sess.current_question_id);
+    if(q){
+      document.getElementById('team-question').textContent=q.question;
+      currentItems=q.podium_items||[];
+      if(!myTeam?.submitted)buildDragCards(q.podium_items||[]);
+      else showSubmitted();
+    }
+  }
+  const timerEl=document.getElementById('team-timer');
+  if(sess.status==='playing'){
+    timerEl.style.display='block';
+    startTeamTimer(sess.timer_duration||30);
+  } else {
+    timerEl.style.display='none';
+    clearInterval(timerInterval);
+  }
 }
 
-function wrongAnswer() {
-  // Shake all unrevealed rows slightly, play wrong sound
-  playWrongSound();
-  // Shake the whole grid briefly
-  const grid = document.getElementById('answers-grid');
-  grid.classList.remove('wrong-shake');
-  void grid.offsetWidth;
-  grid.classList.add('wrong-shake');
-  showToast('✗ Mauvaise réponse');
+let teamTimerStarted=false;
+function startTeamTimer(duration){
+  if(teamTimerStarted)return;
+  teamTimerStarted=true;
+  timerVal=duration;
+  const el=document.getElementById('team-timer');
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    timerVal--;
+    el.textContent=timerVal;
+    el.className='team-timer '+(timerVal>duration*.5?'ok':timerVal>10?'warn':'urgent');
+    if(timerVal<=0){clearInterval(timerInterval);teamTimerStarted=false;}
+  },1000);
 }
 
-// ══ STARTING TEAM TRACKING ══
-let startingTeam = 1; // who started last question
-let questionCount = 0;
-
-function getNextStartingTeam() {
-  return startingTeam === 1 ? 2 : 1;
+// ── DRAG & DROP ──
+function buildDragCards(items){
+  // Shuffle for the team
+  const shuffled=[...items].sort(()=>Math.random()-.5);
+  teamDragOrder=shuffled.map(i=>i.id);
+  const area=document.getElementById('drag-area');
+  area.innerHTML=shuffled.map((item,i)=>`
+    <div class="drag-card" id="dc-${item.id}" draggable="true"
+      ondragstart="dragStart(event,'${item.id}')"
+      ondragover="dragOver(event)"
+      ondrop="dragDrop(event,'${item.id}')"
+      ondragend="dragEnd(event)"
+      ontouchstart="touchStart(event,'${item.id}')"
+      ontouchmove="touchMove(event)"
+      ontouchend="touchEnd(event,'${item.id}')">
+      <div class="drag-rank" id="dr-${item.id}">${i+1}</div>
+      ${item.image_url?`<img src="${item.image_url}" alt="">`:''}
+      <div class="drag-card-name">${item.name||''}</div>
+      <div class="drag-handle">⠿</div>
+    </div>`).join('');
+  document.getElementById('team-submit-bar').style.display='block';
+  document.getElementById('drag-area').style.display='flex';
+  teamTimerStarted=false;
 }
 
-function renderStartReminder() {
-  const el = document.getElementById('start-reminder');
-  if (!el) return;
-  const next = getNextStartingTeam();
-  const name = next === 1
-    ? document.getElementById('name-t1').textContent
-    : document.getElementById('name-t2').textContent;
-  el.className = 'start-reminder t' + next;
-  el.innerHTML = `Pour cette question, c'est <span>${name}</span> qui commence`;
+function showSubmitted(){
+  document.getElementById('drag-area').innerHTML='';
+  document.getElementById('team-submit-bar').innerHTML='<div class="team-submitted-msg">✓ Réponse envoyée ! En attente de la révélation…</div>';
+}
+
+// Drag & Drop
+let dragSrc=null;
+function dragStart(e,id){dragSrc=id;e.currentTarget.classList.add('dragging');}
+function dragEnd(e){e.currentTarget.classList.remove('dragging');}
+function dragOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
+function dragDrop(e,targetId){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(!dragSrc||dragSrc===targetId)return;
+  swapCards(dragSrc,targetId);
+  dragSrc=null;
+}
+
+// Touch drag
+let touchDragId=null, touchClone=null;
+function touchStart(e,id){
+  touchDragId=id;
+  const card=document.getElementById('dc-'+id);
+  const rect=card.getBoundingClientRect();
+  touchClone=card.cloneNode(true);
+  touchClone.style.cssText=`position:fixed;top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;opacity:0.8;z-index:1000;pointer-events:none;transition:none`;
+  document.body.appendChild(touchClone);
+  card.style.opacity='0.3';
+}
+function touchMove(e){
+  if(!touchClone)return;
+  e.preventDefault();
+  const t=e.touches[0];
+  touchClone.style.top=(t.clientY-30)+'px';
+  touchClone.style.left=(t.clientX-touchClone.offsetWidth/2)+'px';
+}
+function touchEnd(e,id){
+  if(!touchClone)return;
+  const t=e.changedTouches[0];
+  document.querySelectorAll('.drag-card').forEach(card=>{
+    const rect=card.getBoundingClientRect();
+    if(t.clientX>=rect.left&&t.clientX<=rect.right&&t.clientY>=rect.top&&t.clientY<=rect.bottom){
+      const targetId=card.id.replace('dc-','');
+      if(targetId!==touchDragId)swapCards(touchDragId,targetId);
+    }
+  });
+  touchClone.remove();touchClone=null;
+  const src=document.getElementById('dc-'+touchDragId);
+  if(src)src.style.opacity='1';
+  touchDragId=null;
+}
+
+function swapCards(id1,id2){
+  const area=document.getElementById('drag-area');
+  const cards=[...area.children];
+  const el1=document.getElementById('dc-'+id1);
+  const el2=document.getElementById('dc-'+id2);
+  if(!el1||!el2)return;
+  const idx1=cards.indexOf(el1);
+  const idx2=cards.indexOf(el2);
+  if(idx1<idx2)el2.parentNode.insertBefore(el1,el2.nextSibling);
+  else el1.parentNode.insertBefore(el2,el1.nextSibling);
+  // Renumber
+  [...area.children].forEach((card,i)=>{
+    const rid=card.id.replace('dc-','');
+    const rankEl=document.getElementById('dr-'+rid);
+    if(rankEl)rankEl.textContent=i+1;
+  });
+  // Update teamDragOrder
+  teamDragOrder=[...area.children].map(c=>parseInt(c.id.replace('dc-','')));
+}
+
+async function submitAnswer(){
+  if(!teamDragOrder.length){showToast('Classez les cartes d\'abord');return;}
+  const {error}=await db.from('podium_answers').insert({
+    session_id:teamSessionId,
+    question_id:currentItems[0]?.question_id||null,
+    team_name:teamName,
+    rankings:teamDragOrder
+  });
+  if(error){showToast('Erreur : '+error.message);return;}
+  // Mark as submitted
+  const {data:sess}=await db.from('podium_sessions').select('teams').eq('id',teamSessionId).single();
+  const teams=(sess?.teams||[]).map(t=>t.name===teamName?{...t,submitted:true}:t);
+  await db.from('podium_sessions').update({teams}).eq('id',teamSessionId);
+  showSubmitted();
+  showToast('Classement envoyé ✓');
+}
+
+// ── ADMIN ──
+function renderAdmin(){
+  const container=document.getElementById('admin-questions');
+  if(!container)return;
+  if(!questions.length){container.innerHTML='<div class="empty-state" style="padding:30px 0">Aucune question.</div>';return;}
+  container.innerHTML=questions.map((q,i)=>`
+    <div class="admin-q-card">
+      <div class="admin-q-header">
+        <div class="admin-q-text">${q.question}</div>
+        <div class="admin-q-count">${(q.podium_items||[]).length}/5</div>
+        <button class="btn btn-ghost btn-sm" onclick="openItemsModal(${q.id})">✏ Éléments</button>
+        <button class="btn btn-ghost btn-sm" style="color:rgba(255,80,80,0.6);border-color:rgba(255,80,80,0.2)" onclick="deleteQuestion(${q.id})">✕</button>
+      </div>
+      ${(q.podium_items||[]).length?`<div class="admin-items-preview">${q.podium_items.map(item=>`
+        <div class="admin-item-chip">
+          <span class="admin-item-rank">#${item.correct_rank}</span>
+          ${item.image_url?`<img src="${item.image_url}" alt="">`:''}
+          <span>${item.name||''}</span>
+        </div>`).join('')}</div>`:''}
+    </div>`).join('');
+}
+
+async function addQuestion(){
+  const input=document.getElementById('new-q-input');
+  const text=input.value.trim();
+  if(!text)return;
+  const {error}=await db.from('podium_questions').insert({question:text,sort_order:questions.length});
+  if(error){showToast('Erreur : '+error.message);return;}
+  input.value='';
+  await loadQuestions();
+  showToast('Question ajoutée ✓');
+}
+
+async function deleteQuestion(id){
+  const pin=prompt('Code de suppression :');
+  if(pin!=='1234'){showToast('Code incorrect');return;}
+  await db.from('podium_questions').delete().eq('id',id);
+  await loadQuestions();
+}
+
+// ── ITEMS MODAL ──
+function openItemsModal(qId){
+  editingQId=qId;
+  const q=questions.find(x=>x.id===qId);
+  document.getElementById('items-modal-title').textContent=q?q.question:'Éléments';
+  const grid=document.getElementById('items-grid');
+  grid.innerHTML=Array.from({length:5},(_,i)=>{
+    const item=(q?.podium_items||[])[i]||{name:'',image_url:'',correct_rank:i+1};
+    return `<div class="item-row">
+      <div class="item-rank-badge">${i+1}</div>
+      <input class="item-name-input" id="iname-${i}" placeholder="Nom…" value="${item.name||''}">
+      ${item.image_url?`<img class="item-img-preview" id="iimg-${i}" src="${item.image_url}" style="display:block">`:
+        `<img class="item-img-preview" id="iimg-${i}" src="">`}
+      <button class="item-img-btn" onclick="pasteImgUrl(${i})">+ URL img</button>
+    </div>`;
+  }).join('');
+  document.getElementById('items-modal').style.display='flex';
+}
+
+function closeItemsModal(){document.getElementById('items-modal').style.display='none';}
+
+function pasteImgUrl(i){
+  const url=prompt('URL de l\'image :');
+  if(!url)return;
+  const img=document.getElementById('iimg-'+i);
+  img.src=url;img.style.display='block';
+}
+
+async function saveItems(){
+  const q=questions.find(x=>x.id===editingQId);
+  const existingItems=q?.podium_items||[];
+  // Delete all existing items
+  if(existingItems.length)await db.from('podium_items').delete().eq('question_id',editingQId);
+  // Insert new
+  const items=Array.from({length:5},(_,i)=>{
+    const name=document.getElementById('iname-'+i).value.trim();
+    const imgEl=document.getElementById('iimg-'+i);
+    const image_url=imgEl&&imgEl.style.display!=='none'?imgEl.src:'';
+    return {question_id:editingQId,name,image_url:image_url||null,correct_rank:i+1};
+  }).filter(item=>item.name||item.image_url);
+  if(items.length){
+    const {error}=await db.from('podium_items').insert(items);
+    if(error){showToast('Erreur : '+error.message);return;}
+  }
+  closeItemsModal();
+  await loadQuestions();
+  showToast('Éléments sauvegardés ✓');
+}
+
+function renderQPicker(){
+  const el=document.getElementById('q-picker-list');
+  if(!el)return;
+}
+
+// ── UTILS ──
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
 }
 
 init();
 </script>
-<!-- ══ SCORE EDIT MODAL ══ -->
-<div class="modal-backdrop" id="score-modal" style="display:none" onclick="if(event.target===this)closeScoreModal()">
-  <div class="modal-box" style="max-width:380px">
-    <div class="modal-header">
-      <div class="modal-title">Modifier les scores</div>
-      <button class="modal-close" onclick="closeScoreModal()">✕</button>
-    </div>
-    <div class="modal-body" style="gap:20px">
-      <div class="modal-field">
-        <label class="modal-label t1" style="color:#4f9eff" id="score-modal-lbl1">Équipe 1</label>
-        <input class="modal-input" id="score-modal-t1" type="number" min="0" style="font-size:28px;font-weight:800;text-align:center;color:#4f9eff">
-      </div>
-      <div class="modal-field">
-        <label class="modal-label t2" style="color:#ff6b9d" id="score-modal-lbl2">Équipe 2</label>
-        <input class="modal-input" id="score-modal-t2" type="number" min="0" style="font-size:28px;font-weight:800;text-align:center;color:#ff6b9d">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeScoreModal()">Annuler</button>
-      <button class="btn btn-primary" onclick="applyScores()">Valider</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
