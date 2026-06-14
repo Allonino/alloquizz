@@ -384,20 +384,24 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
   </div>
 </div>
 
-<!-- ══ ITEMS MODAL ══ -->
+<!-- ══ QUESTION MODAL ══ -->
 <div class="modal-backdrop" id="items-modal" style="display:none" onclick="if(event.target===this)closeItemsModal()">
   <div class="modal-box">
     <div class="modal-header">
-      <div class="modal-title" id="items-modal-title">Éléments</div>
+      <div class="modal-title" id="items-modal-title">Nouvelle question</div>
       <button class="modal-close" onclick="closeItemsModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div style="font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:4px">Renseignez les 5 éléments dans l'ordre du classement correct (1 = premier)</div>
+      <div>
+        <label class="modal-label">Question</label>
+        <input class="modal-input" id="modal-q-text" placeholder="ex: Classe ces 5 basketteurs par taille">
+      </div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.3)">Éléments dans l'ordre correct (1 = premier du classement)</div>
       <div class="items-grid" id="items-grid"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeItemsModal()">Annuler</button>
-      <button class="btn btn-pink" onclick="saveItems()">Enregistrer</button>
+      <button class="btn btn-pink" id="items-modal-save" onclick="saveItems()" disabled>Enregistrer</button>
     </div>
   </div>
 </div>
@@ -409,10 +413,7 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
     <button class="btn btn-ghost btn-sm" onclick="showView('home')">← Retour</button>
   </div>
   <div class="admin-q-list" id="admin-questions"></div>
-  <div class="add-q-form">
-    <input class="add-q-input" id="new-q-input" placeholder="Nouvelle question… (ex: Classe ces 5 basketteurs par taille)" onkeydown="if(event.key==='Enter')addQuestion()">
-    <button class="btn btn-pink btn-sm" onclick="addQuestion()">+ Ajouter</button>
-  </div>
+  <button class="btn btn-pink" onclick="openNewQuestionModal()" style="align-self:flex-start">+ Nouvelle question</button>
 </div>
 
 <!-- ══ SCORE EDIT MODAL ══ -->
@@ -1043,16 +1044,23 @@ function pasteImgUrl(i){
 }
 
 async function saveItems(){
-  const q=questions.find(x=>x.id===editingQId);
-  const existingItems=q?.podium_items||[];
-  // Delete all existing items
-  if(existingItems.length)await db.from('podium_items').delete().eq('question_id',editingQId);
-  // Insert new
+  const qText=document.getElementById('modal-q-text').value.trim();
+  if(!qText){showToast('Entrez une question');return;}
+  let qId=editingQId;
+  if(!qId){
+    // Create new question
+    const {data,error}=await db.from('podium_questions').insert({question:qText,sort_order:questions.length}).select().single();
+    if(error){showToast('Erreur : '+error.message);return;}
+    qId=data.id;
+  } else {
+    await db.from('podium_questions').update({question:qText}).eq('id',qId);
+    await db.from('podium_items').delete().eq('question_id',qId);
+  }
   const items=Array.from({length:5},(_,i)=>{
     const name=document.getElementById('iname-'+i).value.trim();
     const imgEl=document.getElementById('iimg-'+i);
-    const image_url=imgEl&&imgEl.style.display!=='none'?imgEl.src:'';
-    return {question_id:editingQId,name,image_url:image_url||null,correct_rank:i+1};
+    const image_url=imgEl&&imgEl.style.display!=='none'&&imgEl.src?imgEl.src:null;
+    return {question_id:qId,name,image_url,correct_rank:i+1};
   }).filter(item=>item.name||item.image_url);
   if(items.length){
     const {error}=await db.from('podium_items').insert(items);
@@ -1060,7 +1068,7 @@ async function saveItems(){
   }
   closeItemsModal();
   await loadQuestions();
-  showToast('Éléments sauvegardés ✓');
+  showToast(editingQId?'Question mise à jour ✓':'Question ajoutée ✓');
 }
 
 function renderQPicker(){
