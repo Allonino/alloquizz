@@ -612,10 +612,18 @@ async function confirmEndSession(){
 // ── SUBSCRIBE (master) ──
 function subscribeToSession(){
   if(sessionSub)sessionSub.unsubscribe();
-  sessionSub=db.channel('session-'+currentSessionId)
+  sessionSub=db.channel('podium-master-'+currentSessionId)
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'podium_sessions',filter:'id=eq.'+currentSessionId},
-      p=>{currentSession=p.new;renderMasterTeams(p.new.teams||[]);})
+      p=>{currentSession=p.new;renderMasterTeams(p.new.teams||[]);renderSubmitProgress();})
     .subscribe();
+  // Polling fallback every 2s
+  if(window._masterPoll)clearInterval(window._masterPoll);
+  window._masterPoll=setInterval(async()=>{
+    const {data}=await db.from('podium_sessions').select('*').eq('id',currentSessionId).single();
+    if(data&&data.updated_at!==currentSession?.updated_at){
+      currentSession=data;renderMasterTeams(data.teams||[]);renderSubmitProgress();
+    }
+  },2000);
 }
 
 // ── MASTER TEAMS ──
