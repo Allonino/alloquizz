@@ -8,407 +8,418 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
 body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
 
-#loading-overlay{position:fixed;inset:0;background:#06060d;z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .4s}
-#loading-overlay.hidden{opacity:0;pointer-events:none}
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e1e2e;border:1px solid rgba(255,255,255,0.12);color:#f0f0f5;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;transition:all .25s;z-index:9999;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#loading{position:fixed;inset:0;background:#06060d;z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#loading.hidden{display:none}
 .spinner{width:32px;height:32px;border:3px solid rgba(244,114,182,0.2);border-top-color:#f472b6;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e1e2e;border:1px solid rgba(255,255,255,0.12);color:#f0f0f5;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;transition:all .25s;z-index:9999;white-space:nowrap;pointer-events:none}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* ── HEADER ── */
-.header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.logo{font-family:'Exo 2',sans-serif;font-size:20px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;color:#f0f0f5}
+.header{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em}
 .logo span{color:#f472b6}
 
 /* ── VIEWS ── */
-.view{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px}
+.view{display:none;flex-direction:column;flex:1;padding:24px 20px}
 .view.active{display:flex}
 
-/* ── JOIN STEP CODE ── */
-.join-box{width:100%;max-width:380px;display:flex;flex-direction:column;gap:20px}
-.join-title{font-family:'Exo 2',sans-serif;font-size:26px;font-weight:800;font-style:italic;text-transform:uppercase;text-align:center;letter-spacing:.04em}
+/* ── CODE VIEW ── */
+#v-code{align-items:center;justify-content:center;gap:20px}
+.join-box{width:100%;max-width:360px;display:flex;flex-direction:column;gap:16px}
+.join-title{font-family:'Exo 2',sans-serif;font-size:24px;font-weight:800;font-style:italic;text-transform:uppercase;text-align:center;letter-spacing:.04em}
 .join-title span{color:#f472b6}
-.join-input{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:14px;padding:16px 20px;font-size:24px;font-weight:800;letter-spacing:.25em;text-transform:uppercase;color:#f0f0f5;font-family:'Exo 2',sans-serif;width:100%;outline:none;text-align:center;transition:border-color .2s}
-.join-input:focus{border-color:rgba(244,114,182,0.5)}
-.join-error{color:#f87171;font-size:13px;text-align:center;display:none}
-.btn-main{display:flex;align-items:center;justify-content:center;width:100%;padding:16px;border-radius:14px;font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;background:#f472b6;color:#fff;font-family:'DM Sans',sans-serif;transition:filter .2s,transform .15s}
-.btn-main:hover{filter:brightness(1.1)}
-.btn-main:active{transform:scale(.97)}
+.code-input{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:14px;padding:16px;font-size:28px;font-weight:800;letter-spacing:.25em;text-transform:uppercase;color:#f0f0f5;font-family:'Exo 2',sans-serif;width:100%;outline:none;text-align:center;transition:border-color .2s}
+.code-input:focus{border-color:rgba(244,114,182,0.5)}
+.err{color:#f87171;font-size:13px;text-align:center;display:none}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;padding:15px;border-radius:14px;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:filter .2s,transform .15s}
+.btn:active{transform:scale(.97)}
+.btn-pink{background:#f472b6;color:#fff}
+.btn-pink:hover{filter:brightness(1.1)}
 .btn-ghost{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1)}
 
-/* ── JOIN STEP TEAM ── */
-.teams-title{font-size:13px;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:4px}
-.teams-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:380px}
-.team-btn{display:flex;align-items:center;justify-content:center;padding:18px 20px;border-radius:14px;font-size:17px;font-weight:700;font-family:'Exo 2',sans-serif;font-style:italic;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;border:1.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#f0f0f5;transition:all .2s}
+/* ── TEAM PICK VIEW ── */
+#v-team{align-items:center;justify-content:center;gap:16px}
+.teams-list{width:100%;max-width:360px;display:flex;flex-direction:column;gap:10px}
+.team-btn{display:flex;align-items:center;justify-content:center;padding:18px;border-radius:14px;font-size:17px;font-weight:700;font-family:'Exo 2',sans-serif;font-style:italic;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;border:1.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#f0f0f5;transition:all .2s;width:100%}
 .team-btn:hover{border-color:rgba(244,114,182,0.5);background:rgba(244,114,182,0.08);color:#f472b6}
 
+/* ── WAITING VIEW ── */
+#v-waiting{align-items:center;justify-content:center;gap:16px;text-align:center}
+.wait-team{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;text-transform:uppercase;color:#f472b6;letter-spacing:.06em}
+.wait-msg{font-size:14px;color:rgba(255,255,255,0.35)}
+
 /* ── GAME VIEW ── */
-#view-game{padding:0;align-items:stretch;justify-content:flex-start;overflow:hidden}
-.game-header{padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.game-team-badge{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;color:#f472b6;text-transform:uppercase;letter-spacing:.06em}
-.game-score{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic}
-.game-question{padding:16px 20px 8px;text-align:center;font-size:16px;font-weight:600;color:#f0f0f5;flex-shrink:0}
-.game-timer{text-align:center;font-family:'Exo 2',sans-serif;font-size:42px;font-weight:800;font-style:italic;padding:4px 0;flex-shrink:0;transition:color .3s}
+#v-game{padding:0;gap:0}
+.game-top{padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.game-team{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;color:#f472b6;text-transform:uppercase;letter-spacing:.06em}
+.game-score{font-family:'Exo 2',sans-serif;font-size:20px;font-weight:800;font-style:italic}
+.game-q{padding:14px 20px 6px;text-align:center;font-size:15px;font-weight:600;flex-shrink:0}
+.game-timer{text-align:center;font-family:'Exo 2',sans-serif;font-size:48px;font-weight:800;font-style:italic;padding:4px 0;flex-shrink:0;transition:color .3s}
 .game-timer.ok{color:#4fce8f}.game-timer.warn{color:#fb923c}.game-timer.urgent{color:#f87171;animation:pulse .5s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
 .drag-hint{font-size:11px;color:rgba(255,255,255,0.25);text-align:center;padding:4px 0;flex-shrink:0}
-.drag-area{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px 16px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-
-.drag-card{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:grab;user-select:none;transition:transform .15s,border-color .15s,background .15s;touch-action:none}
-.drag-card:active{cursor:grabbing}
-.drag-card.dragging{opacity:.5;transform:scale(.98)}
+.drag-area{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px 16px;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0}
+.drag-card{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:grab;user-select:none;touch-action:none;transition:transform .15s,border-color .15s,background .15s}
 .drag-card.drag-over{border-color:#f472b6;background:rgba(244,114,182,0.1);transform:scale(1.02)}
+.drag-card.dragging{opacity:.4;transform:scale(.97)}
 .drag-rank{font-family:'Exo 2',sans-serif;font-size:20px;font-weight:800;font-style:italic;color:rgba(244,114,182,0.5);width:28px;flex-shrink:0;text-align:center}
 .drag-card img{width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0}
-.drag-card-name{flex:1;font-size:15px;font-weight:600;color:#f0f0f5}
+.drag-card-name{flex:1;font-size:15px;font-weight:600}
 .drag-handle{color:rgba(255,255,255,0.2);font-size:20px;flex-shrink:0}
+.submit-bar{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0;background:#06060d;position:sticky;bottom:0}
+.submitted-msg{text-align:center;padding:16px;color:rgba(255,255,255,0.4);font-size:14px;font-style:italic}
 
-.submit-bar{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.07);position:sticky;bottom:0;background:#06060d;z-index:10}
-.submitted-msg{text-align:center;padding:20px;color:rgba(255,255,255,0.4);font-size:14px;font-style:italic}
-
-/* ── WAITING ── */
-.waiting-box{display:flex;flex-direction:column;align-items:center;gap:16px;color:rgba(255,255,255,0.3);text-align:center}
-.waiting-box svg{opacity:.3}
-.waiting-title{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
-.waiting-sub{font-size:13px}
+/* ── DONE VIEW ── */
+#v-done{align-items:center;justify-content:center;gap:16px;text-align:center}
+.done-icon{font-size:48px}
+.done-title{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;text-transform:uppercase;color:#4fce8f}
+.done-msg{font-size:14px;color:rgba(255,255,255,0.35)}
 </style>
 </head>
 <body>
-
-<div id="loading-overlay"><div class="spinner"></div><div style="font-size:13px;color:rgba(255,255,255,0.3)">Chargement…</div></div>
+<div id="loading"><div class="spinner"></div><div style="font-size:13px;color:rgba(255,255,255,0.3)">Chargement…</div></div>
 <div id="toast"></div>
 
 <div class="header">
   <div class="logo">Le <span>Podium</span></div>
+  <div id="header-team" style="font-size:13px;color:rgba(244,114,182,0.6);font-weight:600"></div>
 </div>
 
-<!-- ══ CODE ══ -->
-<div class="view active" id="view-code">
+<!-- CODE -->
+<div class="view" id="v-code">
   <div class="join-box">
     <div class="join-title">Rejoindre <span>une partie</span></div>
-    <input class="join-input" id="join-code" maxlength="4" placeholder="ABCD" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')lookupSession()">
-    <div class="join-error" id="join-error">Code invalide ou partie introuvable</div>
-    <button class="btn-main" onclick="lookupSession()">Continuer →</button>
+    <input class="code-input" id="inp-code" maxlength="4" placeholder="ABCD" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')doLookup()">
+    <div class="err" id="err-code">Code invalide</div>
+    <button class="btn btn-pink" onclick="doLookup()">Continuer →</button>
   </div>
 </div>
 
-<!-- ══ TEAM PICK ══ -->
-<div class="view" id="view-team-pick">
-  <div class="teams-title">Choisissez votre équipe</div>
-  <div class="teams-list" id="teams-list"></div>
-  <button class="btn-main btn-ghost" onclick="showView('code')" style="max-width:380px;margin-top:12px">← Retour</button>
+<!-- TEAM PICK -->
+<div class="view" id="v-team">
+  <div style="font-size:13px;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:4px">Choisissez votre équipe</div>
+  <div class="teams-list" id="teams-list" style="margin:0 auto"></div>
+  <button class="btn btn-ghost" onclick="goBack()" style="max-width:360px;margin:8px auto 0">← Retour</button>
 </div>
 
-<!-- ══ WAITING ── -->
-<div class="view" id="view-waiting">
-  <div class="waiting-box">
-    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    <div class="waiting-title" id="waiting-team-name">Équipe</div>
-    <div class="waiting-sub">En attente du maître du jeu…</div>
-  </div>
+<!-- WAITING -->
+<div class="view" id="v-waiting">
+  <div class="wait-team" id="wait-team-name"></div>
+  <div class="wait-msg">En attente du maître du jeu…</div>
 </div>
 
-<!-- ══ GAME ══ -->
-<div class="view" id="view-game">
-  <div class="game-header">
-    <div class="game-team-badge" id="game-team-name">—</div>
-    <div class="game-score" id="game-score">0 pts</div>
+<!-- GAME -->
+<div class="view" id="v-game">
+  <div class="game-top">
+    <div class="game-team" id="g-team"></div>
+    <div class="game-score" id="g-score">0 pts</div>
   </div>
-  <div class="game-question" id="game-question">—</div>
-  <div class="game-timer ok" id="game-timer" style="display:none">—</div>
+  <div class="game-q" id="g-question"></div>
+  <div class="game-timer ok" id="g-timer" style="display:none"></div>
   <div class="drag-hint">Glissez les cartes pour les classer</div>
   <div class="drag-area" id="drag-area"></div>
-  <div class="submit-bar" id="submit-bar">
-    <button class="btn-main" id="btn-ready" onclick="markReady()" style="display:none">Je suis prêt ✓</button>
-    <div class="submitted-msg" id="submitted-msg" style="display:none">✓ Prêt ! En attente des autres équipes…</div>
+  <div class="submit-bar">
+    <button class="btn btn-pink" id="btn-ready" onclick="markReady()">Je suis prêt ✓</button>
+    <div class="submitted-msg" id="msg-submitted" style="display:none">✓ Classement envoyé ! En attente…</div>
   </div>
+</div>
+
+<!-- DONE -->
+<div class="view" id="v-done">
+  <div class="done-icon">✓</div>
+  <div class="done-title">Classement envoyé !</div>
+  <div class="done-msg">En attente de la révélation…</div>
 </div>
 
 <script>
-const SUPABASE_URL='https://tsneytqibltnjarajcll.supabase.co';
-const SUPABASE_KEY='sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
+const DB_URL='https://tsneytqibltnjarajcll.supabase.co';
+const DB_KEY='sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
 const {createClient}=supabase;
-const db=createClient(SUPABASE_URL,SUPABASE_KEY);
+const db=createClient(DB_URL,DB_KEY);
 
-let questions=[], teamName='', teamSessionId=null, teamScore=0;
-let teamDragOrder=[], currentItems=[];
-let sessionSub=null, timerInterval=null, timerVal=0, teamTimerStarted=false;
-let sessionData=null;
+// ── STATE ──
+let questions=[];
+let sessData=null, myTeam='', myCode='';
+let currentItems=[], teamDragOrder=[];
+let lastQId=null, cardsBuilt=false, isReady=false;
+let timerVal=0, timerInterval=null, timerStarted=false;
+let pollInterval=null;
 
+// ── INIT ──
 async function init(){
-  const {data}=await db.from('podium_questions').select('*, podium_items(*)').order('sort_order');
+  const {data}=await db.from('podium_questions').select('*,podium_items(*)').order('sort_order');
   questions=(data||[]).map(q=>({...q,podium_items:(q.podium_items||[]).sort((a,b)=>a.correct_rank-b.correct_rank)}));
-  document.getElementById('loading-overlay').classList.add('hidden');
-  // Auto-fill code from URL
-  const params=new URLSearchParams(location.search);
-  const code=params.get('code');
-  if(code){
-    document.getElementById('join-code').value=code.toUpperCase();
-    await lookupSession();
+  document.getElementById('loading').classList.add('hidden');
+
+  // Read URL params
+  const p=new URLSearchParams(location.search);
+  myCode=p.get('code')||'';
+  myTeam=p.get('team')||'';
+
+  if(myCode&&myTeam){
+    // Restore session directly
+    document.getElementById('inp-code').value=myCode;
+    const ok=await lookupCode(myCode);
+    if(ok&&sessData){
+      joinTeam(myTeam,false);
+      return;
+    }
+  } else if(myCode){
+    document.getElementById('inp-code').value=myCode;
+    const ok=await lookupCode(myCode);
+    if(ok)showView('v-team');
+    else showView('v-code');
+    return;
   }
+  showView('v-code');
 }
 
 function showView(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
-  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById(v).classList.add('active');
 }
 
-async function lookupSession(){
-  const code=document.getElementById('join-code').value.trim().toUpperCase();
-  if(!code){showToast('Entre un code');return;}
+function setURL(){
+  const u=new URL(location.href);
+  if(myCode)u.searchParams.set('code',myCode);
+  if(myTeam)u.searchParams.set('team',myTeam);
+  history.replaceState(null,'',u.toString());
+}
+
+function goBack(){
+  myTeam='';
+  const u=new URL(location.href);
+  u.searchParams.delete('team');
+  history.replaceState(null,'',u.toString());
+  showView('v-code');
+}
+
+// ── LOOKUP ──
+async function doLookup(){
+  const code=document.getElementById('inp-code').value.trim().toUpperCase();
+  if(!code){toast('Entre un code');return;}
+  myCode=code;
+  const ok=await lookupCode(code);
+  if(ok){setURL();showView('v-team');}
+}
+
+async function lookupCode(code){
   const {data,error}=await db.from('podium_sessions').select('*').eq('code',code).single();
-  if(error||!data){document.getElementById('join-error').style.display='block';return;}
-  document.getElementById('join-error').style.display='none';
-  sessionData=data;
+  if(error||!data){document.getElementById('err-code').style.display='block';return false;}
+  document.getElementById('err-code').style.display='none';
+  sessData=data;
   const teams=data.teams||[];
   document.getElementById('teams-list').innerHTML=teams.map(t=>`
-    <button class="team-btn" onclick="pickTeam('${t.name.replace(/'/g,"\\'")}')">
-      ${t.name}
-    </button>`).join('');
-  showView('team-pick');
+    <button class="team-btn" onclick="joinTeam('${t.name.replace(/'/g,"\\'")}',true)">${t.name}</button>`).join('');
+  return true;
 }
 
-function pickTeam(name){
-  if(!sessionData)return;
-  teamName=name;
-  teamSessionId=sessionData.id;
-  teamScore=(sessionData.teams||[]).find(t=>t.name===name)?.score||0;
-  document.getElementById('game-team-name').textContent=name;
-  document.getElementById('waiting-team-name').textContent=name;
-  document.getElementById('game-score').textContent=teamScore+' pts';
-  subscribeAsTeam(sessionData);
-  showView('waiting');
+// ── JOIN ──
+async function joinTeam(name, updateURL){
+  if(!sessData)return;
+  myTeam=name;
+  if(updateURL)setURL();
+  document.getElementById('header-team').textContent=name;
+  document.getElementById('wait-team-name').textContent=name;
+  document.getElementById('g-team').textContent=name;
+  const myT=(sessData.teams||[]).find(t=>t.name===name);
+  const score=myT?.score||0;
+  document.getElementById('g-score').textContent=score+' pts';
+
+  // Start polling
+  if(pollInterval)clearInterval(pollInterval);
+  pollInterval=setInterval(poll,2000);
+  applySession(sessData);
 }
 
-function subscribeAsTeam(sess){
-  applySessionToTeam(sess);
-  // Realtime
-  if(sessionSub)sessionSub.unsubscribe();
-  sessionSub=db.channel('podium-player-'+teamSessionId)
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'podium_sessions',filter:'id=eq.'+teamSessionId},
-      p=>applySessionToTeam(p.new))
-    .subscribe();
-  // Polling fallback every 2s
-  if(window._pollInterval)clearInterval(window._pollInterval);
-  window._pollInterval=setInterval(async()=>{
-    const {data}=await db.from('podium_sessions').select('*').eq('id',teamSessionId).single();
-    if(data)applySessionToTeam(data);
-  },2000);
+async function poll(){
+  if(!sessData)return;
+  const {data}=await db.from('podium_sessions').select('*').eq('id',sessData.id).single();
+  if(data)applySession(data);
 }
 
-let lastQuestionId=null;
-let cardsBuilt=false;
+// ── APPLY SESSION ──
+function applySession(sess){
+  sessData=sess;
+  const myT=(sess.teams||[]).find(t=>t.name===myTeam);
+  const score=myT?.score||0;
+  document.getElementById('g-score').textContent=score+' pts';
 
-function applySessionToTeam(sess){
-  const myTeam=(sess.teams||[]).find(t=>t.name===teamName);
-  if(myTeam){
-    teamScore=myTeam.score||0;
-    document.getElementById('game-score').textContent=teamScore+' pts';
-  }
+  const qId=sess.current_question_id;
+  const status=sess.status;
 
-  if(sess.current_question_id){
-    const qChanged=String(sess.current_question_id)!==String(lastQuestionId);
-    const q=questions.find(x=>String(x.id)===String(sess.current_question_id));
-
-    if(q){
-      document.getElementById('game-question').textContent=q.question;
-      currentItems=q.podium_items||[];
-
-      if(qChanged){
-        // New question — reset and rebuild cards
-        lastQuestionId=sess.current_question_id;
-        cardsBuilt=false;
-        teamTimerStarted=false;
-      }
-
-      if(!cardsBuilt && !myTeam?.submitted){
-        buildDragCards(q.podium_items||[]);
-        cardsBuilt=true;
-        showView('game');
-      } else if(myTeam?.submitted && !cardsBuilt){
-        showSubmitted();
-        cardsBuilt=true;
-        showView('game');
-      } else if(cardsBuilt){
-        // Just update view if needed, don't rebuild cards
-        showView('game');
-      }
-    } else {
-      db.from('podium_questions').select('*, podium_items(*)').order('sort_order').then(({data})=>{
-        if(data){
-          questions=data.map(q=>({...q,podium_items:(q.podium_items||[]).sort((a,b)=>a.correct_rank-b.correct_rank)}));
-          applySessionToTeam(sess);
-        }
-      });
-    }
-  }
-
-  // Timer
-  const timerEl=document.getElementById('game-timer');
-  if(sess.status==='playing'){
-    timerEl.style.display='block';
-    startTeamTimer(sess.timer_duration||60);
-  } else {
-    timerEl.style.display='none';
+  // New question → reset
+  if(String(qId)!==String(lastQId)){
+    lastQId=qId;
+    cardsBuilt=false;
+    isReady=false;
+    timerStarted=false;
     clearInterval(timerInterval);
-    teamTimerStarted=false;
+  }
+
+  if(!qId){showView('v-waiting');return;}
+
+  const q=questions.find(x=>String(x.id)===String(qId));
+  if(!q){
+    // reload questions
+    db.from('podium_questions').select('*,podium_items(*)').order('sort_order').then(({data})=>{
+      if(data){questions=data.map(q=>({...q,podium_items:(q.podium_items||[]).sort((a,b)=>a.correct_rank-b.correct_rank)}));applySession(sess);}
+    });
+    return;
+  }
+
+  document.getElementById('g-question').textContent=q.question;
+  currentItems=q.podium_items||[];
+
+  if(status==='playing'){
+    if(!cardsBuilt){
+      buildDragCards(currentItems);
+      cardsBuilt=true;
+    }
+    if(!timerStarted){
+      startTimer(sess.timer_duration||60);
+    }
+    if(!isReady){
+      showView('v-game');
+      document.getElementById('btn-ready').style.display='flex';
+      document.getElementById('msg-submitted').style.display='none';
+    }
+  } else if(status==='waiting'||status==='stopped'){
+    // Question selected but not started yet — wait
+    showView('v-waiting');
+    document.getElementById('wait-team-name').textContent=myTeam+' — '+q.question;
   }
 }
 
-function startTeamTimer(duration){
-  if(teamTimerStarted)return;
-  teamTimerStarted=true;
+// ── TIMER ──
+function startTimer(duration){
+  if(timerStarted)return;
+  timerStarted=true;
   timerVal=duration;
-  const el=document.getElementById('game-timer');
-  clearInterval(timerInterval);
+  const el=document.getElementById('g-timer');
+  el.style.display='block';
   el.textContent=timerVal;
   el.className='game-timer ok';
+  clearInterval(timerInterval);
   timerInterval=setInterval(()=>{
     timerVal--;
     el.textContent=timerVal;
     el.className='game-timer '+(timerVal>duration*.5?'ok':timerVal>10?'warn':'urgent');
     if(timerVal<=0){
       clearInterval(timerInterval);
-      teamTimerStarted=false;
       el.style.display='none';
+      // Time's up — if not ready, disable
+      if(!isReady){
+        document.getElementById('btn-ready').disabled=true;
+        document.getElementById('btn-ready').style.opacity='0.4';
+        toast('Temps écoulé !');
+      }
     }
   },1000);
 }
 
-// ── DRAG & DROP ──
+// ── DRAG ──
 function buildDragCards(items){
   const shuffled=[...items].sort(()=>Math.random()-.5);
   teamDragOrder=shuffled.map(i=>i.id);
   const area=document.getElementById('drag-area');
   area.innerHTML=shuffled.map((item,i)=>`
     <div class="drag-card" id="dc-${item.id}" draggable="true"
-      ondragstart="dragStart(event,'${item.id}')"
-      ondragover="dragOver(event)"
-      ondrop="dragDrop(event,'${item.id}')"
-      ondragend="dragEnd(event)"
-      ontouchstart="touchStart(event,'${item.id}')"
-      ontouchmove="touchMove(event)"
-      ontouchend="touchEnd(event,'${item.id}')">
+      ondragstart="dStart(event,'${item.id}')"
+      ondragover="dOver(event)"
+      ondrop="dDrop(event,'${item.id}')"
+      ondragend="dEnd(event)"
+      ontouchstart="tStart(event,'${item.id}')"
+      ontouchmove="tMove(event)"
+      ontouchend="tEnd(event,'${item.id}')">
       <div class="drag-rank" id="dr-${item.id}">${i+1}</div>
-      ${item.image_url?`<img src="${item.image_url}" alt="">`:''}
+      ${item.image_url?`<img src="${item.image_url}" alt="">`:'' }
       <div class="drag-card-name">${item.name||''}</div>
       <div class="drag-handle">⠿</div>
     </div>`).join('');
-  document.getElementById('btn-ready').style.display='flex';
-  document.getElementById('submitted-msg').style.display='none';
-}
-
-function showSubmitted(){
-  document.getElementById('btn-ready').style.display='none';
-  document.getElementById('submitted-msg').style.display='block';
-  document.querySelectorAll('.drag-card').forEach(c=>{c.style.opacity='0.5';c.draggable=false;});
 }
 
 let dragSrc=null;
-function dragStart(e,id){dragSrc=id;e.currentTarget.classList.add('dragging');}
-function dragEnd(e){e.currentTarget.classList.remove('dragging');document.querySelectorAll('.drag-card').forEach(c=>c.classList.remove('drag-over'));}
-function dragOver(e){e.preventDefault();document.querySelectorAll('.drag-card').forEach(c=>c.classList.remove('drag-over'));e.currentTarget.classList.add('drag-over');}
-function dragDrop(e,targetId){
+function dStart(e,id){dragSrc=id;e.currentTarget.classList.add('dragging');}
+function dEnd(e){document.querySelectorAll('.drag-card').forEach(c=>c.classList.remove('dragging','drag-over'));}
+function dOver(e){e.preventDefault();document.querySelectorAll('.drag-card').forEach(c=>c.classList.remove('drag-over'));e.currentTarget.classList.add('drag-over');}
+function dDrop(e,tid){
   e.preventDefault();
-  document.querySelectorAll('.drag-card').forEach(c=>c.classList.remove('drag-over'));
-  if(!dragSrc||dragSrc===targetId)return;
-  swapCards(dragSrc,targetId);
-  dragSrc=null;
+  document.querySelectorAll('.drag-card').forEach(c=>c.classList.remove('drag-over','dragging'));
+  if(!dragSrc||dragSrc===tid)return;
+  swap(dragSrc,tid);dragSrc=null;
 }
-
-let touchDragId=null,touchClone=null;
-function touchStart(e,id){
-  touchDragId=id;
-  const card=document.getElementById('dc-'+id);
-  const rect=card.getBoundingClientRect();
-  touchClone=card.cloneNode(true);
-  touchClone.style.cssText=`position:fixed;top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;opacity:0.8;z-index:1000;pointer-events:none;transition:none`;
-  document.body.appendChild(touchClone);
-  card.style.opacity='0.3';
+let tId=null,tClone=null;
+function tStart(e,id){
+  tId=id;
+  const c=document.getElementById('dc-'+id),r=c.getBoundingClientRect();
+  tClone=c.cloneNode(true);
+  tClone.style.cssText=`position:fixed;top:${r.top}px;left:${r.left}px;width:${r.width}px;opacity:.8;z-index:1000;pointer-events:none;transition:none`;
+  document.body.appendChild(tClone);c.style.opacity='.3';
 }
-function touchMove(e){
-  if(!touchClone)return;
-  e.preventDefault();
+function tMove(e){
+  if(!tClone)return;e.preventDefault();
   const t=e.touches[0];
-  touchClone.style.top=(t.clientY-30)+'px';
-  touchClone.style.left=(t.clientX-touchClone.offsetWidth/2)+'px';
-  // highlight target
-  document.querySelectorAll('.drag-card').forEach(card=>{
-    const r=card.getBoundingClientRect();
-    if(t.clientX>=r.left&&t.clientX<=r.right&&t.clientY>=r.top&&t.clientY<=r.bottom)
-      card.classList.add('drag-over');
-    else card.classList.remove('drag-over');
+  tClone.style.top=(t.clientY-30)+'px';tClone.style.left=(t.clientX-tClone.offsetWidth/2)+'px';
+  document.querySelectorAll('.drag-card').forEach(c=>{
+    const r=c.getBoundingClientRect();
+    c.classList.toggle('drag-over',t.clientX>=r.left&&t.clientX<=r.right&&t.clientY>=r.top&&t.clientY<=r.bottom);
   });
 }
-function touchEnd(e,id){
-  if(!touchClone)return;
+function tEnd(e,id){
+  if(!tClone)return;
   const t=e.changedTouches[0];
-  document.querySelectorAll('.drag-card').forEach(card=>{
-    const rect=card.getBoundingClientRect();
-    if(t.clientX>=rect.left&&t.clientX<=rect.right&&t.clientY>=rect.top&&t.clientY<=rect.bottom){
-      const targetId=card.id.replace('dc-','');
-      if(targetId!==touchDragId)swapCards(touchDragId,targetId);
+  document.querySelectorAll('.drag-card').forEach(c=>{
+    const r=c.getBoundingClientRect();
+    if(t.clientX>=r.left&&t.clientX<=r.right&&t.clientY>=r.top&&t.clientY<=r.bottom){
+      const tid=c.id.replace('dc-','');if(tid!==id)swap(id,tid);
     }
-    card.classList.remove('drag-over');
+    c.classList.remove('drag-over');
   });
-  touchClone.remove();touchClone=null;
-  const src=document.getElementById('dc-'+touchDragId);
-  if(src)src.style.opacity='1';
-  touchDragId=null;
+  tClone.remove();tClone=null;
+  const s=document.getElementById('dc-'+id);if(s)s.style.opacity='1';
+  tId=null;
 }
-
-function swapCards(id1,id2){
+function swap(id1,id2){
   const area=document.getElementById('drag-area');
-  const el1=document.getElementById('dc-'+id1);
-  const el2=document.getElementById('dc-'+id2);
-  if(!el1||!el2)return;
+  const e1=document.getElementById('dc-'+id1),e2=document.getElementById('dc-'+id2);
+  if(!e1||!e2)return;
   const cards=[...area.children];
-  const idx1=cards.indexOf(el1);
-  const idx2=cards.indexOf(el2);
-  if(idx1<idx2)el2.parentNode.insertBefore(el1,el2.nextSibling);
-  else el1.parentNode.insertBefore(el2,el1.nextSibling);
-  [...area.children].forEach((card,i)=>{
-    const rid=card.id.replace('dc-','');
-    const rankEl=document.getElementById('dr-'+rid);
-    if(rankEl)rankEl.textContent=i+1;
+  const i1=cards.indexOf(e1),i2=cards.indexOf(e2);
+  if(i1<i2)e2.parentNode.insertBefore(e1,e2.nextSibling);
+  else e1.parentNode.insertBefore(e2,e1.nextSibling);
+  [...area.children].forEach((c,i)=>{
+    const rid=c.id.replace('dc-','');
+    const r=document.getElementById('dr-'+rid);if(r)r.textContent=i+1;
   });
   teamDragOrder=[...area.children].map(c=>parseInt(c.id.replace('dc-','')));
-  autoSave();
 }
 
-let autoSaveTimeout=null;
-async function autoSave(){
-  clearTimeout(autoSaveTimeout);
-  autoSaveTimeout=setTimeout(async()=>{
-    if(!teamDragOrder.length||!teamSessionId)return;
-    const qId=currentItems[0]?.question_id||null;
-    // Upsert answer
-    await db.from('podium_answers').upsert({
-      session_id:teamSessionId,question_id:qId,team_name:teamName,rankings:teamDragOrder
-    },{onConflict:'session_id,question_id,team_name'});
-  },500);
-}
-
-async function submitAnswer(){
-  if(!teamDragOrder.length){showToast('Classez les cartes d\'abord');return;}
+// ── MARK READY ──
+async function markReady(){
+  if(isReady||timerVal<=0)return;
+  if(!teamDragOrder.length){toast('Classez les cartes d\'abord');return;}
+  isReady=true;
   const qId=currentItems[0]?.question_id||null;
-  const {error}=await db.from('podium_answers').insert({
-    session_id:teamSessionId,question_id:qId,team_name:teamName,rankings:teamDragOrder
-  });
-  if(error){showToast('Erreur : '+error.message);return;}
-  const {data:sess}=await db.from('podium_sessions').select('teams').eq('id',teamSessionId).single();
-  const teams=(sess?.teams||[]).map(t=>t.name===teamName?{...t,submitted:true}:t);
-  await db.from('podium_sessions').update({teams}).eq('id',teamSessionId);
-  showSubmitted();
-  showToast('Classement envoyé ✓');
+  // Save answer
+  const {error}=await db.from('podium_answers').upsert({
+    session_id:sessData.id,question_id:qId,team_name:myTeam,rankings:teamDragOrder
+  },{onConflict:'session_id,question_id,team_name'});
+  if(error){toast('Erreur : '+error.message);isReady=false;return;}
+  // Mark submitted
+  const {data:s}=await db.from('podium_sessions').select('teams').eq('id',sessData.id).single();
+  const teams=(s?.teams||[]).map(t=>t.name===myTeam?{...t,submitted:true}:t);
+  await db.from('podium_sessions').update({teams}).eq('id',sessData.id);
+  // UI
+  document.getElementById('btn-ready').style.display='none';
+  document.getElementById('msg-submitted').style.display='block';
+  document.querySelectorAll('.drag-card').forEach(c=>{c.style.opacity='.5';c.draggable=false;});
+  toast('Prêt ✓');
 }
 
-function showToast(msg){
+function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2000);
