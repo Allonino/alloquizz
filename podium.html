@@ -1016,6 +1016,26 @@ async function deleteQuestion(id){
 }
 
 // ── ITEMS MODAL ──
+function buildItemsGrid(existing){
+  const grid=document.getElementById('items-grid');
+  grid.innerHTML=Array.from({length:5},(_,i)=>{
+    const item=existing[i]||{name:'',image_url:'',correct_rank:i+1};
+    return `<div class="item-row">
+      <div class="item-rank-badge">${i+1}</div>
+      <input class="item-name-input" id="iname-${i}" placeholder="Nom…" value="${item.name||''}" oninput="checkItemsValid()">
+      <img class="item-img-preview" id="iimg-${i}" src="${item.image_url||''}" style="${item.image_url?'display:block':'display:none'}">
+      <button class="item-img-btn" onclick="pasteImgUrl(${i})">+ img</button>
+    </div>`;
+  }).join('');
+}
+
+function checkItemsValid(){
+  const q=document.getElementById('modal-q-text').value.trim();
+  const filled=Array.from({length:5},(_,i)=>document.getElementById('iname-'+i)?.value.trim()).filter(Boolean);
+  const valid=!!q && filled.length===5;
+  document.getElementById('items-modal-save').disabled=!valid;
+}
+
 function openNewQuestionModal(){
   editingQId=null;
   document.getElementById('items-modal-title').textContent='Nouvelle question';
