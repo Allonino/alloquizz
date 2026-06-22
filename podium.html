@@ -93,15 +93,27 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 /* ══ REVEAL ══ */
 #v-reveal{padding:20px 36px 32px;gap:18px;max-width:1100px;width:100%;margin:0 auto;overflow-y:auto}
 .reveal-q{font-family:'Exo 2',sans-serif;font-size:20px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em;text-align:center}
-.reveal-list{display:flex;flex-direction:column;gap:8px}
-.reveal-item{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.03);border:2px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 18px;transition:all .4s cubic-bezier(.16,1,.3,1);overflow:hidden;min-height:70px}
-.reveal-item.revealed{border-color:rgba(244,114,182,.5);background:rgba(244,114,182,.08)}
-.reveal-item img{width:52px;height:52px;border-radius:8px;object-fit:cover;flex-shrink:0}
-.reveal-item-rank{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;color:rgba(244,114,182,.3);width:36px;flex-shrink:0;text-align:center;transition:color .3s}
-.reveal-item.revealed .reveal-item-rank{color:#f472b6}
-.reveal-item-name{flex:1;font-size:17px;font-weight:700;color:#f0f0f5}
-.reveal-item-detail{font-size:13px;color:rgba(244,114,182,.7);font-weight:600;margin-left:auto;flex-shrink:0}
-.reveal-item-hidden{flex:1;height:2px;background:rgba(255,255,255,.06);border-radius:2px}
+.reveal-grid-wrap{max-width:900px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:7px}
+.reveal-header-row,.reveal-row{display:grid;gap:8px;align-items:stretch}
+.ans-cell{display:flex;align-items:center;gap:8px;border-radius:10px;padding:8px 12px;border:1.5px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);transition:all .35s;min-height:56px}
+.ans-cell.rev{border-color:rgba(244,114,182,.5);background:rgba(244,114,182,.07)}
+.ans-cell-rank{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(244,114,182,.25);width:22px;flex-shrink:0;text-align:center}
+.ans-cell.rev .ans-cell-rank{color:#f472b6}
+.ans-sq{width:36px;height:36px;border-radius:6px;flex-shrink:0;object-fit:cover;background:rgba(255,255,255,.08)}
+.ans-cell-name{font-size:13px;font-weight:700;color:#f0f0f5}
+.ans-cell-detail{font-size:10px;color:rgba(244,114,182,.65);font-weight:600;margin-top:1px}
+.ans-cell-hidden{flex:1;height:1.5px;background:rgba(255,255,255,.06);border-radius:2px}
+.tc{border-radius:10px;display:flex;flex-direction:column;align-items:center;padding:6px 5px 5px;gap:4px;min-height:56px;justify-content:center}
+.tc.ok{border:1.5px solid rgba(79,206,143,.5);background:rgba(79,206,143,.08)}
+.tc.ko{border:1.5px solid rgba(248,113,113,.5);background:rgba(248,113,113,.08)}
+.tc.wait{border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
+.tc-sq{width:36px;height:36px;border-radius:6px;flex-shrink:0;object-fit:cover;background:rgba(255,255,255,.08)}
+.tc-name{font-size:10px;font-weight:700;text-align:center;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.tc.ok .tc-name{color:#4fce8f}
+.tc.ko .tc-name{color:#f87171}
+.tc.wait .tc-name{color:rgba(255,255,255,.5)}
+.tc-score{font-size:18px;font-weight:700;color:#f472b6;text-align:center;line-height:1}
+.tc-team{font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.06em;text-align:center;margin-top:2px}
 .reveal-teams{display:flex;flex-direction:column;gap:10px}
 .rt-row{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden}
 .rt-header{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
@@ -649,11 +661,42 @@ async function goReveal(){
 }
 
 function buildRevealSlots(){
-  document.getElementById('reveal-list').innerHTML=revealItems.map((it,i)=>`
-    <div class="reveal-item" id="rs-${i}">
-      <div class="reveal-item-rank">${i+1}</div>
-      <div class="reveal-item-hidden"></div>
+  const teams=sess?.teams||[];
+  const cols=`2fr ${teams.map(()=>'1fr').join(' ')}`;
+  const wrap=document.getElementById('reveal-list');
+  wrap.className='reveal-grid-wrap';
+  // Header row
+  const hdr=document.createElement('div');
+  hdr.className='reveal-header-row';
+  hdr.style.gridTemplateColumns=cols;
+  hdr.innerHTML='<div></div>'+teams.map(t=>`
+    <div style="text-align:center">
+      <div class="tc-score">${t.score||0}</div>
+      <div class="tc-team">${t.name}</div>
     </div>`).join('');
+  wrap.innerHTML='';
+  wrap.appendChild(hdr);
+  // Item rows
+  revealItems.forEach((it,i)=>{
+    const row=document.createElement('div');
+    row.className='reveal-row';
+    row.id='rs-'+i;
+    row.style.gridTemplateColumns=cols;
+    row.innerHTML=`<div class="ans-cell" id="ans-cell-${i}">
+      <div class="ans-cell-rank">${i+1}</div>
+      <div class="ans-cell-hidden"></div>
+    </div>`+teams.map(t=>{
+      const ans=revealAnswers.find(a=>a.team_name===t.name);
+      const ranking=ans?ans.rankings:[];
+      const itemId=ranking[i];
+      const item=revealItems.find(x=>String(x.id)===String(itemId));
+      return `<div class="tc wait" id="tc-${t.name.replace(/\s/g,'_')}-${i}">
+        <div class="tc-sq" ${item?.image_url?`style="background:url('${item.image_url}') center/cover"`:''}></div>
+        <div class="tc-name">${item?.name||'?'}</div>
+      </div>`;
+    }).join('');
+    wrap.appendChild(row);
+  });
 }
 
 function buildRevealTeams(){
@@ -693,16 +736,18 @@ function revealNext(){
     `<div class="reveal-item-name">${item.name}</div>`+
     (item.detail?`<div class="reveal-item-detail">${item.detail}</div>`:'');
   // Color team mini-cards
-  const teams=sess?.teams||[];
   teams.forEach(t=>{
     const ans=revealAnswers.find(a=>a.team_name===t.name);
-    if(!ans)return;
+    const key=t.name.replace(/\s/g,'_');
+    const tc=document.getElementById(`tc-${key}-${revealIdx}`);
+    if(!tc)return;
+    if(!ans||!ans.rankings||!ans.rankings.length){tc.className='tc ko';tc.querySelector('.tc-name').textContent='—';return;}
     const ranking=ans.rankings||[];
     const teamItemId=ranking[revealIdx];
     const correct=String(teamItemId)===String(item.id);
-    const key=t.name.replace(/\s/g,'_');
-    const mini=document.getElementById(`mini-${key}-${revealIdx}`);
-    if(mini)mini.classList.add(correct?'correct':'wrong');
+    tc.className='tc '+(correct?'ok':'ko');
+    const nameEl=tc.querySelector('.tc-name');
+    if(nameEl)nameEl.textContent=(correct?'✓ ':'✗ ')+(tc.querySelector('.tc-name').textContent);
   });
   revealIdx++;
   pushTV({view:'reveal',answers:revealAnswers,revealed_count:revealIdx});
