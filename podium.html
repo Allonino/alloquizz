@@ -3,846 +3,198 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AlloQuizz — Le Podium</title>
-<link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,700;0,800;1,800&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<title>Le Podium — TV</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,700;0,800;1,800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-height:100vh;display:flex;flex-direction:column}
-#loading{position:fixed;inset:0;background:#06060d;z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
-#loading.hidden{display:none}
-.spinner{width:32px;height:32px;border:3px solid rgba(244,114,182,0.2);border-top-color:#f472b6;border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+html,body{height:100%;overflow:hidden;background:#06060d;color:#f0f0f5}
+body{font-family:'DM Sans',sans-serif;display:flex;flex-direction:column}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e1e2e;border:1px solid rgba(255,255,255,0.12);color:#f0f0f5;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;transition:all .25s;z-index:9999;pointer-events:none;white-space:nowrap}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* NAV */
-.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(6,6,13,.95);border-bottom:1px solid rgba(255,255,255,.07);backdrop-filter:blur(16px)}
-.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#f0f0f5;padding:14px 0;letter-spacing:-.02em;text-decoration:none}
-.nav-logo span{color:#f472b6}
-.nav-right{display:flex;gap:8px}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;transition:filter .2s,transform .15s;font-family:'DM Sans',sans-serif}
-.btn:active{transform:scale(.97)}
-.btn-pink{background:#f472b6;color:#fff}
-.btn-pink:hover{filter:brightness(1.1)}
-.btn-ghost{background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.1)}
-.btn-ghost:hover{background:rgba(255,255,255,.1);color:#fff}
-.btn-sm{padding:6px 12px;font-size:11px}
+.top{display:flex;align-items:center;padding:14px 36px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;gap:16px}
+.logo{font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.25);flex-shrink:0}
+.logo b{color:#f472b6}
+.top-q{flex:1;text-align:center;font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
+.top-code{font-family:'Exo 2',sans-serif;font-size:12px;font-weight:800;font-style:italic;color:rgba(255,255,255,.2);letter-spacing:.1em;flex-shrink:0}
+.main{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center}
 
-/* VIEWS */
-.view{display:none;flex-direction:column;flex:1}
-.view.active{display:flex}
+/* WAITING */
+.s-wait{display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center}
+.w-code{font-family:'Exo 2',sans-serif;font-size:72px;font-weight:800;font-style:italic;color:#f472b6;letter-spacing:.12em;line-height:1}
+.w-hint{font-size:14px;color:rgba(255,255,255,.3)}
+.w-chips{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.w-chip{padding:8px 20px;border-radius:20px;font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;border:1.5px solid rgba(244,114,182,.4);color:#f472b6;background:rgba(244,114,182,.08)}
 
-/* ══ HOME ══ */
-#v-home{padding:32px 40px;gap:24px;max-width:960px;width:100%;margin:0 auto}
-.home-title{font-family:'Exo 2',sans-serif;font-size:30px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
-.home-title span{color:#f472b6}
-.sessions{display:flex;flex-direction:column;gap:10px}
-.sess-card{display:flex;align-items:center;gap:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 18px;cursor:pointer;transition:border-color .2s,background .2s}
-.sess-card:hover{background:rgba(244,114,182,.06);border-color:rgba(244,114,182,.3)}
-.sess-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.sess-dot.active{background:#f472b6;box-shadow:0 0 6px rgba(244,114,182,.6)}
-.sess-dot.done{background:rgba(255,255,255,.2)}
-.sess-info{flex:1}
-.sess-code{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6;letter-spacing:.06em}
-.sess-meta{font-size:12px;color:rgba(255,255,255,.3);margin-top:2px}
-.empty{text-align:center;padding:48px;color:rgba(255,255,255,.2);font-size:14px}
-.sec-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3)}
+/* PLAYING */
+.s-play{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;padding:0 40px}
+.p-lbl{font-size:11px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+.p-teams{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.p-card{background:rgba(255,255,255,.03);border:2px solid rgba(255,255,255,.1);border-radius:16px;padding:18px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:160px;transition:all .4s}
+.p-card.ready{border-color:rgba(79,206,143,.5);background:rgba(79,206,143,.06)}
+.p-name{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em}
+.p-score{font-family:'Exo 2',sans-serif;font-size:44px;font-weight:800;font-style:italic;color:#f472b6;line-height:1}
+.p-status{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:20px}
+.p-status.ready{background:rgba(79,206,143,.15);color:#4fce8f;border:1px solid rgba(79,206,143,.3)}
+.p-status.wait{background:rgba(255,255,255,.06);color:rgba(255,255,255,.3);border:1px solid rgba(255,255,255,.08)}
 
-/* ══ MASTER ══ */
-#v-master{flex-direction:row;height:calc(100vh - 49px)}
-.sidebar{width:300px;flex-shrink:0;border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;overflow:hidden}
-.sb-top{padding:18px;border-bottom:1px solid rgba(255,255,255,.07)}
-.sb-code-lbl{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
-.sb-code{font-family:'Exo 2',sans-serif;font-size:32px;font-weight:800;font-style:italic;color:#f472b6;letter-spacing:.1em}
-.sb-qr{display:flex;justify-content:center;margin:10px 0 6px}
-.sb-hint{font-size:11px;color:rgba(255,255,255,.2);text-align:center}
-.sb-teams{flex:1;overflow-y:auto;padding:14px}
-.team-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);margin-bottom:8px;transition:border-color .3s}
-.team-row.ready{border-color:rgba(79,206,143,.4);background:rgba(79,206,143,.05)}
-.team-name{flex:1;font-size:13px;font-weight:600}
-.team-score{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6}
-.team-badge{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:10px}
-.team-badge.ready{background:rgba(79,206,143,.15);color:#4fce8f;border:1px solid rgba(79,206,143,.3)}
-.team-badge.wait{background:rgba(255,255,255,.06);color:rgba(255,255,255,.3)}
-.sb-bottom{padding:12px;border-top:1px solid rgba(255,255,255,.07);display:flex;gap:8px;flex-wrap:wrap}
-
-.master-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.master-top{padding:14px 22px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:12px;flex-shrink:0}
-.master-q-text{flex:1;font-size:15px;font-weight:600}
-.timer-display{font-family:'Exo 2',sans-serif;font-size:40px;font-weight:800;font-style:italic;font-variant-numeric:tabular-nums;transition:color .3s;display:none}
-.timer-display.ok{color:#4fce8f}.timer-display.warn{color:#fb923c}.timer-display.urgent{color:#f87171;animation:pulse .5s infinite}
-.ready-count{font-size:12px;color:rgba(255,255,255,.3);white-space:nowrap}
-.master-content{flex:1;overflow-y:auto;padding:18px 22px}
-.master-controls{padding:12px 22px;border-top:1px solid rgba(255,255,255,.07);display:flex;gap:10px;flex-wrap:wrap;align-items:center;flex-shrink:0}
-
-/* Q picker */
-.q-list{display:flex;flex-direction:column;gap:8px}
-.q-card{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;cursor:pointer;transition:border-color .2s,background .2s}
-.q-card:hover{background:rgba(244,114,182,.06);border-color:rgba(244,114,182,.35)}
-.q-card.done{opacity:.4;cursor:default}
-.q-num{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;color:rgba(244,114,182,.4);width:26px}
-.q-text{flex:1;font-size:14px;font-weight:500}
-.q-done-badge{font-size:10px;font-weight:700;color:rgba(79,206,143,.7);letter-spacing:.08em}
-
-/* Timer setup */
-.timer-setup{display:none;align-items:center;gap:8px}
-.timer-val-disp{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6;min-width:48px;text-align:center}
-
-/* ══ REVEAL ══ */
-#v-reveal{padding:20px 36px 32px;gap:18px;max-width:1100px;width:100%;margin:0 auto;overflow-y:auto}
-.reveal-q{font-family:'Exo 2',sans-serif;font-size:20px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em;text-align:center}
-.reveal-grid-wrap{max-width:900px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:7px}
-.reveal-header-row,.reveal-row{display:grid;gap:8px;align-items:stretch}
-.ans-cell{display:flex;align-items:center;gap:8px;border-radius:10px;padding:8px 12px;border:1.5px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);transition:all .35s;min-height:56px}
-.ans-cell.rev{border-color:rgba(244,114,182,.5);background:rgba(244,114,182,.07)}
-.ans-cell-rank{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(244,114,182,.25);width:22px;flex-shrink:0;text-align:center}
-.ans-cell.rev .ans-cell-rank{color:#f472b6}
-.ans-sq{width:36px;height:36px;border-radius:6px;flex-shrink:0;object-fit:cover;background:rgba(255,255,255,.08)}
-.ans-cell-name{font-size:13px;font-weight:700;color:#f0f0f5}
-.ans-cell-detail{font-size:10px;color:rgba(244,114,182,.65);font-weight:600;margin-top:1px}
-.ans-cell-hidden{flex:1;height:1.5px;background:rgba(255,255,255,.06);border-radius:2px}
-.tc{border-radius:10px;display:flex;flex-direction:column;align-items:center;padding:6px 5px 5px;gap:4px;min-height:56px;justify-content:center}
+/* REVEAL */
+.s-reveal{width:100%;height:100%;overflow-y:auto;padding:16px 36px;display:flex;align-items:flex-start;justify-content:center}
+.rev-inner{max-width:1000px;width:100%;display:flex;flex-direction:column;gap:7px}
+.rev-hdr,.rev-row{display:grid;gap:8px;align-items:stretch}
+.rev-ans{display:flex;align-items:center;gap:10px;border-radius:10px;padding:8px 12px;border:1.5px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);transition:all .4s cubic-bezier(.16,1,.3,1);min-height:62px}
+.rev-ans.rev{border-color:rgba(244,114,182,.5);background:rgba(244,114,182,.07)}
+.rev-rk{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(244,114,182,.25);width:22px;flex-shrink:0;text-align:center}
+.rev-ans.rev .rev-rk{color:#f472b6}
+.rsq{width:40px;height:40px;border-radius:7px;flex-shrink:0;object-fit:cover;background:rgba(255,255,255,.08)}
+.rev-nm{font-size:14px;font-weight:700;color:#f0f0f5}
+.rev-dt{font-size:11px;color:rgba(244,114,182,.65);font-weight:600;margin-top:2px}
+.rev-hid{flex:1;height:1.5px;background:rgba(255,255,255,.06);border-radius:2px}
+.tc{border-radius:10px;display:flex;flex-direction:column;align-items:center;padding:6px 5px 5px;gap:4px;min-height:62px;justify-content:center}
 .tc.ok{border:1.5px solid rgba(79,206,143,.5);background:rgba(79,206,143,.08)}
 .tc.ko{border:1.5px solid rgba(248,113,113,.5);background:rgba(248,113,113,.08)}
-.tc.wait{border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
-.tc-sq{width:36px;height:36px;border-radius:6px;flex-shrink:0;object-fit:cover;background:rgba(255,255,255,.08)}
-.tc-name{font-size:10px;font-weight:700;text-align:center;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.tc.ok .tc-name{color:#4fce8f}
-.tc.ko .tc-name{color:#f87171}
-.tc.wait .tc-name{color:rgba(255,255,255,.5)}
-.tc-score{font-size:18px;font-weight:700;color:#f472b6;text-align:center;line-height:1}
-.tc-team{font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.06em;text-align:center;margin-top:2px}
-.reveal-teams{display:flex;flex-direction:column;gap:10px}
-.rt-row{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden}
-.rt-header{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
-.rt-name{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em;flex:1}
-.rt-pts{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:#f472b6}
-.rt-cards{display:flex;gap:8px;padding:10px 16px}
-.mini{flex:1;border-radius:10px;border:2px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:600;text-align:center;padding:6px 4px;min-height:52px;transition:all .4s cubic-bezier(.16,1,.3,1);overflow:hidden}
-.mini img{width:100%;height:34px;object-fit:cover;border-radius:6px;margin-bottom:3px}
-.mini.correct{border-color:#4fce8f;background:rgba(79,206,143,.12);color:#4fce8f}
-.mini.wrong{border-color:#f87171;background:rgba(248,113,113,.1);color:#f87171}
-.reveal-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-
-/* ══ ADMIN ══ */
-#v-admin{padding:28px 36px;gap:20px;max-width:900px;width:100%;margin:0 auto}
-.admin-title{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
-.admin-list{display:flex;flex-direction:column;gap:10px}
-.admin-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px}
-.admin-num{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;color:rgba(244,114,182,.4);width:26px}
-.admin-text{flex:1;font-size:14px;font-weight:600}
-.admin-count{font-size:12px;color:rgba(255,255,255,.3)}
-
-/* ══ MODAL ══ */
-.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal{background:#0f0f1a;border:1px solid rgba(255,255,255,.1);border-radius:18px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
-.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,.07)}
-.modal-title{font-family:'Exo 2',sans-serif;font-size:17px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
-.modal-x{background:none;border:none;color:rgba(255,255,255,.3);font-size:18px;cursor:pointer;padding:2px 6px}
-.modal-x:hover{color:#fff}
-.modal-body{padding:18px 22px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
-.modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid rgba(255,255,255,.07)}
-.mlabel{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:5px;display:block}
-.minput{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;font-size:14px;color:#f0f0f5;font-family:'DM Sans',sans-serif;width:100%;outline:none;transition:border-color .2s}
-.minput:focus{border-color:rgba(244,114,182,.5)}
-.item-row{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px 12px}
-.item-rank{font-family:'Exo 2',sans-serif;font-size:15px;font-weight:800;font-style:italic;color:#f472b6;width:20px;flex-shrink:0}
-.iname{flex:2;background:transparent;border:none;font-size:13px;color:#f0f0f5;font-family:'DM Sans',sans-serif;outline:none;min-width:0}
-.idetail{flex:1.2;background:transparent;border:none;font-size:12px;color:rgba(255,255,255,.4);font-family:'DM Sans',sans-serif;outline:none;min-width:0}
-.iname::placeholder,.idetail::placeholder{color:rgba(255,255,255,.2)}
-.iimg-btn{font-size:11px;color:rgba(244,114,182,.7);background:none;border:1px solid rgba(244,114,182,.3);border-radius:6px;padding:3px 7px;cursor:pointer;flex-shrink:0;font-family:'DM Sans',sans-serif}
-.iimg-preview{width:30px;height:30px;border-radius:5px;object-fit:cover;flex-shrink:0}
-
-/* New session modal */
-.tc-opt{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);padding:8px 16px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;transition:all .15s}
-.tc-opt.sel{background:rgba(244,114,182,.15);border-color:rgba(244,114,182,.5);color:#f472b6}
-.team-name-input{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:9px 12px;font-size:13px;color:#f0f0f5;font-family:'DM Sans',sans-serif;width:100%;outline:none}
-.team-name-input:focus{border-color:rgba(244,114,182,.4)}
-
-@media(max-width:700px){
-  #v-master{flex-direction:column;height:auto}
-  .sidebar{width:100%;height:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,.07)}
-  #v-home,#v-admin{padding:20px 16px}
-  #v-reveal{padding:16px}
-}
+.tc.wt{border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
+.tcsq{width:40px;height:40px;border-radius:7px;flex-shrink:0;background:rgba(255,255,255,.08)}
+.tcnm{font-size:11px;font-weight:700;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.tc.ok .tcnm{color:#4fce8f}
+.tc.ko .tcnm{color:#f87171}
+.tc.wt .tcnm{color:rgba(255,255,255,.55)}
+.tcsc{font-size:20px;font-weight:700;color:#f472b6;text-align:center;line-height:1}
+.tclbl{font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.06em;text-align:center;margin-top:2px}
 </style>
 </head>
 <body>
-<div id="loading"><div class="spinner"></div><div style="font-size:13px;color:rgba(255,255,255,.3)">Chargement…</div></div>
-<div id="toast"></div>
-
-<nav class="nav">
-  <a href="index.html" class="nav-logo">Allo<span>Quizz</span> <span style="color:rgba(255,255,255,.2);font-size:13px;font-weight:400;margin-left:6px">Le Podium</span></a>
-  <div class="nav-right">
-    <button class="btn btn-ghost btn-sm" onclick="goAdmin()">⚙ Questions</button>
-    <button class="btn btn-ghost btn-sm" onclick="goHome()">🏠 Accueil</button>
-    <button class="btn btn-ghost btn-sm" onclick="openTV()">📺 Écran TV</button>
-    <a class="btn btn-ghost btn-sm" href="index.html">← Retour</a>
-  </div>
-</nav>
-
-<!-- HOME -->
-<div class="view" id="v-home">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-    <div class="home-title">Le <span>Podium</span></div>
-    <button class="btn btn-pink" onclick="openNewSession()">+ Nouvelle partie</button>
-  </div>
-  <div>
-    <div class="sec-label" style="margin-bottom:10px">Parties récentes</div>
-    <div class="sessions" id="sessions-list"><div class="empty">Aucune partie</div></div>
-  </div>
+<div class="top">
+  <div class="logo">Le <b>Podium</b></div>
+  <div class="top-q" id="top-q">En attente…</div>
+  <div class="top-code" id="top-code"></div>
 </div>
-
-<!-- MASTER -->
-<div class="view" id="v-master">
-  <div class="sidebar">
-    <div class="sb-top">
-      <div class="sb-code-lbl">Code de session</div>
-      <div class="sb-code" id="sb-code">—</div>
-      <div class="sb-qr" id="sb-qr"></div>
-      <div class="sb-hint">Rejoindre sur cette page</div>
-    </div>
-    <div class="sb-teams" id="sb-teams"><div style="font-size:12px;color:rgba(255,255,255,.25);text-align:center;padding:20px">En attente des équipes…</div></div>
-    <div class="sb-bottom">
-      <button class="btn btn-ghost btn-sm" onclick="openScoreEdit()">✏ Scores</button>
-      <button class="btn btn-ghost btn-sm" onclick="endSession()">Terminer ✓</button>
-    </div>
-  </div>
-  <div class="master-main">
-    <div class="master-top">
-      <div class="master-q-text" id="master-q-text">Choisissez une question →</div>
-      <div class="ready-count" id="ready-count"></div>
-      <div class="timer-display ok" id="timer-disp"></div>
-    </div>
-    <div class="master-content" id="master-content"></div>
-    <div class="master-controls" id="master-controls">
-      <button class="btn btn-ghost btn-sm" onclick="showQPicker()">☰ Questions</button>
-      <div class="timer-setup" id="timer-setup">
-        <button class="btn btn-ghost btn-sm" onclick="adjTimer(-10)">−10s</button>
-        <button class="btn btn-ghost btn-sm" onclick="adjTimer(-5)">−5s</button>
-        <div class="timer-val-disp" id="timer-pending">60s</div>
-        <button class="btn btn-ghost btn-sm" onclick="adjTimer(5)">+5s</button>
-        <button class="btn btn-ghost btn-sm" onclick="adjTimer(10)">+10s</button>
-        <button class="btn btn-pink btn-sm" onclick="startRound()">▶ Lancer</button>
-      </div>
-      <button class="btn btn-ghost btn-sm" id="btn-addtime" onclick="addTime(30)" style="display:none">+30s</button>
-      <button class="btn btn-ghost btn-sm" id="btn-stop" onclick="stopRound()" style="display:none">⏹ Stopper</button>
-      <button class="btn btn-pink btn-sm" id="btn-reveal" onclick="goReveal()" style="display:none">Révéler →</button>
-    </div>
-  </div>
-</div>
-
-<!-- REVEAL -->
-<div class="view" id="v-reveal">
-  <div class="reveal-q" id="reveal-q"></div>
-  <div class="reveal-list" id="reveal-list"></div>
-  <div class="reveal-teams" id="reveal-teams"></div>
-  <div class="reveal-controls">
-    <button class="btn btn-ghost" id="btn-rev-next" onclick="revealNext()">Révéler suivant →</button>
-    <button class="btn btn-ghost" onclick="revealAll()">Tout révéler</button>
-    <button class="btn btn-pink" onclick="backToMaster()">← Retour maître</button>
-  </div>
-</div>
-
-<!-- ADMIN -->
-<div class="view" id="v-admin">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-    <div class="admin-title">Questions</div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-pink btn-sm" onclick="openQModal(null)">+ Nouvelle question</button>
-      <button class="btn btn-ghost btn-sm" onclick="goHome()">← Retour</button>
-    </div>
-  </div>
-  <div class="admin-list" id="admin-list"><div class="empty">Aucune question</div></div>
-</div>
-
-<!-- MODAL: NEW SESSION -->
-<div class="modal-back" id="m-session" style="display:none" onclick="if(event.target===this)closeModal('m-session')">
-  <div class="modal">
-    <div class="modal-header"><div class="modal-title">Nouvelle partie</div><button class="modal-x" onclick="closeModal('m-session')">✕</button></div>
-    <div class="modal-body">
-      <div>
-        <span class="mlabel">Nombre d'équipes</span>
-        <div style="display:flex;gap:8px;flex-wrap:wrap" id="tc-btns">
-          <button class="tc-opt sel" data-n="2" onclick="setTeamCount(this)">2</button>
-          <button class="tc-opt" data-n="3" onclick="setTeamCount(this)">3</button>
-          <button class="tc-opt" data-n="4" onclick="setTeamCount(this)">4</button>
-          <button class="tc-opt" data-n="5" onclick="setTeamCount(this)">5</button>
-          <button class="tc-opt" data-n="6" onclick="setTeamCount(this)">6</button>
-        </div>
-      </div>
-      <div>
-        <span class="mlabel">Noms des équipes</span>
-        <div id="team-names" style="display:flex;flex-direction:column;gap:8px"></div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal('m-session')">Annuler</button>
-      <button class="btn btn-pink" onclick="createSession()">Créer →</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: QUESTION -->
-<div class="modal-back" id="m-question" style="display:none" onclick="if(event.target===this)closeModal('m-question')">
-  <div class="modal">
-    <div class="modal-header"><div class="modal-title" id="mq-title">Nouvelle question</div><button class="modal-x" onclick="closeModal('m-question')">✕</button></div>
-    <div class="modal-body">
-      <div>
-        <span class="mlabel">Question</span>
-        <input class="minput" id="mq-text" placeholder="ex: Classe ces 5 basketteurs par taille" oninput="checkQValid()">
-      </div>
-      <div>
-        <span class="mlabel">Éléments — dans l'ordre correct (1 = premier)</span>
-        <div id="mq-items" style="display:flex;flex-direction:column;gap:8px"></div>
-      </div>
-      <div id="mq-hint" style="font-size:12px;color:rgba(255,255,255,.25);text-align:center"></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal('m-question')">Annuler</button>
-      <button class="btn btn-pink" id="mq-save" onclick="saveQuestion()" disabled>Enregistrer</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: SCORE EDIT -->
-<div class="modal-back" id="m-scores" style="display:none" onclick="if(event.target===this)closeModal('m-scores')">
-  <div class="modal" style="max-width:380px">
-    <div class="modal-header"><div class="modal-title">Modifier les scores</div><button class="modal-x" onclick="closeModal('m-scores')">✕</button></div>
-    <div class="modal-body" id="m-scores-body"></div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal('m-scores')">Annuler</button>
-      <button class="btn btn-pink" onclick="applyScores()">Valider</button>
-    </div>
-  </div>
-</div>
+<div class="main" id="main"></div>
 
 <script>
 const DB_URL='https://tsneytqibltnjarajcll.supabase.co';
 const DB_KEY='sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
 const {createClient}=supabase;
 const db=createClient(DB_URL,DB_KEY);
+let questions=[],lastView='',lastRevealed=-1;
 
-let questions=[], sess=null, sessId=null;
-let currentQId=null, currentItems=[];
-let pendingTimer=60, timerVal=0, timerInterval=null;
-let revealIdx=0, revealItems=[], revealAnswers=[];
-let editingQId=null, teamCount=2;
-let pollInterval=null, tvWin=null;
-let bc=null; try{bc=new BroadcastChannel('podium_spectator');}catch(e){}
-let doneQIds=[];
-
-// ── INIT ──
 async function init(){
-  await Promise.all([loadQuestions(), loadSessions()]);
-  document.getElementById('loading').classList.add('hidden');
-  showView('v-home');
-}
-
-function showView(v){
-  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
-  document.getElementById(v).classList.add('active');
-}
-
-// ── NAV ──
-function goHome(){loadSessions();showView('v-home');}
-function goAdmin(){showView('v-admin');}
-function backToMaster(){showView('v-master');}
-
-// ── QUESTIONS ──
-async function loadQuestions(){
   const {data}=await db.from('podium_questions').select('*,podium_items(*)').order('sort_order');
   questions=(data||[]).map(q=>({...q,podium_items:(q.podium_items||[]).sort((a,b)=>a.correct_rank-b.correct_rank)}));
-  renderAdmin();
+  try{const bc=new BroadcastChannel('podium_spectator');bc.onmessage=e=>applyState(e.data);}catch(e){}
+  setInterval(()=>{try{const r=localStorage.getItem('podium_spectator');if(r)applyState(JSON.parse(r));}catch(e){}},1000);
+  try{const r=localStorage.getItem('podium_spectator');if(r)applyState(JSON.parse(r));}catch(e){}
 }
 
-function renderAdmin(){
-  const el=document.getElementById('admin-list');
-  if(!questions.length){el.innerHTML='<div class="empty">Aucune question — créez-en une !</div>';return;}
-  el.innerHTML=questions.map((q,i)=>`
-    <div class="admin-card">
-      <div class="admin-num">${String(i+1).padStart(2,'0')}</div>
-      <div class="admin-text">${q.question}</div>
-      <div class="admin-count">${(q.podium_items||[]).length}/5</div>
-      <button class="btn btn-ghost btn-sm" onclick="openQModal(${q.id})">✏</button>
-      <button class="btn btn-ghost btn-sm" style="color:rgba(255,80,80,.6)" onclick="deleteQ(${q.id})">✕</button>
-    </div>`).join('');
-}
+window.applyState=function(s){
+  if(!s)return;
+  const code=s.code||'';
+  const teams=s.teams||[];
+  const q=questions.find(x=>String(x.id)===String(s.question_id));
+  document.getElementById('top-code').textContent=code;
+  document.getElementById('top-q').textContent=q?q.question:'En attente…';
 
-function openQModal(id){
-  editingQId=id;
-  const q=id?questions.find(x=>x.id===id):null;
-  document.getElementById('mq-title').textContent=id?'Modifier':'Nouvelle question';
-  document.getElementById('mq-text').value=q?q.question:'';
-  const items=document.getElementById('mq-items');
-  items.innerHTML=Array.from({length:5},(_,i)=>{
-    const it=(q?.podium_items||[])[i]||{name:'',detail:'',image_url:''};
-    return `<div class="item-row">
-      <div class="item-rank">${i+1}</div>
-      <input class="iname" id="in-${i}" placeholder="Nom…" value="${it.name||''}" oninput="checkQValid()">
-      <input class="idetail" id="id-${i}" placeholder="Détail…" value="${it.detail||''}">
-      <img class="iimg-preview" id="ii-${i}" src="${it.image_url||''}" style="${it.image_url?'':'display:none'}">
-      <button class="iimg-btn" onclick="pickImg(${i})">img</button>
-    </div>`;
-  }).join('');
-  checkQValid();
-  document.getElementById('m-question').style.display='flex';
-  setTimeout(()=>document.getElementById('mq-text').focus(),50);
-}
-
-function pickImg(i){
-  const url=prompt('URL de l\'image :');
-  if(!url)return;
-  document.getElementById('ii-'+i).src=url;
-  document.getElementById('ii-'+i).style.display='block';
-}
-
-function checkQValid(){
-  const q=document.getElementById('mq-text').value.trim();
-  const all=Array.from({length:5},(_,i)=>document.getElementById('in-'+i)?.value.trim()).every(Boolean);
-  const ok=!!q&&all;
-  document.getElementById('mq-save').disabled=!ok;
-  document.getElementById('mq-hint').textContent=ok?'✓ Prêt à enregistrer':'Remplissez la question et les 5 éléments';
-  document.getElementById('mq-hint').style.color=ok?'rgba(79,206,143,.7)':'rgba(255,255,255,.25)';
-}
-
-async function saveQuestion(){
-  const qText=document.getElementById('mq-text').value.trim();
-  const itemsData=Array.from({length:5},(_,i)=>({
-    name:document.getElementById('in-'+i).value.trim(),
-    detail:document.getElementById('id-'+i)?.value.trim()||'',
-    image_url:(()=>{const el=document.getElementById('ii-'+i);return el&&el.style.display!=='none'&&el.src?el.src:null;})(),
-    correct_rank:i+1
-  }));
-  let qId=editingQId;
-  if(!qId){
-    const {data,error}=await db.from('podium_questions').insert({question:qText,sort_order:questions.length}).select().single();
-    if(error){toast('Erreur : '+error.message);return;}
-    qId=data.id;
-  } else {
-    await db.from('podium_questions').update({question:qText}).eq('id',qId);
-    await db.from('podium_items').delete().eq('question_id',qId);
-  }
-  await db.from('podium_items').insert(itemsData.map(it=>({...it,question_id:qId})));
-  closeModal('m-question');
-  await loadQuestions();
-  toast(editingQId?'Mis à jour ✓':'Question ajoutée ✓');
-}
-
-async function deleteQ(id){
-  const pin=prompt('Code :');
-  if(pin!=='1234'){toast('Code incorrect');return;}
-  await db.from('podium_questions').delete().eq('id',id);
-  await loadQuestions();
-}
-
-// ── SESSIONS ──
-async function loadSessions(){
-  const {data}=await db.from('podium_sessions').select('*').order('created_at',{ascending:false}).limit(15);
-  const el=document.getElementById('sessions-list');
-  if(!data||!data.length){el.innerHTML='<div class="empty">Aucune partie — créez-en une !</div>';return;}
-  el.innerHTML=data.map(s=>{
-    const date=new Date(s.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-    const teams=(s.teams||[]).map(t=>t.name).join(', ')||'—';
-    const active=s.status!=='finished';
-    return `<div class="sess-card" onclick="${active?`resumeSession('${s.id}')`:''}" style="${!active?'opacity:.5;cursor:default':''}">
-      <div class="sess-dot ${active?'active':'done'}"></div>
-      <div class="sess-info">
-        <div class="sess-code">${s.code}</div>
-        <div class="sess-meta">${date} · ${teams} · ${active?'En cours':'Terminée'}</div>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteSess('${s.id}')">✕</button>
-    </div>`;
-  }).join('');
-}
-
-// ── NEW SESSION ──
-let _teamCount=2;
-function openNewSession(){
-  _teamCount=2;
-  renderTeamNames(2);
-  document.getElementById('m-session').style.display='flex';
-}
-function setTeamCount(el){
-  document.querySelectorAll('.tc-opt').forEach(b=>b.classList.remove('sel'));
-  el.classList.add('sel');
-  _teamCount=parseInt(el.dataset.n);
-  renderTeamNames(_teamCount);
-}
-function renderTeamNames(n){
-  const defaults=['Équipe 1','Équipe 2','Équipe 3','Équipe 4','Équipe 5','Équipe 6'];
-  document.getElementById('team-names').innerHTML=Array.from({length:n},(_,i)=>`
-    <input class="team-name-input" id="tn-${i}" value="${defaults[i]}" placeholder="${defaults[i]}">`).join('');
-}
-async function createSession(){
-  const code=Math.random().toString(36).substring(2,6).toUpperCase();
-  const teams=Array.from({length:_teamCount},(_,i)=>({
-    name:document.getElementById('tn-'+i)?.value.trim()||('Équipe '+(i+1)),
-    score:0,submitted:false
-  }));
-  const {data,error}=await db.from('podium_sessions').insert({code,status:'waiting',teams,timer_duration:60,reveal_rank:0}).select().single();
-  if(error){toast('Erreur : '+error.message);return;}
-  closeModal('m-session');
-  await loadSessions();
-  mountSession(data);
-}
-async function resumeSession(id){
-  const {data}=await db.from('podium_sessions').select('*').eq('id',id).single();
-  if(!data)return;
-  mountSession(data);
-}
-async function deleteSess(id){
-  const pin=prompt('Code :');
-  if(pin!=='1234'){toast('Code incorrect');return;}
-  await db.from('podium_sessions').delete().eq('id',id);
-  loadSessions();
-}
-
-function mountSession(data){
-  sess=data; sessId=data.id;
-  doneQIds=data.done_question_ids||[];
-  pendingTimer=60;
-  document.getElementById('sb-code').textContent=data.code;
-  generateQR(data.code);
-  renderTeams(data.teams||[]);
-  showQPicker();
-  startPoll();
-  pushTV({view:'waiting'});
-  showView('v-master');
-}
-
-async function endSession(){
-  if(!confirm('Terminer cette partie ?'))return;
-  if(pollInterval)clearInterval(pollInterval);
-  await db.from('podium_sessions').update({status:'finished'}).eq('id',sessId);
-  loadSessions();
-  showView('v-home');
-}
-
-// ── POLL ──
-function startPoll(){
-  if(pollInterval)clearInterval(pollInterval);
-  pollInterval=setInterval(async()=>{
-    if(!sessId)return;
-    const {data}=await db.from('podium_sessions').select('*').eq('id',sessId).single();
-    if(data){sess=data;renderTeams(data.teams||[]);updateReadyCount(data.teams||[]);}
-  },2000);
-}
-
-function renderTeams(teams){
-  document.getElementById('sb-teams').innerHTML=teams.length
-    ?teams.map(t=>`
-      <div class="team-row ${t.submitted?'ready':''}">
-        <div class="team-name">${t.name}</div>
-        <div class="team-score">${t.score||0}</div>
-        <div class="team-badge ${t.submitted?'ready':'wait'}">${t.submitted?'✓ Prêt':'—'}</div>
-      </div>`).join('')
-    :'<div style="font-size:12px;color:rgba(255,255,255,.25);text-align:center;padding:20px">En attente des équipes…</div>';
-}
-
-function updateReadyCount(teams){
-  const ready=teams.filter(t=>t.submitted).length;
-  const el=document.getElementById('ready-count');
-  el.textContent=teams.length?`${ready}/${teams.length} prêts`:'';
-  if(ready===teams.length&&teams.length>0)pushTV({view:'playing'});
-}
-
-// ── Q PICKER ──
-function showQPicker(){
-  document.getElementById('master-q-text').textContent='Choisissez une question →';
-  document.getElementById('master-content').innerHTML=`<div class="q-list">${
-    questions.length?questions.map((q,i)=>{
-      const done=doneQIds.includes(q.id);
-      return `<div class="q-card${done?' done':''}" onclick="${done?'':('pickQ('+q.id+')')}">
-        <div class="q-num">${String(i+1).padStart(2,'0')}</div>
-        <div class="q-text">${q.question}</div>
-        ${done?'<div class="q-done-badge">✓ Faite</div>':'<span style="color:rgba(255,255,255,.2)">›</span>'}
+  if(s.view==='reveal'){
+    document.getElementById('top-q').textContent=q?q.question:'Révélation';
+    const items=q?q.podium_items||[]:[];
+    const revealed=s.revealed_count||0;
+    const answers=s.answers||[];
+    const updTeams=s.teams||teams;
+    if(lastView!=='reveal'){lastView='reveal';lastRevealed=-1;buildReveal(items,updTeams,answers,revealed);}
+    else if(revealed!==lastRevealed){updateReveal(items,updTeams,answers,revealed);}
+  } else if(s.view==='playing'||s.view==='stopped'){
+    if(lastView!=='playing'){
+      lastView='playing';
+      const url=`${location.origin}${location.pathname.replace('podium-spectateur.html','podium-joueur.html')}?code=${code}`;
+      document.getElementById('main').innerHTML=`<div class="s-play">
+        <div class="p-lbl">En cours</div>
+        <div class="p-teams" id="sp-teams"></div>
+        ${!q?`<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(url)}&bgcolor=06060d&color=f472b6&margin=6" style="width:120px;height:120px;border-radius:10px">
+          <div style="font-family:'Exo 2',sans-serif;font-size:40px;font-weight:800;font-style:italic;color:#f472b6;letter-spacing:.1em">${code}</div>
+        </div>`:''}
       </div>`;
-    }).join('')
-    :'<div class="empty">Aucune question — créez-en dans ⚙ Questions</div>'
-  }</div>`;
-  document.getElementById('timer-setup').style.display='none';
-  document.getElementById('btn-reveal').style.display='none';
-  document.getElementById('btn-stop').style.display='none';
-  document.getElementById('btn-addtime').style.display='none';
-  document.getElementById('timer-disp').style.display='none';
-}
-
-async function pickQ(id){
-  currentQId=id;
-  const q=questions.find(x=>x.id===id);
-  if(!q)return;
-  currentItems=q.podium_items||[];
-  document.getElementById('master-q-text').textContent=q.question;
-  // Reset submissions
-  const teams=(sess?.teams||[]).map(t=>({...t,submitted:false}));
-  await db.from('podium_sessions').update({current_question_id:id,status:'waiting',teams}).eq('id',sessId);
-  sess={...sess,teams,current_question_id:id,status:'waiting'};
-  renderTeams(teams);
-  document.getElementById('master-content').innerHTML='<div style="text-align:center;padding:40px;color:rgba(255,255,255,.3)">Question sélectionnée — règle le chrono et lance !</div>';
-  pendingTimer=60;
-  document.getElementById('timer-pending').textContent='60s';
-  document.getElementById('timer-setup').style.display='flex';
-  document.getElementById('btn-reveal').style.display='none';
-  document.getElementById('btn-stop').style.display='none';
-  document.getElementById('btn-addtime').style.display='none';
-  document.getElementById('timer-disp').style.display='none';
-  pushTV({view:'playing'});
-}
-
-// ── TIMER ──
-function adjTimer(delta){
-  pendingTimer=Math.max(5,Math.min(300,pendingTimer+delta));
-  document.getElementById('timer-pending').textContent=pendingTimer+'s';
-}
-function addTime(s){
-  timerVal+=s;
-  toast('+'+s+'s ajoutées');
-}
-
-async function startRound(){
-  if(!currentQId){toast('Choisissez une question');return;}
-  const dur=pendingTimer;
-  const teams=(sess?.teams||[]).map(t=>({...t,submitted:false}));
-  await db.from('podium_sessions').update({status:'playing',teams,timer_duration:dur}).eq('id',sessId);
-  sess={...sess,status:'playing',teams};
-  renderTeams(teams);
-  document.getElementById('timer-setup').style.display='none';
-  document.getElementById('btn-stop').style.display='';
-  document.getElementById('btn-addtime').style.display='';
-  document.getElementById('btn-reveal').style.display='none';
-  timerVal=dur;
-  const el=document.getElementById('timer-disp');
-  el.style.display='block';
-  clearInterval(timerInterval);
-  const tick=()=>{
-    el.textContent=timerVal;
-    el.className='timer-display '+(timerVal>dur*.5?'ok':timerVal>10?'warn':'urgent');
-    if(timerVal<=0){
-      clearInterval(timerInterval);
-      document.getElementById('btn-stop').style.display='none';
-      document.getElementById('btn-addtime').style.display='none';
-      document.getElementById('btn-reveal').style.display='';
-      toast('Temps écoulé !');
-      pushTV({view:'playing'});
     }
-  };
-  tick();
-  timerInterval=setInterval(()=>{timerVal--;tick();},1000);
-  pushTV({view:'playing'});
-}
+    const el=document.getElementById('sp-teams');
+    if(el)el.innerHTML=teams.map(t=>`
+      <div class="p-card ${t.submitted?'ready':''}">
+        <div class="p-name">${t.name}</div>
+        <div class="p-score">${t.score||0}</div>
+        <div class="p-status ${t.submitted?'ready':'wait'}">${t.submitted?'✓ Prêt':'En cours…'}</div>
+      </div>`).join('');
+  } else {
+    if(lastView==='default')return;
+    lastView='default';
+    const url=`${location.origin}${location.pathname.replace('podium-spectateur.html','podium-joueur.html')}?code=${code}`;
+    document.getElementById('main').innerHTML=`<div class="s-wait">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}&bgcolor=06060d&color=f472b6&margin=8" style="width:180px;height:180px;border-radius:14px">
+      <div><div class="w-code">${code||'—'}</div><div class="w-hint">Rejoindre sur cette page</div></div>
+      <div class="w-chips">${teams.map(t=>`<div class="w-chip">${t.name}</div>`).join('')}</div>
+    </div>`;
+  }
+};
 
-function stopRound(){
-  clearInterval(timerInterval);
-  document.getElementById('btn-stop').style.display='none';
-  document.getElementById('btn-addtime').style.display='none';
-  document.getElementById('btn-reveal').style.display='';
-  db.from('podium_sessions').update({status:'stopped'}).eq('id',sessId);
-  pushTV({view:'playing'});
-}
-
-// ── REVEAL ──
-async function goReveal(){
-  if(!currentQId)return;
-  clearInterval(timerInterval);
-  document.getElementById('timer-disp').style.display='none';
-  const q=questions.find(x=>x.id===currentQId);
-  revealItems=q?q.podium_items||[]:[];
-  const {data}=await db.from('podium_answers').select('*').eq('session_id',sessId).eq('question_id',currentQId);
-  revealAnswers=data||[];
-  revealIdx=0;
-  document.getElementById('reveal-q').textContent=q?q.question:'—';
-  buildRevealSlots();
-  buildRevealTeams();
-  showView('v-reveal');
-  pushTV({view:'reveal',answers:revealAnswers,revealed_count:0});
-}
-
-function buildRevealSlots(){
-  const teams=sess?.teams||[];
+function buildReveal(items,teams,answers,revealed){
   const cols=`2fr ${teams.map(()=>'1fr').join(' ')}`;
-  const wrap=document.getElementById('reveal-list');
-  wrap.className='reveal-grid-wrap';
-  // Header row
-  const hdr=document.createElement('div');
-  hdr.className='reveal-header-row';
-  hdr.style.gridTemplateColumns=cols;
-  hdr.innerHTML='<div></div>'+teams.map(t=>`
-    <div style="text-align:center">
-      <div class="tc-score">${t.score||0}</div>
-      <div class="tc-team">${t.name}</div>
-    </div>`).join('');
-  wrap.innerHTML='';
-  wrap.appendChild(hdr);
-  // Item rows
-  revealItems.forEach((it,i)=>{
-    const row=document.createElement('div');
-    row.className='reveal-row';
-    row.id='rs-'+i;
-    row.style.gridTemplateColumns=cols;
-    row.innerHTML=`<div class="ans-cell" id="ans-cell-${i}">
-      <div class="ans-cell-rank">${i+1}</div>
-      <div class="ans-cell-hidden"></div>
-    </div>`+teams.map(t=>{
-      const ans=revealAnswers.find(a=>a.team_name===t.name);
-      const ranking=ans?ans.rankings:[];
-      const itemId=ranking[i];
-      const item=revealItems.find(x=>String(x.id)===String(itemId));
-      return `<div class="tc wait" id="tc-${t.name.replace(/\s/g,'_')}-${i}">
-        <div class="tc-sq" ${item?.image_url?`style="background:url('${item.image_url}') center/cover"`:''}></div>
-        <div class="tc-name">${item?.name||'?'}</div>
-      </div>`;
-    }).join('');
-    wrap.appendChild(row);
-  });
-}
-
-function buildRevealTeams(){
-  const teams=sess?.teams||[];
-  document.getElementById('reveal-teams').innerHTML=teams.map(t=>{
-    const ans=revealAnswers.find(a=>a.team_name===t.name);
-    const ranking=ans?ans.rankings:[];
-    const hasAnswer=!!ans;
-    return `<div class="rt-row">
-      <div class="rt-header">
-        <div class="rt-name">${t.name}</div>
-        ${!hasAnswer?'<div style="font-size:11px;color:rgba(255,80,80,.5);font-weight:700;letter-spacing:.08em;text-transform:uppercase;flex:1;margin-left:8px">Pas de réponse</div>':''}
-        <div class="rt-pts" id="rpts-${t.name.replace(/\s/g,'_')}">${t.score||0} pts</div>
-      </div>
-      ${hasAnswer?`<div class="rt-cards">
-        ${revealItems.map((_,i)=>{
+  document.getElementById('main').innerHTML=`<div class="s-reveal"><div class="rev-inner">
+    <div class="rev-hdr" style="grid-template-columns:${cols}">
+      <div></div>
+      ${teams.map(t=>`<div><div class="tcsc">${t.score||0}</div><div class="tclbl">${t.name}</div></div>`).join('')}
+    </div>
+    ${items.map((it,i)=>{
+      const isRev=i<revealed;
+      return `<div class="rev-row" style="grid-template-columns:${cols}">
+        <div class="rev-ans${isRev?' rev':''}" id="sa-${i}">
+          <div class="rev-rk">${i+1}</div>
+          ${isRev
+            ?(it.image_url?`<img class="rsq" src="${it.image_url}" alt="">`:'')+`<div><div class="rev-nm">${it.name}</div>${it.detail?`<div class="rev-dt">${it.detail}</div>`:''}</div>`
+            :'<div class="rev-hid"></div>'}
+        </div>
+        ${teams.map(t=>{
+          const ans=answers.find(a=>a.team_name===t.name);
+          const ranking=ans?ans.rankings:[];
           const itemId=ranking[i];
-          const item=revealItems.find(x=>String(x.id)===String(itemId))||{name:'?'};
-          return `<div class="mini" id="mini-${t.name.replace(/\s/g,'_')}-${i}">
-            ${item.image_url?`<img src="${item.image_url}" alt="">`:'' }
-            <span>${item.name||'?'}</span>
+          const item=items.find(x=>String(x.id)===String(itemId));
+          const ok=isRev&&String(itemId)===String(it.id);
+          const cls=isRev?(ok?'ok':'ko'):'wt';
+          return `<div class="tc ${cls}" id="stc-${t.name.replace(/ /g,'_')}-${i}">
+            <div class="tcsq" ${item?.image_url&&isRev?`style="background:url('${item.image_url}') center/cover"`:''} ></div>
+            <div class="tcnm">${isRev?(ok?'✓ ':'✗ '):''}${item?.name||'?'}</div>
           </div>`;
         }).join('')}
-      </div>`:''}
-    </div>`;
-  }).join('');
+      </div>`;
+    }).join('')}
+  </div></div>`;
+  lastRevealed=revealed;
 }
 
-function revealNext(){
-  if(revealIdx>=revealItems.length){toast('Tout révélé');return;}
-  const item=revealItems[revealIdx];
-  const row=document.getElementById('rs-'+revealIdx);
-  row.classList.add('revealed');
-  row.innerHTML=
-    `<div class="reveal-item-rank">${revealIdx+1}</div>`+
-    (item.image_url?`<img src="${item.image_url}" alt="">`:'') +
-    `<div class="reveal-item-name">${item.name}</div>`+
-    (item.detail?`<div class="reveal-item-detail">${item.detail}</div>`:'');
-  // Color team mini-cards
-  teams.forEach(t=>{
-    const ans=revealAnswers.find(a=>a.team_name===t.name);
-    const key=t.name.replace(/\s/g,'_');
-    const tc=document.getElementById(`tc-${key}-${revealIdx}`);
-    if(!tc)return;
-    if(!ans||!ans.rankings||!ans.rankings.length){tc.className='tc ko';tc.querySelector('.tc-name').textContent='—';return;}
-    const ranking=ans.rankings||[];
-    const teamItemId=ranking[revealIdx];
-    const correct=String(teamItemId)===String(item.id);
-    tc.className='tc '+(correct?'ok':'ko');
-    const nameEl=tc.querySelector('.tc-name');
-    if(nameEl)nameEl.textContent=(correct?'✓ ':'✗ ')+(tc.querySelector('.tc-name').textContent);
-  });
-  revealIdx++;
-  pushTV({view:'reveal',answers:revealAnswers,revealed_count:revealIdx});
-  if(revealIdx===revealItems.length){
-    document.getElementById('btn-rev-next').style.display='none';
-    calcScores();
-  }
-}
-
-function revealAll(){while(revealIdx<revealItems.length)revealNext();}
-
-async function calcScores(){
-  const teams=sess?.teams||[];
-  const updated=teams.map(t=>{
-    const ans=revealAnswers.find(a=>a.team_name===t.name);
-    if(!ans||!ans.rankings||!ans.rankings.length)return t; // no answer submitted
-    const ranking=ans.rankings||[];
-    let pts=0,allOk=true;
-    revealItems.forEach((item,i)=>{
-      if(String(ranking[i])===String(item.id))pts++;
-      else allOk=false;
+function updateReveal(items,teams,answers,revealed){
+  if(document.getElementById('sa-0')===null){buildReveal(items,teams,answers,revealed);return;}
+  for(let i=lastRevealed;i<revealed;i++){
+    const it=items[i];
+    const cell=document.getElementById('sa-'+i);
+    if(cell&&!cell.classList.contains('rev')){
+      cell.classList.add('rev');
+      cell.innerHTML=`<div class="rev-rk">${i+1}</div>`+
+        (it.image_url?`<img class="rsq" src="${it.image_url}" alt="">`:'')+
+        `<div><div class="rev-nm">${it.name}</div>${it.detail?`<div class="rev-dt">${it.detail}</div>`:''}</div>`;
+    }
+    teams.forEach(t=>{
+      const ans=answers.find(a=>a.team_name===t.name);
+      const key=t.name.replace(/ /g,'_');
+      const tc=document.getElementById(`stc-${key}-${i}`);
+      if(!tc)return;
+      const ranking=ans?ans.rankings:[];
+      const itemId=ranking[i];
+      const item=items.find(x=>String(x.id)===String(itemId));
+      const ok=String(itemId)===String(it.id);
+      tc.className='tc '+(ans?(ok?'ok':'ko'):'ko');
+      const nm=tc.querySelector('.tcnm');
+      if(nm)nm.textContent=(ans?(ok?'✓ ':'✗ '):'— ')+(item?.name||'?');
+      if(item?.image_url){const sq=tc.querySelector('.tcsq');if(sq)sq.style.background=`url('${item.image_url}') center/cover`;}
     });
-    if(allOk)pts+=5;
-    return {...t,score:(t.score||0)+pts};
-  });
-  doneQIds=[...doneQIds,currentQId];
-  await db.from('podium_sessions').update({teams:updated,done_question_ids:doneQIds}).eq('id',sessId);
-  sess={...sess,teams:updated};
-  renderTeams(updated);
-  updated.forEach(t=>{
-    const el=document.getElementById('rpts-'+t.name.replace(/\s/g,'_'));
-    if(el)el.textContent=(t.score||0)+' pts';
-  });
-  pushTV({view:'reveal',answers:revealAnswers,revealed_count:revealIdx,teams:updated});
-  toast('Scores calculés ✓');
-}
-
-// ── SCORE EDIT ──
-function openScoreEdit(){
-  const teams=sess?.teams||[];
-  document.getElementById('m-scores-body').innerHTML=teams.map(t=>`
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
-      <label class="mlabel" style="color:#f472b6">${t.name}</label>
-      <input class="minput" id="se-${t.name.replace(/\s/g,'_')}" type="number" min="0" value="${t.score||0}" style="font-size:24px;font-weight:800;text-align:center;color:#f472b6">
-    </div>`).join('');
-  document.getElementById('m-scores').style.display='flex';
-}
-async function applyScores(){
-  const teams=(sess?.teams||[]).map(t=>{
-    const v=parseInt(document.getElementById('se-'+t.name.replace(/\s/g,'_'))?.value)||0;
-    return {...t,score:v};
-  });
-  await db.from('podium_sessions').update({teams}).eq('id',sessId);
-  sess={...sess,teams};
-  renderTeams(teams);
-  closeModal('m-scores');
-  toast('Scores mis à jour ✓');
-}
-
-// ── QR + TV ──
-function generateQR(code){
-  const url=`${location.origin}${location.pathname.replace('podium.html','podium-joueur.html')}?code=${code}`;
-  const img=document.createElement('img');
-  img.src=`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(url)}&bgcolor=06060d&color=f472b6&margin=6`;
-  img.style.cssText='width:130px;height:130px;border-radius:10px';
-  const el=document.getElementById('sb-qr');
-  el.innerHTML='';el.appendChild(img);
-}
-
-function openTV(){
-  pushTV({view:currentQId?'playing':'waiting'});
-  tvWin=window.open('podium-spectateur.html','podium_tv','width=1280,height=720,toolbar=0,menubar=0,location=0');
-  if(!tvWin){toast('Pop-up bloquée');return;}
-  toast('Écran TV ouvert');
-  setTimeout(()=>pushTV({view:currentQId?'playing':'waiting'}),800);
-}
-
-function pushTV(extra={}){
-  const state={
-    code:sess?.code||'',
-    teams:sess?.teams||[],
-    question_id:currentQId,
-    ...extra
-  };
-  try{localStorage.setItem('podium_spectator',JSON.stringify(state));}catch(e){}
-  if(bc)try{bc.postMessage(state);}catch(e){}
-  if(tvWin&&!tvWin.closed&&tvWin.applyState)try{tvWin.applyState(state);}catch(e){}
-}
-
-// ── UTILS ──
-function closeModal(id){document.getElementById(id).style.display='none';}
-function toast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2000);
+  }
+  lastRevealed=revealed;
 }
 
 init();
