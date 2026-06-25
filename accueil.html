@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlloQuizz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,800;1,800&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:#06060d;color:#f0f0f5;
+  min-height:100vh;display:flex;flex-direction:column;
+  cursor:none;overflow-x:hidden;
+}
+.cursor{
+  position:fixed;width:10px;height:10px;
+  background:#7c6fff;border-radius:50%;
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  transition:width .2s ease,height .2s ease,background .25s ease;
+  opacity:.85;
+}
+.cursor.grow{width:52px;height:52px;opacity:.55}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 70% 55% at 15% 10%,rgba(124,111,255,0.15) 0%,transparent 55%),
+    radial-gradient(ellipse 55% 45% at 85% 85%,rgba(79,158,255,0.1) 0%,transparent 50%);
+  pointer-events:none;z-index:0;
+}
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);
+  background-size:52px 52px;
+  pointer-events:none;z-index:0;
+}
+.nav{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;
+  background:rgba(6,6,13,0.9);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+.nav-logo{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:18px;
+  color:#f0f0f5;padding:16px 0;letter-spacing:-.02em;
+}
+.nav-logo span{color:#7c6fff}
+.hero{
+  position:relative;z-index:1;
+  text-align:center;padding:36px 48px 24px;
+}
+.hero h1{
+  font-family:'Righteous',sans-serif;font-size:44px;font-weight:400;
+  letter-spacing:.02em;line-height:1.15;margin-bottom:0;
+}
+.hero h1 em{
+  background:linear-gradient(135deg,#a599ff,#7c6fff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  font-style:normal;font-family:'Righteous',sans-serif;
+}
+/* Corner brackets */
+.hero-corners{position:absolute;inset:0;pointer-events:none;z-index:2}
+.corner{position:absolute;width:16px;height:16px;border-color:#7c6fff;border-style:solid;display:block}
+.corner.tl{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:2px 0 0 0}
+.corner.tr{top:-1px;right:-1px;border-width:2px 2px 0 0;border-radius:0 2px 0 0}
+.corner.bl{bottom:-1px;left:-1px;border-width:0 0 2px 2px;border-radius:0 0 0 2px}
+.corner.br{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 2px 0}
+.games{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:12px;padding:0 40px 48px;
+  max-width:1000px;margin:0 auto;width:100%;
+}
+.game-card{
+  border-radius:16px;height:220px;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:22px 24px;
+  text-decoration:none;overflow:hidden;
+  cursor:none;position:relative;
+  transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s;
+}
+.card-grille{border:1.5px solid rgba(251,146,60,0.25)}
+.card-jp{border:1.5px solid rgba(45,212,191,0.2)}
+.card-mot{border:1.5px solid rgba(192,132,252,0.2)}
+.card-panel{border:1.5px solid rgba(248,113,113,0.2)}
+.card-podium{border:1.5px solid rgba(244,114,182,0.2)}
+.card-grille:hover{border-color:rgba(251,146,60,0.6);box-shadow:0 0 32px rgba(251,146,60,0.15)}
+.card-jp:hover{border-color:rgba(45,212,191,0.55);box-shadow:0 0 32px rgba(45,212,191,0.12)}
+.card-mot:hover{border-color:rgba(192,132,252,0.55);box-shadow:0 0 32px rgba(192,132,252,0.12)}
+.card-panel:hover{border-color:rgba(248,113,113,0.55);box-shadow:0 0 32px rgba(248,113,113,0.12)}
+.card-podium:hover{border-color:rgba(244,114,182,0.55);box-shadow:0 0 32px rgba(244,114,182,0.12)}
+.game-card:hover{transform:translateY(-8px) scale(1.02);box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.card-btn.soon-btn{cursor:default;opacity:.7}
+.card-bg{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  transition:transform .5s ease,filter .3s;
+  filter:brightness(.9);
+}
+.game-card:hover .card-bg{transform:scale(1.05);filter:brightness(1.05)}
+.card-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.25) 55%,transparent 100%);
+}
+.card-content{position:relative;z-index:1;display:flex;flex-direction:column;gap:5px}
+.card-tag{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.7}
+.card-grille .card-tag{color:#fb923c}
+.card-jp .card-tag{color:#2dd4bf}
+.card-mot .card-tag{color:#c084fc}
+.card-panel .card-tag{color:#f87171}
+.card-podium .card-tag{color:#f472b6}
+.card-desc{font-size:12px;color:rgba(255,255,255,0.5);line-height:1.4;max-width:240px;margin-top:4px}
+.card-name{
+  font-family:'Exo 2',sans-serif;font-size:28px;font-weight:800;font-style:italic;
+  color:#fff;letter-spacing:.06em;line-height:1.1;text-transform:uppercase;
+}
+
+.card-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  margin-top:16px;padding:10px 20px;border-radius:8px;
+  font-size:11px;font-weight:700;letter-spacing:.12em;
+  color:#fff;
+  transition:filter .2s, transform .2s;
+  width:fit-content;text-transform:uppercase;
+}
+.game-card:hover .card-btn{filter:brightness(1.25);transform:translateX(2px)}
+.card-grille .card-btn{background:rgba(251,146,60,0.15);border:1px solid #fb923c;color:#fb923c}
+.card-jp .card-btn{background:rgba(45,212,191,0.12);border:1px solid #2dd4bf;color:#2dd4bf}
+.card-mot .card-btn{background:rgba(192,132,252,0.12);border:1px solid #c084fc;color:#c084fc}
+.card-panel .card-btn{background:rgba(248,113,113,0.12);border:1px solid #f87171;color:#f87171}
+.card-podium .card-btn{background:rgba(244,114,182,0.12);border:1px solid #f472b6;color:#f472b6}
+.soon-lbl{
+  position:absolute;top:14px;right:14px;z-index:2;
+  font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,0.35);
+  border:1px solid rgba(255,255,255,0.12);
+  padding:3px 9px;border-radius:20px;
+  background:rgba(0,0,0,0.35);backdrop-filter:blur(4px);
+}
+.game-card{animation:up .5s cubic-bezier(.16,1,.3,1) both}
+.game-card:nth-child(1){animation-delay:.05s}
+.game-card:nth-child(2){animation-delay:.12s}
+.game-card:nth-child(3){animation-delay:.19s}
+.game-card:nth-child(4){animation-delay:.26s}
+.game-card:nth-child(5){animation-delay:.33s}
+@keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.hero{animation:up .4s ease both}
+.footer{
+  position:relative;z-index:1;
+  padding:0 28px 28px;
+  display:flex;gap:24px;justify-content:center;
+}
+.footer-item{font-size:11px;color:rgba(255,255,255,0.18);display:flex;align-items:center;gap:6px}
+.footer-item::before{content:'·'}
+@media(max-width:600px){
+  body{cursor:auto}
+  .cursor{display:none}
+  .nav{padding:0 20px}
+  .hero{padding:28px 20px 16px}
+  .hero h1{font-size:32px}
+  .games{
+    grid-template-columns:1fr;
+    gap:10px;padding:0 16px 40px;
+  }
+  .game-card{height:180px;padding:18px 20px}
+  .card-name{font-size:24px}
+  .game-card:nth-child(5){grid-column:1}
+}
+
+.sessions-section{
+  position:relative;z-index:1;
+  max-width:1000px;margin:0 auto;width:100%;
+  padding:0 40px 32px;
+}
+.sessions-header{margin-bottom:14px}
+.sessions-title{font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,0.35)}
+.sessions-subtitle{font-size:11px;color:rgba(255,255,255,0.18);margin-top:2px}
+.sessions-list{display:flex;flex-direction:column;gap:8px}
+.session-row{
+  display:flex;align-items:center;gap:16px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px;padding:14px 18px;
+  transition:border-color .2s,background .2s;
+}
+.session-row:hover{background:rgba(255,255,255,0.055);border-color:rgba(251,146,60,0.3)}
+.session-status{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.session-status.in_progress{background:#fb923c;box-shadow:0 0 6px rgba(251,146,60,0.6)}
+.session-status.finished{background:rgba(255,255,255,0.2)}
+.session-info{flex:1;min-width:0}
+.session-themes{font-size:13px;font-weight:600;color:#f0f0f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-meta{font-size:11px;color:rgba(255,255,255,0.3);margin-top:3px}
+.session-scores{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(255,255,255,0.5);flex-shrink:0}
+.session-score-t1{color:#4f9eff}.session-score-t2{color:#ff6b9d}
+.session-actions{display:flex;gap:8px;flex-shrink:0}
+.btn-resume{
+  padding:7px 14px;border-radius:7px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  background:rgba(251,146,60,0.12);border:1px solid rgba(251,146,60,0.5);color:#fb923c;
+  cursor:pointer;text-decoration:none;transition:filter .2s;
+}
+.btn-resume:hover{filter:brightness(1.3)}
+.btn-delete{
+  padding:7px 10px;border-radius:7px;font-size:11px;
+  background:transparent;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.25);
+  cursor:pointer;transition:border-color .2s,color .2s;
+}
+.btn-delete:hover{border-color:rgba(255,80,80,0.5);color:#ff5050}
+@media(max-width:600px){
+  .sessions-section{padding:0 16px 32px}
+  .session-row{flex-wrap:wrap;gap:10px}
+  .session-actions{width:100%}
+  .btn-resume,.btn-delete{flex:1;text-align:center}
+}
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<nav class="nav">
+  <a href="index.html" class="nav-logo" style="text-decoration:none">Allo<span>Quizz</span></a>
+  <div style="flex:1"></div>
+  <a href="admin.html" style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);text-decoration:none;padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.08);transition:color .2s" onmouseover="this.style.color='#f0f0f5'" onmouseout="this.style.color='rgba(255,255,255,.25)'">⚙ Back Office</a>
+</nav>
+<div class="hero">
+  <h1>Choisissez votre <em>jeu</em></h1>
+
+</div>
+<div class="games">
+  <a class="game-card card-grille" href="grille.html">
+    <div class="card-bg" style="background-image:url('https://i.goopics.net/1ch4b7.png')"></div>
+      <div class="card-overlay"></div>
+    <div class="card-content">
+      <div class="card-name">La Grille</div>
+      <div class="card-desc">Retrouvez les bonnes réponses sur une grille de cases visuelles.</div>
+      <div class="card-btn">Jouer ›</div>
+    </div>
+  </a>
+  <a class="game-card card-panel" href="panel.html">
+    <div class="card-bg" style="background-image:url('https://i.goopics.net/t3rihx.png')"></div>
+      <div class="card-overlay"></div>
+    <div class="card-content">
+      <div class="card-name">Le Panel</div>
+      <div class="card-desc">Trouvez les réponses les plus données par le panel.</div>
+      <div class="card-btn">Jouer ›</div>
+    </div>
+  </a>
+  <div class="game-card card-jp">
+    <div class="card-bg" style="background-image:url('https://i.goopics.net/6jx2wm.png')"></div>
+      <div class="card-overlay"></div>
+    <div class="card-content">
+      <div class="card-name">Le Juste Prix</div>
+      <div class="card-desc">Estimez, pariez et soyez le plus proche du juste prix.</div>
+      <div class="card-btn soon-btn">Bientôt disponible</div>
+    </div>
+  </div>
+  <a class="game-card card-mot" href="mot-interdit.html">
+    <div class="card-bg" style="background-image:url('https://i.goopics.net/hqmske.png')"></div>
+      <div class="card-overlay"></div>
+    <div class="card-content">
+      <div class="card-name">Le Mot Interdit</div>
+      <div class="card-desc">Faites deviner un mot sans prononcer les 5 mots interdits.</div>
+      <div class="card-btn">Jouer ›</div>
+    </div>
+  </a>
+  <a class="game-card card-podium" href="podium.html">
+    <div class="card-bg" style="background-image:url('https://i.goopics.net/r5iqnx.png')"></div>
+      <div class="card-overlay"></div>
+    <div class="card-content">
+      <div class="card-name">Le Podium</div>
+      <div class="card-desc">Classez les 5 éléments dans le bon ordre avant les autres.</div>
+      <div class="card-btn">Jouer ›</div>
+    </div>
+  </a>
+</div>
+
+<div class="sessions-section" id="sessions-section" style="display:none">
+  <div class="sessions-header">
+    <div class="sessions-title">Parties récentes</div>
+    <div class="sessions-subtitle">La Grille</div>
+  </div>
+  <div class="sessions-list" id="sessions-list"></div>
+</div>
+<div class="footer">
+  <div class="footer-item">100% gratuit</div>
+  <div class="footer-item">Rapide &amp; fluide</div>
+  <div class="footer-item">Multijoueur</div>
+</div>
+<script>
+const cursor=document.getElementById('cursor');
+const cardColors={
+  'card-grille':'#fb923c',
+  'card-jp':'#2dd4bf',
+  'card-mot':'#c084fc',
+  'card-panel':'#f87171',
+  'card-podium':'#f472b6',
+};
+const defaultColor='#7c6fff';
+document.addEventListener('mousemove',e=>{cursor.style.left=e.clientX+'px';cursor.style.top=e.clientY+'px';});
+document.querySelectorAll('.game-card').forEach(card=>{
+  const color=Object.entries(cardColors).find(([cls])=>card.classList.contains(cls))?.[1]||defaultColor;
+  card.addEventListener('mouseenter',()=>{
+    cursor.classList.add('grow');
+    cursor.style.background=color;
+  });
+  card.addEventListener('mouseleave',()=>{
+    cursor.classList.remove('grow');
+    cursor.style.background=defaultColor;
+  });
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL = 'https://tsneytqibltnjarajcll.supabase.co';
+const SUPA_KEY = 'sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
+const { createClient } = supabase;
+const db2 = createClient(SUPA_URL, SUPA_KEY);
+const DELETE_PIN = '1234';
+
+async function loadSessions() {
+  const { data, error } = await db2
+    .from('grille_sessions')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(10);
+  if (error || !data || !data.length) return;
+  document.getElementById('sessions-section').style.display = 'block';
+  const list = document.getElementById('sessions-list');
+  list.innerHTML = data.map(s => {
+    const date = new Date(s.created_at).toLocaleDateString('fr-FR', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const themes = (s.theme_names || []).join(', ') || 'Thèmes inconnus';
+    const sc = s.scores || [0,0];
+    const isOngoing = s.status === 'in_progress';
+    return `<div class="session-row">
+      <div class="session-status ${s.status}"></div>
+      <div class="session-info">
+        <div class="session-themes">${themes}</div>
+        <div class="session-meta">${date} · ${isOngoing ? 'En cours' : 'Terminée'}</div>
+      </div>
+      <div class="session-scores">
+        <span class="session-score-t1">${sc[0]}</span>
+        <span style="color:rgba(255,255,255,0.2)"> — </span>
+        <span class="session-score-t2">${sc[1]}</span>
+      </div>
+      <div class="session-actions">
+        ${isOngoing ? `<a class="btn-resume" href="grille.html?session=${s.id}">Reprendre →</a>` : `<a class="btn-resume" style="opacity:.6;cursor:default" href="#">Terminée</a>`}
+        <button class="btn-delete" onclick="deleteSession('${s.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteSession(id) {
+  const pin = prompt('Code de suppression :');
+  if (pin !== DELETE_PIN) { alert('Code incorrect'); return; }
+  await db2.from('grille_sessions').delete().eq('id', id);
+  loadSessions();
+}
+
+loadSessions();
+</script>
+</body>
+</html>
