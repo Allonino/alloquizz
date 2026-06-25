@@ -376,7 +376,11 @@ body { display: flex; flex-direction: column; }
 <script src="config.js"></script>
 <script>
 const BUCKET = 'images';
-const db = aq_db;
+const db = (typeof aq_db !== 'undefined') ? aq_db : supabase.createClient('https://tsneytqibltnjarajcll.supabase.co', 'sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1');
+function aqToast(m,t){let e=document.getElementById('aq-toast');if(!e){e=document.createElement('div');e.id='aq-toast';document.body.appendChild(e);}e.textContent=m;e.className='show'+(t?' '+t:'');setTimeout(()=>e.className='',2600);}
+function aqBroadcast(g,s){try{localStorage.setItem('aq_'+g,JSON.stringify(s));}catch(e){}try{const b=new BroadcastChannel('aq_'+g);b.postMessage(s);b.close();}catch(e){}}
+function aqOpenSpectator(g){window.open('spectateur-'+g+'.html','_blank');}
+function aqEsc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 let themes = [], currentThemeId = null;
 let gameThemes = [], selectedForGame = new Set(), lockedThemes = new Set();
 let scores = [0,0], roundScores = [0,0], currentTeam = 1;
@@ -389,7 +393,7 @@ let pendingThemeId = null, pendingTeam = null;
 
 // ── INIT ──────────────────────────────────────────
 async function init() {
-  const { data } = await db.from('themes').select('*, images(*)').order('sort_order').order('name');
+  const { data } = await db.from('themes').select('*, images(*)').order('sort_order', { ascending: true });
   themes = (data || []).map(t => ({ ...t, images: (t.images || []).sort((a,b) => a.sort_order - b.sort_order) }));
   renderSidebar();
   document.getElementById('loader').classList.add('hidden');
