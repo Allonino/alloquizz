@@ -375,7 +375,7 @@ body { display: flex; flex-direction: column; }
 
 <script>
 const BUCKET = 'images';
-const db = supabase.createClient('https://tsneytqibltnjarajcll.supabase.co', 'sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1');
+const db = supabase.createClient('https://tsneytqibltnjarajcll.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzbmV5dHFpYmx0bmphcmFqY2xsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NTI0OTUsImV4cCI6MjA5NjMyODQ5NX0.dHlBVF1yI5gx0mxS88HmZvyrMPi2ghZngUjf2GOOess');
 function aqToast(m,t){let e=document.getElementById('aq-toast');if(!e){e=document.createElement('div');e.id='aq-toast';document.body.appendChild(e);}e.textContent=m;e.className='show'+(t?' '+t:'');setTimeout(()=>e.className='',2600);}
 function aqBroadcast(g,s){try{localStorage.setItem('aq_'+g,JSON.stringify(s));}catch(e){}try{const b=new BroadcastChannel('aq_'+g);b.postMessage(s);b.close();}catch(e){}}
 function aqOpenSpectator(g){window.open('spectateur-'+g+'.html','_blank');}
