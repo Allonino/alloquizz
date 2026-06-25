@@ -489,7 +489,7 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
           <div class="game-q-label">Question</div>
           <div>
             <span class="game-q-text" id="game-q-text">—</span>
-            <button class="game-q-edit-btn" id="btn-edit-q" onclick="openEditCurrentQuestion()" style="display:none" title="Modifier cette question">✏</button>
+            <button class="game-q-edit-btn" id="btn-edit-q" onclick="openEditCurrentQuestion()" title="Modifier cette question">✏</button>
           </div>
           <div class="game-q-panel-desc" id="game-q-panel-desc"></div>
         </div>
@@ -834,9 +834,9 @@ async function deleteSession(id) {
 
 // ══ PLAYLIST / SIDEBAR ══
 function buildAnswerTooltip(q) {
-  const ans = (q.panel_answers || []).filter(a => a.text && a.text.trim());
+  const ans = (q.panel_answers || []).filter(a => a.answer && a.answer.trim());
   const rows = ans.length
-    ? ans.map(a => `<div class="sat-row"><span class="sat-pts">${a.points}</span><span class="sat-text">${a.text}</span></div>`).join('')
+    ? ans.map(a => `<div class="sat-row"><span class="sat-pts">${a.points}</span><span class="sat-text">${a.answer}</span></div>`).join('')
     : '<div class="sat-empty">Aucune réponse</div>';
   return `<div class="sidebar-ans-tooltip"><div class="sat-q">${q.question}</div>${rows}</div>`;
 }
@@ -1588,6 +1588,33 @@ function playWrongSound() {
       osc.stop(t + delay + 0.25);
     });
   } catch(e) {}
+}
+
+// ══ WRONG ANSWER ══
+function wrongAnswer() {
+  // Incrémenter le compteur de l'équipe active
+  wrongCounts[currentTeam - 1]++;
+  updateWrongCountersUI();
+
+  // Flash overlay sur l'écran maître
+  const ov = document.getElementById('wrong-overlay');
+  ov.classList.add('show');
+  if (wrongOverlayTimer) clearTimeout(wrongOverlayTimer);
+  wrongOverlayTimer = setTimeout(() => ov.classList.remove('show'), 2000);
+
+  // Son wrong
+  playWrongSound();
+
+  // Flash sur l'écran spectateur via BroadcastChannel / localStorage
+  const flashState = { ...getSpectatorState(), wrongFlash: true };
+  if (bc) try { bc.postMessage(flashState); } catch(e) {}
+  try { localStorage.setItem('panel_spectator', JSON.stringify(flashState)); } catch(e) {}
+  // Repousser l'état normal après 2s pour que le spectateur revienne à la normale
+  setTimeout(() => pushSpectator(), 2100);
+
+  showToast('✗ Mauvaise réponse — ' + (currentTeam === 1
+    ? document.getElementById('name-t1').textContent
+    : document.getElementById('name-t2').textContent));
 }
 
 // ══ STARTING TEAM TRACKING ══
