@@ -3,367 +3,543 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AlloQuizz</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>Le Mot Interdit — Maître du jeu</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,700;0,800;1,800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,800;1,800&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{
-  font-family:'DM Sans',sans-serif;
-  background:#06060d;color:#f0f0f5;
-  min-height:100vh;display:flex;flex-direction:column;
-  cursor:none;overflow-x:hidden;
-}
-.cursor{
-  position:fixed;width:10px;height:10px;
-  background:#7c6fff;border-radius:50%;
-  pointer-events:none;z-index:9999;
-  transform:translate(-50%,-50%);
-  transition:width .2s ease,height .2s ease,background .25s ease;
-  opacity:.85;
-}
-.cursor.grow{width:52px;height:52px;opacity:.55}
-body::before{
-  content:'';position:fixed;inset:0;
-  background:
-    radial-gradient(ellipse 70% 55% at 15% 10%,rgba(124,111,255,0.15) 0%,transparent 55%),
-    radial-gradient(ellipse 55% 45% at 85% 85%,rgba(79,158,255,0.1) 0%,transparent 50%);
-  pointer-events:none;z-index:0;
-}
-body::after{
-  content:'';position:fixed;inset:0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);
-  background-size:52px 52px;
-  pointer-events:none;z-index:0;
-}
-.nav{
-  position:sticky;top:0;z-index:100;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 40px;
-  background:rgba(6,6,13,0.9);
-  border-bottom:1px solid rgba(255,255,255,0.08);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-}
-.nav-logo{
-  font-family:'Syne',sans-serif;font-weight:800;font-size:18px;
-  color:#f0f0f5;padding:16px 0;letter-spacing:-.02em;
-}
-.nav-logo span{color:#7c6fff}
-.hero{
-  position:relative;z-index:1;
-  text-align:center;padding:36px 48px 24px;
-}
-.hero h1{
-  font-family:'Righteous',sans-serif;font-size:44px;font-weight:400;
-  letter-spacing:.02em;line-height:1.15;margin-bottom:0;
-}
-.hero h1 em{
-  background:linear-gradient(135deg,#a599ff,#7c6fff);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  font-style:normal;font-family:'Righteous',sans-serif;
-}
-/* Corner brackets */
-.hero-corners{position:absolute;inset:0;pointer-events:none;z-index:2}
-.corner{position:absolute;width:16px;height:16px;border-color:#7c6fff;border-style:solid;display:block}
-.corner.tl{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:2px 0 0 0}
-.corner.tr{top:-1px;right:-1px;border-width:2px 2px 0 0;border-radius:0 2px 0 0}
-.corner.bl{bottom:-1px;left:-1px;border-width:0 0 2px 2px;border-radius:0 0 0 2px}
-.corner.br{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 2px 0}
-.games{
-  position:relative;z-index:1;
-  display:grid;grid-template-columns:1fr 1fr;
-  gap:12px;padding:0 40px 48px;
-  max-width:1000px;margin:0 auto;width:100%;
-}
-.game-card{
-  border-radius:16px;height:220px;
-  display:flex;flex-direction:column;justify-content:flex-end;
-  padding:22px 24px;
-  text-decoration:none;overflow:hidden;
-  cursor:none;position:relative;
-  transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s;
-}
-.card-grille{border:1.5px solid rgba(251,146,60,0.25)}
-.card-jp{border:1.5px solid rgba(45,212,191,0.2)}
-.card-mot{border:1.5px solid rgba(192,132,252,0.2)}
-.card-panel{border:1.5px solid rgba(248,113,113,0.2)}
-.card-podium{border:1.5px solid rgba(244,114,182,0.2)}
-.card-grille:hover{border-color:rgba(251,146,60,0.6);box-shadow:0 0 32px rgba(251,146,60,0.15)}
-.card-jp:hover{border-color:rgba(45,212,191,0.55);box-shadow:0 0 32px rgba(45,212,191,0.12)}
-.card-mot:hover{border-color:rgba(192,132,252,0.55);box-shadow:0 0 32px rgba(192,132,252,0.12)}
-.card-panel:hover{border-color:rgba(248,113,113,0.55);box-shadow:0 0 32px rgba(248,113,113,0.12)}
-.card-podium:hover{border-color:rgba(244,114,182,0.55);box-shadow:0 0 32px rgba(244,114,182,0.12)}
-.game-card:hover{transform:translateY(-8px) scale(1.02);box-shadow:0 20px 60px rgba(0,0,0,0.5)}
-.card-btn.soon-btn{cursor:default;opacity:.7}
-.card-bg{
-  position:absolute;inset:0;
-  background-size:cover;background-position:center;
-  transition:transform .5s ease,filter .3s;
-  filter:brightness(.9);
-}
-.game-card:hover .card-bg{transform:scale(1.05);filter:brightness(1.05)}
-.card-overlay{
-  position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.25) 55%,transparent 100%);
-}
-.card-content{position:relative;z-index:1;display:flex;flex-direction:column;gap:5px}
-.card-tag{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.7}
-.card-grille .card-tag{color:#fb923c}
-.card-jp .card-tag{color:#2dd4bf}
-.card-mot .card-tag{color:#c084fc}
-.card-panel .card-tag{color:#f87171}
-.card-podium .card-tag{color:#f472b6}
-.card-desc{font-size:12px;color:rgba(255,255,255,0.5);line-height:1.4;max-width:240px;margin-top:4px}
-.card-name{
-  font-family:'Exo 2',sans-serif;font-size:28px;font-weight:800;font-style:italic;
-  color:#fff;letter-spacing:.06em;line-height:1.1;text-transform:uppercase;
-}
+html,body{height:100%;overflow:hidden;background:#06060d;color:#f0f0f5}
+body{font-family:'DM Sans',sans-serif;display:flex;flex-direction:column}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes bump{0%{transform:scale(1.3)}100%{transform:scale(1)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes timerPulse{0%,100%{box-shadow:0 0 0 0 rgba(192,132,252,.4)}50%{box-shadow:0 0 0 8px rgba(192,132,252,0)}}
 
-.card-btn{
-  display:inline-flex;align-items:center;gap:8px;
-  margin-top:16px;padding:10px 20px;border-radius:8px;
-  font-size:11px;font-weight:700;letter-spacing:.12em;
-  color:#fff;
-  transition:filter .2s, transform .2s;
-  width:fit-content;text-transform:uppercase;
-}
-.game-card:hover .card-btn{filter:brightness(1.25);transform:translateX(2px)}
-.card-grille .card-btn{background:rgba(251,146,60,0.15);border:1px solid #fb923c;color:#fb923c}
-.card-jp .card-btn{background:rgba(45,212,191,0.12);border:1px solid #2dd4bf;color:#2dd4bf}
-.card-mot .card-btn{background:rgba(192,132,252,0.12);border:1px solid #c084fc;color:#c084fc}
-.card-panel .card-btn{background:rgba(248,113,113,0.12);border:1px solid #f87171;color:#f87171}
-.card-podium .card-btn{background:rgba(244,114,182,0.12);border:1px solid #f472b6;color:#f472b6}
-.soon-lbl{
-  position:absolute;top:14px;right:14px;z-index:2;
-  font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-  color:rgba(255,255,255,0.35);
-  border:1px solid rgba(255,255,255,0.12);
-  padding:3px 9px;border-radius:20px;
-  background:rgba(0,0,0,0.35);backdrop-filter:blur(4px);
-}
-.game-card{animation:up .5s cubic-bezier(.16,1,.3,1) both}
-.game-card:nth-child(1){animation-delay:.05s}
-.game-card:nth-child(2){animation-delay:.12s}
-.game-card:nth-child(3){animation-delay:.19s}
-.game-card:nth-child(4){animation-delay:.26s}
-.game-card:nth-child(5){animation-delay:.33s}
-@keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.hero{animation:up .4s ease both}
-.footer{
-  position:relative;z-index:1;
-  padding:0 28px 28px;
-  display:flex;gap:24px;justify-content:center;
-}
-.footer-item{font-size:11px;color:rgba(255,255,255,0.18);display:flex;align-items:center;gap:6px}
-.footer-item::before{content:'·'}
-@media(max-width:600px){
-  body{cursor:auto}
-  .cursor{display:none}
-  .nav{padding:0 20px}
-  .hero{padding:28px 20px 16px}
-  .hero h1{font-size:32px}
-  .games{
-    grid-template-columns:1fr;
-    gap:10px;padding:0 16px 40px;
-  }
-  .game-card{height:180px;padding:18px 20px}
-  .card-name{font-size:24px}
-  .game-card:nth-child(5){grid-column:1}
-}
+/* TOP BAR */
+.top{display:flex;align-items:center;padding:12px 28px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;gap:16px;background:rgba(6,6,13,.95)}
+.logo{font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.25);flex-shrink:0}
+.logo b{color:#c084fc}
+.top-center{flex:1;display:flex;align-items:center;justify-content:center;gap:24px}
+.score-block{display:flex;flex-direction:column;align-items:center;gap:2px}
+.score-lbl{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+.score-val{font-family:'Exo 2',sans-serif;font-size:36px;font-weight:800;font-style:italic;line-height:1}
+.t1c{color:#4f9eff}.t2c{color:#ff6b9d}
+.score-sep{font-size:20px;color:rgba(255,255,255,.15);font-weight:300;align-self:center}
+.top-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.btn-sm{padding:7px 14px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border:none;transition:filter .2s,transform .15s;font-family:'DM Sans',sans-serif}
+.btn-sm:hover{filter:brightness(1.25);transform:translateY(-1px)}
+.btn-spectator{background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.4);color:#c084fc}
+.btn-setup{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5)}
 
-.sessions-section{
-  position:relative;z-index:1;
-  max-width:1000px;margin:0 auto;width:100%;
-  padding:0 40px 32px;
-}
-.sessions-header{margin-bottom:14px}
-.sessions-title{font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,0.35)}
-.sessions-subtitle{font-size:11px;color:rgba(255,255,255,0.18);margin-top:2px}
-.sessions-list{display:flex;flex-direction:column;gap:8px}
-.session-row{
-  display:flex;align-items:center;gap:16px;
-  background:rgba(255,255,255,0.03);
-  border:1px solid rgba(255,255,255,0.07);
-  border-radius:12px;padding:14px 18px;
-  transition:border-color .2s,background .2s;
-}
-.session-row:hover{background:rgba(255,255,255,0.055);border-color:rgba(251,146,60,0.3)}
-.session-status{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.session-status.in_progress{background:#fb923c;box-shadow:0 0 6px rgba(251,146,60,0.6)}
-.session-status.finished{background:rgba(255,255,255,0.2)}
-.session-info{flex:1;min-width:0}
-.session-themes{font-size:13px;font-weight:600;color:#f0f0f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.session-meta{font-size:11px;color:rgba(255,255,255,0.3);margin-top:3px}
-.session-scores{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(255,255,255,0.5);flex-shrink:0}
-.session-score-t1{color:#4f9eff}.session-score-t2{color:#ff6b9d}
-.session-actions{display:flex;gap:8px;flex-shrink:0}
-.btn-resume{
-  padding:7px 14px;border-radius:7px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  background:rgba(251,146,60,0.12);border:1px solid rgba(251,146,60,0.5);color:#fb923c;
-  cursor:pointer;text-decoration:none;transition:filter .2s;
-}
-.btn-resume:hover{filter:brightness(1.3)}
-.btn-delete{
-  padding:7px 10px;border-radius:7px;font-size:11px;
-  background:transparent;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.25);
-  cursor:pointer;transition:border-color .2s,color .2s;
-}
-.btn-delete:hover{border-color:rgba(255,80,80,0.5);color:#ff5050}
-@media(max-width:600px){
-  .sessions-section{padding:0 16px 32px}
-  .session-row{flex-wrap:wrap;gap:10px}
-  .session-actions{width:100%}
-  .btn-resume,.btn-delete{flex:1;text-align:center}
-}
+/* MAIN */
+.main{flex:1;display:flex;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:260px;flex-shrink:0;border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;overflow:hidden;background:rgba(255,255,255,.015)}
+.sidebar-head{padding:16px 18px 10px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sidebar-title{font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3)}
+.word-list{flex:1;overflow-y:auto;padding:8px}
+.word-list::-webkit-scrollbar{width:4px}
+.word-list::-webkit-scrollbar-track{background:transparent}
+.word-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.word-item{padding:10px 12px;border-radius:9px;cursor:pointer;transition:background .15s,border-color .15s;border:1px solid transparent;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.word-item:hover{background:rgba(192,132,252,.08);border-color:rgba(192,132,252,.2)}
+.word-item.active{background:rgba(192,132,252,.14);border-color:rgba(192,132,252,.4)}
+.word-item.done{opacity:.35}
+.word-item-name{font-size:13px;font-weight:700;color:#f0f0f5}
+.word-item-done{width:6px;height:6px;border-radius:50%;background:rgba(79,206,143,.7);flex-shrink:0}
+
+/* CONTENT */
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* SETUP SCREEN */
+.setup-screen{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
+.setup-box{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:36px;max-width:480px;width:100%;animation:fadeIn .4s ease both}
+.setup-title{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;color:#c084fc;margin-bottom:24px}
+.form-row{margin-bottom:18px}
+.form-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px;display:block}
+.form-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 14px;color:#f0f0f5;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:rgba(192,132,252,.5)}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn-start{width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#9333ea,#c084fc);border:none;color:#fff;font-family:'Exo 2',sans-serif;font-size:15px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;transition:filter .2s,transform .15s;margin-top:8px}
+.btn-start:hover{filter:brightness(1.15);transform:translateY(-2px)}
+
+/* GAME SCREEN */
+.game-screen{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.game-top{padding:16px 28px 0;display:flex;align-items:center;gap:16px;flex-shrink:0}
+.team-badge{padding:5px 16px;border-radius:20px;font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em}
+.team-badge.t1{background:rgba(79,158,255,.12);border:1px solid rgba(79,158,255,.3);color:#4f9eff}
+.team-badge.t2{background:rgba(255,107,157,.12);border:1px solid rgba(255,107,157,.3);color:#ff6b9d}
+.round-lbl{font-size:11px;color:rgba(255,255,255,.3);font-weight:600}
+
+/* TIMER */
+.timer-wrap{display:flex;align-items:center;justify-content:center;gap:12px;flex-shrink:0;padding:12px 28px 0}
+.timer-display{font-family:'Exo 2',sans-serif;font-size:64px;font-weight:800;font-style:italic;line-height:1;min-width:130px;text-align:center;font-variant-numeric:tabular-nums;transition:color .3s}
+.timer-ok{color:#c084fc}
+.timer-warn{color:#f59e0b}
+.timer-urgent{color:#ef4444;animation:timerPulse 1s ease infinite}
+.timer-controls{display:flex;flex-direction:column;gap:6px}
+.btn-timer{width:40px;height:40px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:filter .2s,transform .15s}
+.btn-timer:hover{filter:brightness(1.3);transform:scale(1.08)}
+.btn-play{background:rgba(192,132,252,.15);border:1px solid rgba(192,132,252,.4);color:#c084fc}
+.btn-stop{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#ef4444}
+.btn-reset{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);font-size:14px}
+.timer-edit{display:flex;align-items:center;gap:6px;margin-top:4px}
+.timer-edit input{width:56px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:5px 8px;color:#f0f0f5;font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;text-align:center;outline:none}
+.timer-edit input:focus{border-color:rgba(192,132,252,.5)}
+.timer-edit-lbl{font-size:11px;color:rgba(255,255,255,.3)}
+
+/* WORD CARD */
+.word-area{flex:1;display:flex;align-items:center;justify-content:center;padding:16px 28px}
+.word-card{background:rgba(255,255,255,.03);border:1.5px solid rgba(192,132,252,.2);border-radius:20px;padding:28px 36px;width:100%;max-width:600px;animation:fadeIn .35s ease both}
+.word-main{font-family:'Exo 2',sans-serif;font-size:52px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;color:#f0f0f5;text-align:center;margin-bottom:24px;line-height:1}
+.forbidden-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px}
+.forbidden-item{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:10px 14px;text-align:center;font-size:15px;font-weight:700;color:#fca5a5;text-transform:uppercase;letter-spacing:.04em}
+.action-row{display:flex;gap:10px;justify-content:center}
+.btn-action{padding:12px 24px;border-radius:10px;font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;border:none;transition:filter .2s,transform .15s;flex:1;max-width:180px}
+.btn-action:hover{filter:brightness(1.2);transform:translateY(-2px)}
+.btn-correct{background:linear-gradient(135deg,#059669,#10b981);color:#fff}
+.btn-pass{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6)}
+.btn-next{background:linear-gradient(135deg,#9333ea,#c084fc);color:#fff}
+.btn-forbidden{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#ef4444}
+
+/* ADD WORD PANEL */
+.add-panel{border-top:1px solid rgba(255,255,255,.07);padding:14px 20px;flex-shrink:0;background:rgba(255,255,255,.015)}
+.add-toggle{font-size:11px;color:rgba(255,255,255,.3);cursor:pointer;font-weight:600;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:6px;transition:color .2s;background:none;border:none;padding:0}
+.add-toggle:hover{color:#c084fc}
+.add-form{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.add-row{display:flex;gap:8px}
+.add-input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 11px;color:#f0f0f5;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
+.add-input:focus{border-color:rgba(192,132,252,.5)}
+.add-input::placeholder{color:rgba(255,255,255,.25)}
+.add-forbidden-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.btn-add-word{background:rgba(192,132,252,.15);border:1px solid rgba(192,132,252,.4);color:#c084fc;padding:8px 16px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;transition:filter .2s}
+.btn-add-word:hover{filter:brightness(1.3)}
+
+/* WAITING SCREEN */
+.wait-screen{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;color:rgba(255,255,255,.2);font-size:16px;font-weight:600}
+.wait-screen svg{opacity:.2}
+
+/* RESULT FLASH */
+.result-flash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:999;pointer-events:none}
+.flash-inner{font-family:'Exo 2',sans-serif;font-size:80px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;animation:bump .4s ease-out both}
+.flash-correct{color:#10b981}
+.flash-pass{color:rgba(255,255,255,.3)}
+.flash-forbidden{color:#ef4444}
+
+/* NO WORD SELECTED */
+.no-word{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:rgba(255,255,255,.2);font-size:14px;font-weight:600;text-align:center;padding:40px}
 </style>
 </head>
 <body>
-<div class="cursor" id="cursor"></div>
-<nav class="nav">
-  <a href="index.html" class="nav-logo" style="text-decoration:none">Allo<span>Quizz</span></a>
-</nav>
-<div class="hero">
-  <h1>Choisissez votre <em>jeu</em></h1>
 
-</div>
-<div class="games">
-  <a class="game-card card-grille" href="grille.html">
-    <div class="card-bg" style="background-image:url('https://i.goopics.net/1ch4b7.png')"></div>
-      <div class="card-overlay"></div>
-    <div class="card-content">
-      <div class="card-name">La Grille</div>
-      <div class="card-desc">Retrouvez les bonnes réponses sur une grille de cases visuelles.</div>
-      <div class="card-btn">Jouer ›</div>
+<div class="top">
+  <div class="logo">Le <b>Mot Interdit</b></div>
+  <div class="top-center">
+    <div class="score-block">
+      <div class="score-lbl" id="lbl-t1">Équipe 1</div>
+      <div class="score-val t1c" id="score-t1">0</div>
     </div>
-  </a>
-  <a class="game-card card-panel" href="panel.html">
-    <div class="card-bg" style="background-image:url('https://i.goopics.net/t3rihx.png')"></div>
-      <div class="card-overlay"></div>
-    <div class="card-content">
-      <div class="card-name">Le Panel</div>
-      <div class="card-desc">Trouvez les réponses les plus données par le panel.</div>
-      <div class="card-btn">Jouer ›</div>
-    </div>
-  </a>
-  <div class="game-card card-jp">
-    <div class="card-bg" style="background-image:url('https://i.goopics.net/6jx2wm.png')"></div>
-      <div class="card-overlay"></div>
-    <div class="card-content">
-      <div class="card-name">Le Juste Prix</div>
-      <div class="card-desc">Estimez, pariez et soyez le plus proche du juste prix.</div>
-      <div class="card-btn soon-btn">Bientôt disponible</div>
+    <div class="score-sep">—</div>
+    <div class="score-block">
+      <div class="score-lbl" id="lbl-t2">Équipe 2</div>
+      <div class="score-val t2c" id="score-t2">0</div>
     </div>
   </div>
-  <div class="game-card card-mot">
-    <div class="card-bg" style="background-image:url('https://i.goopics.net/hqmske.png')"></div>
-      <div class="card-overlay"></div>
-    <div class="card-content">
-      <div class="card-name">Le Mot Interdit</div>
-      <div class="card-desc">Répondez, votez et découvrez les tendances en direct.</div>
-      <div class="card-btn soon-btn">Bientôt disponible</div>
-    </div>
+  <div class="top-right">
+    <button class="btn-sm btn-setup" id="btn-back-setup">⚙ Setup</button>
+    <button class="btn-sm btn-spectator" onclick="openSpectator()">📺 Spectateur</button>
   </div>
-  <a class="game-card card-podium" href="podium.html">
-    <div class="card-bg" style="background-image:url('https://i.goopics.net/r5iqnx.png')"></div>
-      <div class="card-overlay"></div>
-    <div class="card-content">
-      <div class="card-name">Le Podium</div>
-      <div class="card-desc">Classez les 5 éléments dans le bon ordre avant les autres.</div>
-      <div class="card-btn">Jouer ›</div>
-    </div>
-  </a>
 </div>
 
-<div class="sessions-section" id="sessions-section" style="display:none">
-  <div class="sessions-header">
-    <div class="sessions-title">Parties récentes</div>
-    <div class="sessions-subtitle">La Grille</div>
+<div class="main">
+  <!-- SIDEBAR : liste des mots -->
+  <div class="sidebar" id="sidebar" style="display:none">
+    <div class="sidebar-head">
+      <div class="sidebar-title">Mots disponibles</div>
+    </div>
+    <div class="word-list" id="word-list"></div>
+    <!-- Ajouter un mot -->
+    <div class="add-panel">
+      <button class="add-toggle" id="add-toggle" onclick="toggleAdd()">＋ Ajouter un mot</button>
+      <div class="add-form" id="add-form" style="display:none">
+        <input class="add-input" id="add-word" placeholder="Mot principal (ex: SOLEIL)" style="font-weight:700;font-size:14px">
+        <div class="add-forbidden-grid">
+          <input class="add-input" id="af1" placeholder="Interdit 1">
+          <input class="add-input" id="af2" placeholder="Interdit 2">
+          <input class="add-input" id="af3" placeholder="Interdit 3">
+          <input class="add-input" id="af4" placeholder="Interdit 4">
+          <input class="add-input" id="af5" placeholder="Interdit 5">
+          <button class="btn-add-word" onclick="addWord()">Ajouter</button>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="sessions-list" id="sessions-list"></div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- SETUP -->
+    <div class="setup-screen" id="setup-screen">
+      <div class="setup-box">
+        <div class="setup-title">Nouvelle partie</div>
+        <div class="form-row-2">
+          <div class="form-row">
+            <label class="form-label">Équipe 1</label>
+            <input class="form-input" id="team1-input" value="Équipe 1" placeholder="Nom équipe 1">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Équipe 2</label>
+            <input class="form-input" id="team2-input" value="Équipe 2" placeholder="Nom équipe 2">
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Durée du chrono (secondes)</label>
+          <input class="form-input" id="timer-input" type="number" value="60" min="10" max="300">
+        </div>
+        <button class="btn-start" onclick="startGame()">Commencer →</button>
+      </div>
+    </div>
+
+    <!-- GAME -->
+    <div class="game-screen" id="game-screen" style="display:none">
+
+      <div class="game-top">
+        <div class="team-badge t1" id="current-team-badge">Équipe 1</div>
+        <div class="round-lbl" id="round-lbl">Choisissez un mot →</div>
+      </div>
+
+      <!-- Timer -->
+      <div class="timer-wrap">
+        <div class="timer-controls">
+          <button class="btn-timer btn-play" id="btn-play" onclick="startTimer()" title="Démarrer">▶</button>
+          <button class="btn-timer btn-stop" id="btn-pause" onclick="pauseTimer()" title="Pause">⏸</button>
+        </div>
+        <div class="timer-display timer-ok" id="timer-display">—</div>
+        <div class="timer-controls">
+          <button class="btn-timer btn-reset" onclick="resetTimer()" title="Réinitialiser">↺</button>
+          <div class="timer-edit">
+            <input type="number" id="timer-set" min="10" max="300" value="60" title="Modifier le temps">
+            <span class="timer-edit-lbl">s</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mot actif ou attente -->
+      <div class="word-area" id="word-area">
+        <div class="no-word">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+          Sélectionnez un mot dans la liste
+        </div>
+      </div>
+
+    </div>
+
+    <!-- WAIT -->
+    <div class="wait-screen" id="wait-screen" style="display:none">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      En attente…
+    </div>
+  </div>
 </div>
-<div class="footer">
-  <div class="footer-item">100% gratuit</div>
-  <div class="footer-item">Rapide &amp; fluide</div>
-  <div class="footer-item">Multijoueur</div>
+
+<!-- Flash résultat -->
+<div class="result-flash" id="result-flash" style="display:none">
+  <div class="flash-inner" id="flash-text"></div>
 </div>
+
 <script>
-const cursor=document.getElementById('cursor');
-const cardColors={
-  'card-grille':'#fb923c',
-  'card-jp':'#2dd4bf',
-  'card-mot':'#c084fc',
-  'card-panel':'#f87171',
-  'card-podium':'#f472b6',
-};
-const defaultColor='#7c6fff';
-document.addEventListener('mousemove',e=>{cursor.style.left=e.clientX+'px';cursor.style.top=e.clientY+'px';});
-document.querySelectorAll('.game-card').forEach(card=>{
-  const color=Object.entries(cardColors).find(([cls])=>card.classList.contains(cls))?.[1]||defaultColor;
-  card.addEventListener('mouseenter',()=>{
-    cursor.classList.add('grow');
-    cursor.style.background=color;
-  });
-  card.addEventListener('mouseleave',()=>{
-    cursor.classList.remove('grow');
-    cursor.style.background=defaultColor;
-  });
-});
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPA_URL = 'https://tsneytqibltnjarajcll.supabase.co';
-const SUPA_KEY = 'sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
+const DB_URL = 'https://tsneytqibltnjarajcll.supabase.co';
+const DB_KEY = 'sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
 const { createClient } = supabase;
-const db2 = createClient(SUPA_URL, SUPA_KEY);
-const DELETE_PIN = '1234';
+const db = createClient(DB_URL, DB_KEY);
 
-async function loadSessions() {
-  const { data, error } = await db2
-    .from('grille_sessions')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(10);
-  if (error || !data || !data.length) return;
-  document.getElementById('sessions-section').style.display = 'block';
-  const list = document.getElementById('sessions-list');
-  list.innerHTML = data.map(s => {
-    const date = new Date(s.created_at).toLocaleDateString('fr-FR', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-    const themes = (s.theme_names || []).join(', ') || 'Thèmes inconnus';
-    const sc = s.scores || [0,0];
-    const isOngoing = s.status === 'in_progress';
-    return `<div class="session-row">
-      <div class="session-status ${s.status}"></div>
-      <div class="session-info">
-        <div class="session-themes">${themes}</div>
-        <div class="session-meta">${date} · ${isOngoing ? 'En cours' : 'Terminée'}</div>
+let words = [];
+let session = null;
+let currentWord = null;
+let timerInterval = null;
+let timerRemaining = 60;
+let timerRunning = false;
+let teamNames = ['Équipe 1', 'Équipe 2'];
+let scores = [0, 0];
+let currentTeam = 0; // 0 or 1
+let doneWordIds = new Set();
+let timerDuration = 60;
+let addOpen = false;
+
+// ─── INIT ────────────────────────────────────────
+async function init() {
+  const { data } = await db.from('mi_words').select('*').order('sort_order');
+  words = data || [];
+  renderWordList();
+}
+
+// ─── SETUP ───────────────────────────────────────
+async function startGame() {
+  teamNames = [
+    document.getElementById('team1-input').value.trim() || 'Équipe 1',
+    document.getElementById('team2-input').value.trim() || 'Équipe 2'
+  ];
+  timerDuration = parseInt(document.getElementById('timer-input').value) || 60;
+  timerRemaining = timerDuration;
+  scores = [0, 0];
+  currentTeam = 0;
+  doneWordIds = new Set();
+  currentWord = null;
+
+  // Create session in DB
+  const { data } = await db.from('mi_sessions').insert({
+    team_names: teamNames,
+    scores: scores,
+    status: 'playing',
+    current_team: currentTeam,
+    timer_duration: timerDuration
+  }).select().single();
+  session = data;
+
+  updateUI();
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'flex';
+  document.getElementById('sidebar').style.display = 'flex';
+  document.getElementById('btn-back-setup').style.display = 'none';
+
+  document.getElementById('timer-set').value = timerDuration;
+  updateTimerDisplay();
+  updateScores();
+  broadcast();
+}
+
+function backToSetup() {
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('sidebar').style.display = 'none';
+  document.getElementById('btn-back-setup').style.display = 'none';
+  pauseTimer();
+  broadcast();
+}
+
+document.getElementById('btn-back-setup').addEventListener('click', backToSetup);
+document.getElementById('btn-back-setup').style.display = 'none';
+
+// ─── WORD LIST ────────────────────────────────────
+function renderWordList() {
+  const list = document.getElementById('word-list');
+  list.innerHTML = words.map(w => `
+    <div class="word-item ${currentWord?.id === w.id ? 'active' : ''} ${doneWordIds.has(w.id) ? 'done' : ''}" onclick="selectWord(${w.id})">
+      <span class="word-item-name">${w.word}</span>
+      ${doneWordIds.has(w.id) ? '<span class="word-item-done"></span>' : ''}
+    </div>
+  `).join('');
+}
+
+function selectWord(id) {
+  currentWord = words.find(w => w.id === id);
+  if (!currentWord) return;
+  pauseTimer();
+  timerRemaining = timerDuration;
+  updateTimerDisplay();
+  renderWordCard();
+  renderWordList();
+  document.getElementById('round-lbl').textContent = 'Mot sélectionné — Démarrez le chrono !';
+  broadcast();
+}
+
+function renderWordCard() {
+  if (!currentWord) return;
+  const area = document.getElementById('word-area');
+  area.innerHTML = `
+    <div class="word-card">
+      <div class="word-main">${currentWord.word}</div>
+      <div class="forbidden-grid">
+        <div class="forbidden-item">🚫 ${currentWord.forbidden_1}</div>
+        <div class="forbidden-item">🚫 ${currentWord.forbidden_2}</div>
+        <div class="forbidden-item">🚫 ${currentWord.forbidden_3}</div>
+        <div class="forbidden-item">🚫 ${currentWord.forbidden_4}</div>
+        <div class="forbidden-item">🚫 ${currentWord.forbidden_5}</div>
+        <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:center;margin-top:8px">
+          <button class="btn-action btn-correct" onclick="markResult('correct')">✓ Correct</button>
+          <button class="btn-action btn-pass" onclick="markResult('pass')">→ Passer</button>
+          <button class="btn-action btn-forbidden" onclick="markResult('forbidden')">🚫 Mot interdit !</button>
+        </div>
       </div>
-      <div class="session-scores">
-        <span class="session-score-t1">${sc[0]}</span>
-        <span style="color:rgba(255,255,255,0.2)"> — </span>
-        <span class="session-score-t2">${sc[1]}</span>
-      </div>
-      <div class="session-actions">
-        ${isOngoing ? `<a class="btn-resume" href="grille.html?session=${s.id}">Reprendre →</a>` : `<a class="btn-resume" style="opacity:.6;cursor:default" href="#">Terminée</a>`}
-        <button class="btn-delete" onclick="deleteSession('${s.id}')">✕</button>
-      </div>
+    </div>
+  `;
+}
+
+// ─── ACTIONS ─────────────────────────────────────
+function markResult(type) {
+  if (!currentWord) return;
+  doneWordIds.add(currentWord.id);
+
+  if (type === 'correct') {
+    scores[currentTeam]++;
+    flashResult('✓ CORRECT', 'flash-correct');
+  } else if (type === 'forbidden') {
+    // Mot interdit : point pour l'autre équipe
+    scores[1 - currentTeam]++;
+    flashResult('🚫 INTERDIT !', 'flash-forbidden');
+  } else {
+    flashResult('PASSÉ', 'flash-pass');
+  }
+
+  // Switch team
+  currentTeam = 1 - currentTeam;
+  currentWord = null;
+  pauseTimer();
+  timerRemaining = timerDuration;
+
+  updateScores();
+  updateUI();
+  renderWordList();
+  updateTimerDisplay();
+  document.getElementById('word-area').innerHTML = `
+    <div class="no-word">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+      Sélectionnez un mot dans la liste
     </div>`;
-  }).join('');
+  document.getElementById('round-lbl').textContent = 'Choisissez un mot →';
+  broadcast();
 }
 
-async function deleteSession(id) {
-  const pin = prompt('Code de suppression :');
-  if (pin !== DELETE_PIN) { alert('Code incorrect'); return; }
-  await db2.from('grille_sessions').delete().eq('id', id);
-  loadSessions();
+function flashResult(text, cls) {
+  const flash = document.getElementById('result-flash');
+  const flashText = document.getElementById('flash-text');
+  flashText.textContent = text;
+  flashText.className = 'flash-inner ' + cls;
+  flash.style.display = 'flex';
+  setTimeout(() => { flash.style.display = 'none'; }, 800);
 }
 
-loadSessions();
+// ─── TIMER ───────────────────────────────────────
+function startTimer() {
+  if (timerRunning) return;
+  timerRunning = true;
+  timerInterval = setInterval(() => {
+    timerRemaining--;
+    updateTimerDisplay();
+    if (timerRemaining <= 0) {
+      timerRemaining = 0;
+      pauseTimer();
+      flashResult('TEMPS !', 'flash-forbidden');
+      // Switch team when time runs out
+      currentTeam = 1 - currentTeam;
+      currentWord = null;
+      updateUI();
+      renderWordList();
+      document.getElementById('word-area').innerHTML = `
+        <div class="no-word">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+          Sélectionnez un mot dans la liste
+        </div>`;
+      document.getElementById('round-lbl').textContent = 'Temps écoulé ! Choisissez un mot →';
+    }
+    broadcast();
+  }, 1000);
+  broadcast();
+}
+
+function pauseTimer() {
+  timerRunning = false;
+  clearInterval(timerInterval);
+  broadcast();
+}
+
+function resetTimer() {
+  pauseTimer();
+  const val = parseInt(document.getElementById('timer-set').value);
+  if (val && val >= 10) { timerDuration = val; timerRemaining = val; }
+  else { timerRemaining = timerDuration; }
+  updateTimerDisplay();
+  broadcast();
+}
+
+document.getElementById('timer-set').addEventListener('change', () => {
+  const val = parseInt(document.getElementById('timer-set').value);
+  if (val && val >= 10) { timerDuration = val; timerRemaining = val; updateTimerDisplay(); }
+});
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer-display');
+  el.textContent = timerRemaining;
+  el.className = 'timer-display ' + (timerRemaining > 20 ? 'timer-ok' : timerRemaining > 10 ? 'timer-warn' : 'timer-urgent');
+}
+
+// ─── UI ───────────────────────────────────────────
+function updateUI() {
+  const badge = document.getElementById('current-team-badge');
+  badge.textContent = teamNames[currentTeam];
+  badge.className = 'team-badge ' + (currentTeam === 0 ? 't1' : 't2');
+}
+
+function updateScores() {
+  document.getElementById('score-t1').textContent = scores[0];
+  document.getElementById('score-t2').textContent = scores[1];
+  document.getElementById('lbl-t1').textContent = teamNames[0];
+  document.getElementById('lbl-t2').textContent = teamNames[1];
+}
+
+// ─── ADD WORD ─────────────────────────────────────
+function toggleAdd() {
+  addOpen = !addOpen;
+  document.getElementById('add-form').style.display = addOpen ? 'flex' : 'none';
+  document.getElementById('add-form').style.flexDirection = 'column';
+}
+
+async function addWord() {
+  const word = document.getElementById('add-word').value.trim().toUpperCase();
+  const f1 = document.getElementById('af1').value.trim().toUpperCase();
+  const f2 = document.getElementById('af2').value.trim().toUpperCase();
+  const f3 = document.getElementById('af3').value.trim().toUpperCase();
+  const f4 = document.getElementById('af4').value.trim().toUpperCase();
+  const f5 = document.getElementById('af5').value.trim().toUpperCase();
+  if (!word || !f1 || !f2 || !f3 || !f4 || !f5) { alert('Remplissez tous les champs'); return; }
+  const { data } = await db.from('mi_words').insert({ word, forbidden_1: f1, forbidden_2: f2, forbidden_3: f3, forbidden_4: f4, forbidden_5: f5, sort_order: words.length + 1 }).select().single();
+  if (data) {
+    words.push(data);
+    renderWordList();
+    ['add-word','af1','af2','af3','af4','af5'].forEach(id => document.getElementById(id).value = '');
+    toggleAdd();
+  }
+}
+
+// ─── BROADCAST ───────────────────────────────────
+function broadcast() {
+  const state = {
+    view: session ? 'playing' : 'setup',
+    teamNames,
+    scores,
+    currentTeam,
+    timerRemaining,
+    timerRunning,
+    currentWord: currentWord ? {
+      word: currentWord.word,
+      forbidden: [currentWord.forbidden_1, currentWord.forbidden_2, currentWord.forbidden_3, currentWord.forbidden_4, currentWord.forbidden_5]
+    } : null
+  };
+  try {
+    localStorage.setItem('mi_spectator', JSON.stringify(state));
+    const bc = new BroadcastChannel('mi_spectator');
+    bc.postMessage(state);
+    bc.close();
+  } catch(e) {}
+
+  // Update DB session
+  if (session) {
+    db.from('mi_sessions').update({
+      scores,
+      current_team: currentTeam,
+      timer_running: timerRunning,
+      current_word_id: currentWord?.id || null,
+      done_word_ids: [...doneWordIds]
+    }).eq('id', session.id).then(() => {});
+  }
+}
+
+function openSpectator() {
+  window.open('mot-interdit-spectateur.html', '_blank');
+}
+
+init();
 </script>
 </body>
 </html>
