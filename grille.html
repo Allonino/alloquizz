@@ -373,10 +373,10 @@ body { display: flex; flex-direction: column; }
 
 <div class="saved-toast" id="saved-toast">Sauvegardé ✓</div>
 
-<script src="config.js"></script>
 <script>
 const BUCKET = 'images';
-const db = (typeof aq_db !== 'undefined') ? aq_db : supabase.createClient('https://tsneytqibltnjarajcll.supabase.co', 'sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1');
+const { createClient } = supabase;
+const db = createClient('https://tsneytqibltnjarajcll.supabase.co', 'sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1');
 function aqToast(m,t){let e=document.getElementById('aq-toast');if(!e){e=document.createElement('div');e.id='aq-toast';document.body.appendChild(e);}e.textContent=m;e.className='show'+(t?' '+t:'');setTimeout(()=>e.className='',2600);}
 function aqBroadcast(g,s){try{localStorage.setItem('aq_'+g,JSON.stringify(s));}catch(e){}try{const b=new BroadcastChannel('aq_'+g);b.postMessage(s);b.close();}catch(e){}}
 function aqOpenSpectator(g){window.open('spectateur-'+g+'.html','_blank');}
