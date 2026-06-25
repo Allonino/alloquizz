@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlloQuizz — Back Office</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,700;0,800;1,800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ── ADMIN-SPECIFIC STYLES ── */
+html,body { height:100%; overflow:hidden; }
+body { display:flex; flex-direction:column; }
+
+.admin-body { display:flex; flex-direction:column; flex:1; overflow:hidden; }
+
+/* Game tabs bar */
+.game-tabs { display:flex; border-bottom:1px solid var(--border); background:var(--bg2); padding:0; overflow-x:auto; flex-shrink:0; }
+.game-tab {
+  display:flex; align-items:center; gap:8px;
+  padding:14px 22px;
+  font-family:'Exo 2',sans-serif; font-size:12px; font-weight:800; font-style:italic;
+  text-transform:uppercase; letter-spacing:.08em;
+  color:var(--text3); cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:color .15s, border-color .15s;
+  white-space:nowrap; flex-shrink:0;
+  background:none; border-top:none; border-left:none; border-right:none;
+}
+.game-tab:hover { color:var(--text2); }
+.game-tab.active.grille { color:var(--grille); border-bottom-color:var(--grille); }
+.game-tab.active.panel  { color:var(--panel);  border-bottom-color:var(--panel); }
+.game-tab.active.podium { color:var(--podium); border-bottom-color:var(--podium); }
+.game-tab.active.mot    { color:var(--mot);    border-bottom-color:var(--mot); }
+.game-tab-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.game-tab.grille .game-tab-dot { background:var(--grille); }
+.game-tab.panel  .game-tab-dot { background:var(--panel); }
+.game-tab.podium .game-tab-dot { background:var(--podium); }
+.game-tab.mot    .game-tab-dot { background:var(--mot); }
+
+/* Panels */
+.admin-panel { display:none; flex:1; overflow:hidden; }
+.admin-panel.active { display:flex; flex-direction:column; }
+
+/* ── SHARED PANEL LAYOUT ── */
+.panel-layout { display:grid; grid-template-columns:260px 1fr; flex:1; overflow:hidden; }
+.panel-sidebar { background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+.panel-sidebar-head { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.panel-sidebar-title { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); }
+.panel-sidebar-list { flex:1; overflow-y:auto; padding:8px; }
+.panel-sidebar-list::-webkit-scrollbar { width:3px; }
+.panel-sidebar-list::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+.panel-item {
+  padding:10px 12px; border-radius:var(--radius); cursor:pointer;
+  transition:background .12s, border-color .12s;
+  border:1px solid transparent; margin-bottom:3px;
+  display:flex; align-items:center; gap:10px;
+}
+.panel-item:hover { background:var(--bg3); }
+.panel-item.active { border-color:var(--border2); background:var(--bg3); }
+.panel-item-num  { font-size:11px; font-weight:700; color:var(--text3); min-width:22px; }
+.panel-item-text { font-size:12px; color:var(--text2); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.4; }
+.panel-item.active .panel-item-text { color:var(--text); }
+
+.panel-editor { flex:1; overflow-y:auto; padding:28px 32px; }
+.panel-editor-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:300px; gap:12px; color:var(--text3); font-size:13px; text-align:center; }
+.panel-editor-empty svg { opacity:.15; }
+
+.panel-editor-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; gap:16px; }
+.panel-editor-title { font-family:'Exo 2',sans-serif; font-size:16px; font-weight:800; font-style:italic; text-transform:uppercase; letter-spacing:.04em; color:var(--text2); }
+
+/* ── MOT INTERDIT TABLE ── */
+.mi-cols { grid-template-columns:36px 1fr 1fr 1fr 1fr 1fr 1fr 80px; }
+.mi-row-word { font-family:'Exo 2',sans-serif; font-size:14px; font-weight:800; font-style:italic; text-transform:uppercase; letter-spacing:.04em; color:var(--text); }
+.mi-forbidden { font-size:11px; font-weight:600; color:rgba(252,165,165,.8); background:var(--red-bg); border:1px solid rgba(239,68,68,.15); border-radius:6px; padding:3px 8px; text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* Add form for mot interdit */
+.mi-add-form { background:rgba(192,132,252,.04); border:1px solid var(--mot-border); border-radius:var(--radius-lg); padding:20px; margin-bottom:20px; animation:aq-fadeIn .3s ease; }
+.mi-add-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:12px; }
+.mi-add-word-row { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; margin-bottom:12px; }
+.mi-add-word-inp { font-family:'Exo 2',sans-serif; font-size:15px; font-weight:800; font-style:italic; text-transform:uppercase; }
+
+/* ── PANEL QUESTION EDITOR ── */
+.pq-field { margin-bottom:14px; }
+.pq-label { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); margin-bottom:6px; display:block; }
+.pq-input { width:100%; background:rgba(255,255,255,.05); border:1px solid var(--border2); border-radius:var(--radius); padding:10px 14px; color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif; outline:none; transition:border-color .2s; }
+.pq-input:focus { border-color:var(--panel); }
+.pq-input::placeholder { color:var(--text3); }
+.pq-answers { display:flex; flex-direction:column; gap:6px; }
+.pq-ans-row { display:grid; grid-template-columns:20px 1fr 70px; gap:8px; align-items:center; }
+.pq-ans-num { font-size:11px; color:var(--text3); font-weight:700; text-align:center; }
+.pq-save-row { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); }
+
+/* ── PODIUM QUESTION EDITOR ── */
+.podium-items { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+.podium-item-row { display:grid; grid-template-columns:24px 1fr 80px 80px; gap:8px; align-items:center; background:var(--bg3); border-radius:var(--radius); padding:8px 12px; border:1px solid var(--border); }
+.podium-item-rank { font-family:'Exo 2',sans-serif; font-size:13px; font-weight:800; font-style:italic; color:var(--podium); text-align:center; }
+
+/* ── GRILLE / THEMES ── */
+.grille-themes { display:flex; flex-direction:column; gap:6px; }
+.grille-theme-row { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:border-color .15s; }
+.grille-theme-row:hover { border-color:var(--grille-border); }
+.grille-theme-row.active { border-color:var(--grille); background:var(--grille-bg); }
+.grille-theme-name { flex:1; font-size:13px; font-weight:600; color:var(--text); }
+.grille-theme-count { font-size:11px; color:var(--text3); }
+.grille-images { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-top:16px; }
+.grille-img-card { background:var(--bg3); border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); }
+.grille-img-card img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
+.grille-img-footer { padding:6px 8px; display:flex; align-items:center; gap:6px; }
+.grille-img-label { flex:1; font-size:11px; color:var(--text2); }
+.grille-img-del { background:none; border:none; cursor:pointer; color:var(--text3); font-size:13px; opacity:0; transition:opacity .15s; }
+.grille-img-card:hover .grille-img-del { opacity:1; }
+
+/* ── STATS ── */
+.admin-stats { display:flex; gap:10px; padding:16px 20px 0; flex-wrap:wrap; flex-shrink:0; }
+.stat-chip { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:10px 16px; display:flex; align-items:baseline; gap:10px; }
+.stat-chip-val { font-family:'Exo 2',sans-serif; font-size:24px; font-weight:800; font-style:italic; line-height:1; }
+.stat-chip-lbl { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text3); }
+
+/* Toolbar */
+.panel-toolbar { display:flex; align-items:center; gap:10px; padding:12px 20px; border-bottom:1px solid var(--border); flex-shrink:0; flex-wrap:wrap; }
+
+/* Import zone */
+.import-zone { background:rgba(79,158,255,.04); border:1px solid var(--jp-border); border-radius:var(--radius-lg); padding:16px 20px; margin-bottom:16px; animation:aq-fadeIn .3s ease; }
+.import-textarea { width:100%; background:rgba(255,255,255,.04); border:1px solid var(--border2); border-radius:var(--radius); padding:10px 13px; color:var(--text); font-size:12px; font-family:'DM Sans',sans-serif; outline:none; resize:vertical; min-height:90px; line-height:1.7; transition:border-color .2s; }
+.import-textarea:focus { border-color:var(--mot); }
+.import-textarea::placeholder { color:var(--text3); }
+</style>
+</head>
+<body>
+
+<div class="aq-loading-overlay" id="loader"><div class="aq-spinner"></div></div>
+
+<!-- NAV -->
+<nav class="aq-nav">
+  <a class="aq-nav-logo" href="index.html">Allo<b>Quizz</b></a>
+  <div class="aq-nav-title">Back Office</div>
+  <div class="aq-nav-actions">
+    <a class="aq-btn aq-btn-ghost aq-btn-sm" href="index.html">← Accueil</a>
+  </div>
+</nav>
+
+<!-- GAME TABS -->
+<div class="game-tabs">
+  <button class="game-tab grille active" onclick="switchGame('grille')"><span class="game-tab-dot"></span>La Grille</button>
+  <button class="game-tab panel"  onclick="switchGame('panel')"><span class="game-tab-dot"></span>Le Panel</button>
+  <button class="game-tab podium" onclick="switchGame('podium')"><span class="game-tab-dot"></span>Le Podium</button>
+  <button class="game-tab mot"    onclick="switchGame('mot')"><span class="game-tab-dot"></span>Mot Interdit</button>
+</div>
+
+<div class="admin-body">
+
+  <!-- ════════════════════════════════
+       GRILLE
+  ════════════════════════════════ -->
+  <div class="admin-panel active" id="panel-grille">
+    <div class="panel-toolbar">
+      <button class="aq-btn aq-btn-grille" onclick="grilleNewTheme()">＋ Nouveau thème</button>
+      <a class="aq-btn aq-btn-ghost" href="grille.html" target="_blank">▶ Jouer</a>
+      <div style="flex:1"></div>
+      <div class="admin-stats" style="padding:0">
+        <div class="stat-chip"><span class="stat-chip-val" style="color:var(--grille)" id="g-stat-themes">—</span><span class="stat-chip-lbl">Thèmes</span></div>
+        <div class="stat-chip"><span class="stat-chip-val" style="color:var(--text2)" id="g-stat-images">—</span><span class="stat-chip-lbl">Images</span></div>
+      </div>
+    </div>
+    <div class="panel-layout">
+      <div class="panel-sidebar">
+        <div class="panel-sidebar-head">
+          <span class="panel-sidebar-title">Thèmes</span>
+        </div>
+        <div class="panel-sidebar-list" id="grille-theme-list"></div>
+      </div>
+      <div class="panel-editor" id="grille-editor">
+        <div class="panel-editor-empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Sélectionnez un thème
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       PANEL
+  ════════════════════════════════ -->
+  <div class="admin-panel" id="panel-panel">
+    <div class="panel-toolbar">
+      <button class="aq-btn aq-btn-panel" onclick="panelNewQ()">＋ Nouvelle question</button>
+      <a class="aq-btn aq-btn-ghost" href="panel.html" target="_blank">▶ Jouer</a>
+      <div style="flex:1"></div>
+      <div class="admin-stats" style="padding:0">
+        <div class="stat-chip"><span class="stat-chip-val" style="color:var(--panel)" id="p-stat-q">—</span><span class="stat-chip-lbl">Questions</span></div>
+      </div>
+    </div>
+    <div class="panel-layout">
+      <div class="panel-sidebar">
+        <div class="panel-sidebar-head">
+          <span class="panel-sidebar-title">Questions</span>
+        </div>
+        <div class="panel-sidebar-list" id="panel-q-list"></div>
+      </div>
+      <div class="panel-editor" id="panel-editor">
+        <div class="panel-editor-empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+          Sélectionnez ou créez une question
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       PODIUM
+  ════════════════════════════════ -->
+  <div class="admin-panel" id="panel-podium">
+    <div class="panel-toolbar">
+      <button class="aq-btn aq-btn-podium" onclick="podiumNewQ()">＋ Nouvelle question</button>
+      <a class="aq-btn aq-btn-ghost" href="podium.html" target="_blank">▶ Jouer</a>
+      <div style="flex:1"></div>
+      <div class="admin-stats" style="padding:0">
+        <div class="stat-chip"><span class="stat-chip-val" style="color:var(--podium)" id="po-stat-q">—</span><span class="stat-chip-lbl">Questions</span></div>
+      </div>
+    </div>
+    <div class="panel-layout">
+      <div class="panel-sidebar">
+        <div class="panel-sidebar-head">
+          <span class="panel-sidebar-title">Questions</span>
+        </div>
+        <div class="panel-sidebar-list" id="podium-q-list"></div>
+      </div>
+      <div class="panel-editor" id="podium-editor">
+        <div class="panel-editor-empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          Sélectionnez ou créez une question
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       MOT INTERDIT
+  ════════════════════════════════ -->
+  <div class="admin-panel" id="panel-mot">
+    <div class="panel-toolbar">
+      <button class="aq-btn aq-btn-mot" id="mi-add-toggle" onclick="miToggleAdd()">＋ Ajouter un mot</button>
+      <button class="aq-btn aq-btn-ghost" id="mi-import-toggle" onclick="miToggleImport()">⬆ Import CSV</button>
+      <a class="aq-btn aq-btn-ghost" href="mot-interdit.html" target="_blank">▶ Jouer</a>
+      <div style="flex:1"></div>
+      <div class="aq-search-wrap" style="max-width:240px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="aq-search" id="mi-search" placeholder="Rechercher…" oninput="miRender()">
+      </div>
+      <div class="admin-stats" style="padding:0">
+        <div class="stat-chip"><span class="stat-chip-val" style="color:var(--mot)" id="mi-stat-total">—</span><span class="stat-chip-lbl">Mots</span></div>
+      </div>
+    </div>
+
+    <!-- Add form -->
+    <div id="mi-add-section" style="display:none;padding:0 20px">
+      <div class="mi-add-form">
+        <div style="font-family:'Exo 2',sans-serif;font-size:12px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.08em;color:var(--mot);margin-bottom:12px">✚ Nouveau mot</div>
+        <div class="mi-add-word-row">
+          <div>
+            <label class="aq-label">Mot principal</label>
+            <input class="aq-input mi-add-word-inp" id="mi-add-word" placeholder="Ex: SOLEIL" oninput="this.value=this.value.toUpperCase()">
+          </div>
+          <button class="aq-btn aq-btn-mot aq-btn-lg" onclick="miSaveNew()" style="margin-top:20px">Enregistrer</button>
+        </div>
+        <label class="aq-label">5 mots interdits</label>
+        <div class="mi-add-grid">
+          <input class="aq-input" id="mi-f1" placeholder="Interdit 1" oninput="this.value=this.value.toUpperCase()">
+          <input class="aq-input" id="mi-f2" placeholder="Interdit 2" oninput="this.value=this.value.toUpperCase()">
+          <input class="aq-input" id="mi-f3" placeholder="Interdit 3" oninput="this.value=this.value.toUpperCase()">
+          <input class="aq-input" id="mi-f4" placeholder="Interdit 4" oninput="this.value=this.value.toUpperCase()">
+          <input class="aq-input" id="mi-f5" placeholder="Interdit 5" oninput="this.value=this.value.toUpperCase()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Import form -->
+    <div id="mi-import-section" style="display:none;padding:0 20px">
+      <div class="import-zone">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:8px;line-height:1.6">Format : <code style="background:var(--bg4);padding:1px 6px;border-radius:4px;color:var(--mot);font-size:11px">MOT;INTERDIT1;INTERDIT2;INTERDIT3;INTERDIT4;INTERDIT5</code> — un mot par ligne</div>
+        <textarea class="import-textarea" id="mi-import-text" placeholder="CHAT;ANIMAL;FÉLIN;MIAOU;CHATON;POIL&#10;PLAGE;MER;SABLE;SOLEIL;VACANCES;EAU" oninput="miPreviewImport()"></textarea>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+          <button class="aq-btn aq-btn-global" onclick="miImport()">Importer</button>
+          <span style="font-size:12px;color:var(--text3)" id="mi-import-preview"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div style="flex:1;overflow-y:auto;padding:0 20px 20px">
+      <div class="aq-table-wrap" style="margin-top:16px">
+        <div class="aq-table-head mi-cols">
+          <div class="aq-th">#</div>
+          <div class="aq-th">Mot</div>
+          <div class="aq-th">Interdit 1</div>
+          <div class="aq-th">Interdit 2</div>
+          <div class="aq-th">Interdit 3</div>
+          <div class="aq-th">Interdit 4</div>
+          <div class="aq-th">Interdit 5</div>
+          <div class="aq-th" style="text-align:right">Actions</div>
+        </div>
+        <div id="mi-table-body"><div style="padding:32px;text-align:center;color:var(--text3)">Chargement…</div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end admin-body -->
+
+<script src="config.js"></script>
+<script>
+// ════════════════════════════════════════════
+//  ROUTING
+// ════════════════════════════════════════════
+let currentGame = 'grille';
+
+function switchGame(game) {
+  currentGame = game;
+  document.querySelectorAll('.game-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.game-tab.${game}`).classList.add('active');
+  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + game).classList.add('active');
+}
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+async function init() {
+  await Promise.all([
+    grilleLoad(),
+    panelLoad(),
+    podiumLoad(),
+    miLoad()
+  ]);
+  document.getElementById('loader').classList.add('hidden');
+}
+
+// ════════════════════════════════════════════
+//  GRILLE
+// ════════════════════════════════════════════
+let gThemes = [], gImages = [], gActiveTheme = null;
+
+async function grilleLoad() {
+  const [{ data: themes }, { data: images }] = await Promise.all([
+    aq_db.from('themes').select('*').order('sort_order').order('name'),
+    aq_db.from('images').select('*').order('sort_order')
+  ]);
+  gThemes = themes || [];
+  gImages = images || [];
+  document.getElementById('g-stat-themes').textContent = gThemes.length;
+  document.getElementById('g-stat-images').textContent = gImages.length;
+  grilleRenderSidebar();
+}
+
+function grilleRenderSidebar() {
+  const list = document.getElementById('grille-theme-list');
+  if (!gThemes.length) {
+    list.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--text3)">Aucun thème</div>';
+    return;
+  }
+  list.innerHTML = gThemes.map(t => {
+    const count = gImages.filter(i => i.theme_id === t.id).length;
+    return `<div class="panel-item ${gActiveTheme?.id === t.id ? 'active' : ''}" onclick="grilleSelectTheme(${t.id})">
+      <span class="panel-item-num">${count}</span>
+      <span class="panel-item-text">${t.name}</span>
+    </div>`;
+  }).join('');
+}
+
+function grilleSelectTheme(id) {
+  gActiveTheme = gThemes.find(t => t.id === id);
+  grilleRenderSidebar();
+  grilleRenderEditor();
+}
+
+function grilleRenderEditor() {
+  if (!gActiveTheme) return;
+  const imgs = gImages.filter(i => i.theme_id === gActiveTheme.id);
+  document.getElementById('grille-editor').innerHTML = `
+    <div class="panel-editor-head">
+      <div>
+        <input class="aq-input" value="${aqEsc(gActiveTheme.name)}" id="g-theme-name" placeholder="Nom du thème" style="font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;text-transform:uppercase;border-color:var(--grille-border)" onchange="grilleRenameTheme()">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="aq-btn aq-btn-grille aq-btn-sm" onclick="grilleUploadClick()">＋ Ajouter image</button>
+        <button class="aq-btn aq-btn-danger aq-btn-sm" onclick="grilleDeleteTheme()">Supprimer thème</button>
+      </div>
+    </div>
+    <input type="file" id="g-file-input" accept="image/*" multiple style="display:none" onchange="grilleUploadFiles(event)">
+    <div class="aq-label" style="margin-bottom:10px">${imgs.length} image${imgs.length > 1 ? 's' : ''}</div>
+    <div class="grille-images" id="g-images-grid">
+      ${imgs.map((img, i) => `
+        <div class="grille-img-card">
+          <img src="${img.public_url}" alt="${aqEsc(img.label||'')}">
+          <div class="grille-img-footer">
+            <input class="grille-img-label aq-input" value="${aqEsc(img.label||'')}" placeholder="Label…" style="padding:4px 6px;font-size:11px" onchange="grilleUpdateLabel(${img.id}, this.value)">
+            <button class="grille-img-del" onclick="grilleDeleteImage(${img.id})">✕</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+async function grilleNewTheme() {
+  const name = prompt('Nom du thème :');
+  if (!name?.trim()) return;
+  const { data } = await aq_db.from('themes').insert({ name: name.trim(), sort_order: gThemes.length }).select().single();
+  if (data) { gThemes.push(data); gActiveTheme = data; grilleRenderSidebar(); grilleRenderEditor(); document.getElementById('g-stat-themes').textContent = gThemes.length; aqToast('Thème créé ✓', 'success'); }
+}
+
+async function grilleRenameTheme() {
+  const name = document.getElementById('g-theme-name').value.trim();
+  if (!name || !gActiveTheme) return;
+  await aq_db.from('themes').update({ name }).eq('id', gActiveTheme.id);
+  gActiveTheme.name = name;
+  gThemes = gThemes.map(t => t.id === gActiveTheme.id ? { ...t, name } : t);
+  grilleRenderSidebar();
+  aqToast('Renommé ✓', 'success');
+}
+
+async function grilleDeleteTheme() {
+  if (!gActiveTheme) return;
+  if (!confirm(`Supprimer "${gActiveTheme.name}" et toutes ses images ?`)) return;
+  await aq_db.from('images').delete().eq('theme_id', gActiveTheme.id);
+  await aq_db.from('themes').delete().eq('id', gActiveTheme.id);
+  gThemes = gThemes.filter(t => t.id !== gActiveTheme.id);
+  gImages = gImages.filter(i => i.theme_id !== gActiveTheme.id);
+  gActiveTheme = null;
+  document.getElementById('g-stat-themes').textContent = gThemes.length;
+  document.getElementById('g-stat-images').textContent = gImages.length;
+  grilleRenderSidebar();
+  document.getElementById('grille-editor').innerHTML = '<div class="panel-editor-empty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Sélectionnez un thème</div>';
+  aqToast('Thème supprimé', 'success');
+}
+
+function grilleUploadClick() { document.getElementById('g-file-input')?.click(); }
+
+async function grilleUploadFiles(e) {
+  if (!gActiveTheme) return;
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  aqToast('Upload en cours…');
+  for (const file of files) {
+    const path = `${gActiveTheme.id}/${Date.now()}_${file.name}`;
+    const { error: upErr } = await aq_db.storage.from('images').upload(path, file, { upsert: true });
+    if (upErr) { aqToast('Erreur upload : ' + upErr.message, 'error'); continue; }
+    const { data: urlData } = aq_db.storage.from('images').getPublicUrl(path);
+    const { data: img } = await aq_db.from('images').insert({
+      theme_id: gActiveTheme.id, label: file.name.replace(/\.[^.]+$/,''), sort_order: gImages.length, storage_path: path, public_url: urlData.publicUrl
+    }).select().single();
+    if (img) gImages.push(img);
+  }
+  document.getElementById('g-stat-images').textContent = gImages.length;
+  grilleRenderEditor();
+  aqToast('Images ajoutées ✓', 'success');
+}
+
+async function grilleUpdateLabel(id, label) {
+  await aq_db.from('images').update({ label }).eq('id', id);
+  gImages = gImages.map(i => i.id === id ? { ...i, label } : i);
+}
+
+async function grilleDeleteImage(id) {
+  if (!confirm('Supprimer cette image ?')) return;
+  const img = gImages.find(i => i.id === id);
+  if (img?.storage_path) await aq_db.storage.from('images').remove([img.storage_path]);
+  await aq_db.from('images').delete().eq('id', id);
+  gImages = gImages.filter(i => i.id !== id);
+  document.getElementById('g-stat-images').textContent = gImages.length;
+  grilleRenderEditor();
+  aqToast('Image supprimée');
+}
+
+// ════════════════════════════════════════════
+//  PANEL
+// ════════════════════════════════════════════
+let pQuestions = [], pActiveQ = null;
+
+async function panelLoad() {
+  const { data } = await aq_db.from('panel_questions').select('*, panel_answers(*)').order('sort_order');
+  pQuestions = (data || []).map(q => ({ ...q, panel_answers: (q.panel_answers || []).sort((a,b) => a.sort_order - b.sort_order) }));
+  document.getElementById('p-stat-q').textContent = pQuestions.length;
+  panelRenderSidebar();
+}
+
+function panelRenderSidebar() {
+  const list = document.getElementById('panel-q-list');
+  if (!pQuestions.length) { list.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--text3)">Aucune question</div>'; return; }
+  list.innerHTML = pQuestions.map((q, i) => `
+    <div class="panel-item ${pActiveQ?.id === q.id ? 'active' : ''}" onclick="panelSelectQ(${q.id})">
+      <span class="panel-item-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="panel-item-text">${aqEsc(q.question)}</span>
+    </div>`).join('');
+}
+
+function panelSelectQ(id) {
+  pActiveQ = pQuestions.find(q => q.id === id);
+  panelRenderSidebar();
+  panelRenderEditor();
+}
+
+function panelRenderEditor(isNew = false) {
+  const q = isNew ? null : pActiveQ;
+  const answers = q?.panel_answers || [];
+  document.getElementById('panel-editor').innerHTML = `
+    <div class="panel-editor-head">
+      <div class="panel-editor-title">${q ? 'Modifier la question' : 'Nouvelle question'}</div>
+      <div style="display:flex;gap:8px">
+        <button class="aq-btn aq-btn-panel aq-btn-sm" onclick="panelSave(${q?.id||'null'})">Enregistrer</button>
+        ${q ? `<button class="aq-btn aq-btn-danger aq-btn-sm" onclick="panelDeleteQ(${q.id})">Supprimer</button>` : ''}
+      </div>
+    </div>
+    <div class="pq-field">
+      <label class="pq-label">Question</label>
+      <input class="pq-input" id="pq-text" value="${aqEsc(q?.question||'')}" placeholder="Quelle est la question ?">
+    </div>
+    <div class="pq-field">
+      <label class="pq-label">Description (optionnel)</label>
+      <input class="pq-input" id="pq-desc" value="${aqEsc(q?.panel_description||'')}" placeholder="Ex: 100 personnes ont répondu…">
+    </div>
+    <label class="pq-label">6 réponses avec leurs points</label>
+    <div class="pq-answers">
+      ${Array.from({length:6},(_,i) => {
+        const a = answers[i] || {};
+        return `<div class="pq-ans-row">
+          <div class="pq-ans-num">${i+1}</div>
+          <input class="pq-input" id="pq-ans-${i}" value="${aqEsc(a.answer||'')}" placeholder="Réponse ${i+1}…">
+          <input class="pq-input" id="pq-pts-${i}" type="number" value="${a.points||''}" placeholder="pts" min="1" max="100">
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function panelNewQ() {
+  pActiveQ = null;
+  panelRenderSidebar();
+  panelRenderEditor(true);
+}
+
+async function panelSave(id) {
+  const text = document.getElementById('pq-text').value.trim();
+  const desc = document.getElementById('pq-desc').value.trim();
+  if (!text) { aqToast('La question est vide', 'error'); return; }
+  const answers = Array.from({length:6},(_,i)=>({ answer:document.getElementById('pq-ans-'+i).value.trim(), points:parseInt(document.getElementById('pq-pts-'+i).value)||0 }));
+  if (id) {
+    await aq_db.from('panel_questions').update({question:text,panel_description:desc}).eq('id',id);
+    await aq_db.from('panel_answers').delete().eq('question_id',id);
+    await aq_db.from('panel_answers').insert(answers.map((a,i)=>({question_id:id,answer:a.answer,points:a.points,sort_order:i})));
+    aqToast('Mis à jour ✓','success');
+  } else {
+    const {data:qd} = await aq_db.from('panel_questions').insert({question:text,panel_description:desc,sort_order:pQuestions.length}).select().single();
+    if (qd) await aq_db.from('panel_answers').insert(answers.map((a,i)=>({question_id:qd.id,answer:a.answer,points:a.points,sort_order:i})));
+    aqToast('Question ajoutée ✓','success');
+  }
+  await panelLoad();
+  if (id) { pActiveQ = pQuestions.find(q=>q.id===id); panelRenderEditor(); }
+}
+
+async function panelDeleteQ(id) {
+  if (!confirm('Supprimer cette question ?')) return;
+  await aq_db.from('panel_questions').delete().eq('id',id);
+  pActiveQ = null;
+  await panelLoad();
+  document.getElementById('panel-editor').innerHTML='<div class="panel-editor-empty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>Sélectionnez ou créez une question</div>';
+  aqToast('Supprimée');
+}
+
+// ════════════════════════════════════════════
+//  PODIUM
+// ════════════════════════════════════════════
+let poQuestions = [], poActiveQ = null;
+
+async function podiumLoad() {
+  const { data } = await aq_db.from('podium_questions').select('*, podium_items(*)').order('sort_order');
+  poQuestions = (data||[]).map(q=>({...q, podium_items:(q.podium_items||[]).sort((a,b)=>a.correct_rank-b.correct_rank)}));
+  document.getElementById('po-stat-q').textContent = poQuestions.length;
+  podiumRenderSidebar();
+}
+
+function podiumRenderSidebar() {
+  const list = document.getElementById('podium-q-list');
+  if (!poQuestions.length) { list.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--text3)">Aucune question</div>'; return; }
+  list.innerHTML = poQuestions.map((q,i)=>`
+    <div class="panel-item ${poActiveQ?.id===q.id?'active':''}" onclick="podiumSelectQ(${q.id})">
+      <span class="panel-item-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="panel-item-text">${aqEsc(q.question)}</span>
+    </div>`).join('');
+}
+
+function podiumSelectQ(id) {
+  poActiveQ = poQuestions.find(q=>q.id===id);
+  podiumRenderSidebar();
+  podiumRenderEditor();
+}
+
+function podiumRenderEditor(isNew=false) {
+  const q = isNew ? null : poActiveQ;
+  const items = q?.podium_items || [];
+  document.getElementById('podium-editor').innerHTML=`
+    <div class="panel-editor-head">
+      <div class="panel-editor-title">${q?'Modifier':'Nouvelle question'}</div>
+      <div style="display:flex;gap:8px">
+        <button class="aq-btn aq-btn-podium aq-btn-sm" onclick="podiumSave(${q?.id||'null'})">Enregistrer</button>
+        ${q?`<button class="aq-btn aq-btn-danger aq-btn-sm" onclick="podiumDeleteQ(${q.id})">Supprimer</button>`:''}
+      </div>
+    </div>
+    <div class="pq-field">
+      <label class="pq-label">Question</label>
+      <input class="pq-input" id="poq-text" value="${aqEsc(q?.question||'')}" placeholder="Classez les 5 éléments…">
+    </div>
+    <label class="pq-label">5 éléments à classer (du 1er au 5e)</label>
+    <div class="podium-items">
+      ${Array.from({length:5},(_,i)=>{
+        const it=items[i]||{};
+        return`<div class="podium-item-row">
+          <div class="podium-item-rank">${i+1}</div>
+          <input class="pq-input" id="po-item-${i}" value="${aqEsc(it.name||'')}" placeholder="Élément ${i+1}…">
+          <input class="pq-input" id="po-detail-${i}" value="${aqEsc(it.detail||'')}" placeholder="Détail…" style="font-size:11px">
+          <input class="pq-input" id="po-img-${i}" value="${aqEsc(it.image_url||'')}" placeholder="URL image" style="font-size:11px">
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function podiumNewQ() {
+  poActiveQ=null; podiumRenderSidebar(); podiumRenderEditor(true);
+}
+
+async function podiumSave(id) {
+  const text=document.getElementById('poq-text').value.trim();
+  if(!text){aqToast('Question vide','error');return;}
+  const items=Array.from({length:5},(_,i)=>({name:document.getElementById('po-item-'+i).value.trim(),detail:document.getElementById('po-detail-'+i).value.trim(),image_url:document.getElementById('po-img-'+i).value.trim(),correct_rank:i+1}));
+  if(id){
+    await aq_db.from('podium_questions').update({question:text}).eq('id',id);
+    await aq_db.from('podium_items').delete().eq('question_id',id);
+    await aq_db.from('podium_items').insert(items.map(it=>({...it,question_id:id})));
+    aqToast('Mis à jour ✓','success');
+  } else {
+    const{data:qd}=await aq_db.from('podium_questions').insert({question:text,sort_order:poQuestions.length}).select().single();
+    if(qd)await aq_db.from('podium_items').insert(items.map(it=>({...it,question_id:qd.id})));
+    aqToast('Question ajoutée ✓','success');
+  }
+  await podiumLoad();
+  if(id){poActiveQ=poQuestions.find(q=>q.id===id);podiumRenderEditor();}
+}
+
+async function podiumDeleteQ(id){
+  if(!confirm('Supprimer ?'))return;
+  await aq_db.from('podium_questions').delete().eq('id',id);
+  poActiveQ=null; await podiumLoad();
+  document.getElementById('podium-editor').innerHTML='<div class="panel-editor-empty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Sélectionnez ou créez une question</div>';
+  aqToast('Supprimée');
+}
+
+// ════════════════════════════════════════════
+//  MOT INTERDIT
+// ════════════════════════════════════════════
+let miWords=[], miEditId=null, miAddOpen=false, miImportOpen=false;
+
+async function miLoad() {
+  const{data}=await aq_db.from('mi_words').select('*').order('sort_order').order('created_at',{ascending:false});
+  miWords=data||[];
+  document.getElementById('mi-stat-total').textContent=miWords.length;
+  miRender();
+}
+
+function miRender() {
+  const search=document.getElementById('mi-search').value.trim().toLowerCase();
+  let filtered=miWords;
+  if(search) filtered=miWords.filter(w=>w.word.toLowerCase().includes(search)||[w.forbidden_1,w.forbidden_2,w.forbidden_3,w.forbidden_4,w.forbidden_5].some(f=>f.toLowerCase().includes(search)));
+  const body=document.getElementById('mi-table-body');
+  if(!filtered.length){body.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">Aucun mot trouvé</div>';return;}
+  body.innerHTML=filtered.map((w,i)=>{
+    if(miEditId===w.id) return `
+      <div class="aq-table-row mi-cols editing">
+        <div style="font-size:11px;color:var(--text3)">${i+1}</div>
+        <input class="aq-edit-input" id="e-word" value="${aqEsc(w.word)}" style="font-family:'Exo 2',sans-serif;font-weight:800;font-style:italic;text-transform:uppercase">
+        <input class="aq-edit-input" id="e-f1" value="${aqEsc(w.forbidden_1)}">
+        <input class="aq-edit-input" id="e-f2" value="${aqEsc(w.forbidden_2)}">
+        <input class="aq-edit-input" id="e-f3" value="${aqEsc(w.forbidden_3)}">
+        <input class="aq-edit-input" id="e-f4" value="${aqEsc(w.forbidden_4)}">
+        <input class="aq-edit-input" id="e-f5" value="${aqEsc(w.forbidden_5)}">
+        <div class="aq-row-actions">
+          <button class="aq-btn aq-btn-success aq-btn-sm" onclick="miConfirmEdit(${w.id})">✓</button>
+          <button class="aq-btn aq-btn-ghost aq-btn-sm" onclick="miCancelEdit()">✕</button>
+        </div>
+      </div>`;
+    return `
+      <div class="aq-table-row mi-cols">
+        <div style="font-size:11px;color:var(--text3)">${i+1}</div>
+        <div class="mi-row-word">${aqEsc(w.word)}</div>
+        <div class="mi-forbidden">${aqEsc(w.forbidden_1)}</div>
+        <div class="mi-forbidden">${aqEsc(w.forbidden_2)}</div>
+        <div class="mi-forbidden">${aqEsc(w.forbidden_3)}</div>
+        <div class="mi-forbidden">${aqEsc(w.forbidden_4)}</div>
+        <div class="mi-forbidden">${aqEsc(w.forbidden_5)}</div>
+        <div class="aq-row-actions">
+          <button class="aq-btn aq-btn-mot aq-btn-sm" onclick="miEdit(${w.id})">✎</button>
+          <button class="aq-btn aq-btn-danger aq-btn-sm" onclick="miDelete(${w.id})">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function miToggleAdd(){miAddOpen=!miAddOpen;document.getElementById('mi-add-section').style.display=miAddOpen?'block':'none';if(miAddOpen&&miImportOpen)miToggleImport();if(miAddOpen)setTimeout(()=>document.getElementById('mi-add-word')?.focus(),100);}
+function miToggleImport(){miImportOpen=!miImportOpen;document.getElementById('mi-import-section').style.display=miImportOpen?'block':'none';if(miImportOpen&&miAddOpen)miToggleAdd();}
+
+async function miSaveNew(){
+  const word=document.getElementById('mi-add-word').value.trim().toUpperCase();
+  const f1=document.getElementById('mi-f1').value.trim().toUpperCase();
+  const f2=document.getElementById('mi-f2').value.trim().toUpperCase();
+  const f3=document.getElementById('mi-f3').value.trim().toUpperCase();
+  const f4=document.getElementById('mi-f4').value.trim().toUpperCase();
+  const f5=document.getElementById('mi-f5').value.trim().toUpperCase();
+  if(!word||!f1||!f2||!f3||!f4||!f5){aqToast('Remplissez tous les champs','error');return;}
+  const{data}=await aq_db.from('mi_words').insert({word,forbidden_1:f1,forbidden_2:f2,forbidden_3:f3,forbidden_4:f4,forbidden_5:f5,sort_order:miWords.length+1}).select().single();
+  if(data){miWords.unshift(data);document.getElementById('mi-stat-total').textContent=miWords.length;miRender();['mi-add-word','mi-f1','mi-f2','mi-f3','mi-f4','mi-f5'].forEach(id=>document.getElementById(id).value='');miToggleAdd();aqToast(`"${word}" ajouté ✓`,'success');}
+}
+
+function miEdit(id){miEditId=id;miRender();setTimeout(()=>document.getElementById('e-word')?.focus(),50);}
+function miCancelEdit(){miEditId=null;miRender();}
+
+async function miConfirmEdit(id){
+  const word=document.getElementById('e-word').value.trim().toUpperCase();
+  const f1=document.getElementById('e-f1').value.trim().toUpperCase();
+  const f2=document.getElementById('e-f2').value.trim().toUpperCase();
+  const f3=document.getElementById('e-f3').value.trim().toUpperCase();
+  const f4=document.getElementById('e-f4').value.trim().toUpperCase();
+  const f5=document.getElementById('e-f5').value.trim().toUpperCase();
+  if(!word||!f1||!f2||!f3||!f4||!f5){aqToast('Champs vides','error');return;}
+  await aq_db.from('mi_words').update({word,forbidden_1:f1,forbidden_2:f2,forbidden_3:f3,forbidden_4:f4,forbidden_5:f5}).eq('id',id);
+  miWords=miWords.map(w=>w.id===id?{...w,word,forbidden_1:f1,forbidden_2:f2,forbidden_3:f3,forbidden_4:f4,forbidden_5:f5}:w);
+  miEditId=null;miRender();aqToast('Mis à jour ✓','success');
+}
+
+async function miDelete(id){
+  const w=miWords.find(x=>x.id===id);
+  if(!confirm(`Supprimer "${w?.word}" ?`))return;
+  await aq_db.from('mi_words').delete().eq('id',id);
+  miWords=miWords.filter(x=>x.id!==id);
+  document.getElementById('mi-stat-total').textContent=miWords.length;
+  miRender();aqToast('Supprimé');
+}
+
+function miPreviewImport(){
+  const lines=document.getElementById('mi-import-text').value.trim().split('\n').filter(l=>l.trim());
+  const valid=lines.filter(l=>l.split(';').length===6);
+  document.getElementById('mi-import-preview').textContent=lines.length?`${valid.length} valide(s) sur ${lines.length}`:'';
+}
+
+async function miImport(){
+  const lines=document.getElementById('mi-import-text').value.trim().split('\n').filter(l=>l.trim());
+  const rows=lines.map(l=>{const p=l.split(';').map(s=>s.trim().toUpperCase());if(p.length!==6)return null;return{word:p[0],forbidden_1:p[1],forbidden_2:p[2],forbidden_3:p[3],forbidden_4:p[4],forbidden_5:p[5],sort_order:miWords.length+1};}).filter(Boolean);
+  if(!rows.length){aqToast('Aucune ligne valide','error');return;}
+  const{data}=await aq_db.from('mi_words').insert(rows).select();
+  if(data){miWords=[...(data||[]),...miWords];document.getElementById('mi-stat-total').textContent=miWords.length;miRender();document.getElementById('mi-import-text').value='';document.getElementById('mi-import-preview').textContent='';miToggleImport();aqToast(`${rows.length} mot(s) importé(s) ✓`,'success');}
+}
+
+// ── KEYBOARD SHORTCUTS ──
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){miCancelEdit();if(miAddOpen)miToggleAdd();if(miImportOpen)miToggleImport();}
+  if((e.metaKey||e.ctrlKey)&&e.key==='Enter'&&miAddOpen)miSaveNew();
+  if((e.metaKey||e.ctrlKey)&&e.key==='Enter'&&pActiveQ)panelSave(pActiveQ.id);
+});
+
+init();
+</script>
+</body>
+</html>
