@@ -72,25 +72,34 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 /* ════════════════════════════
    GAME VIEW
 ════════════════════════════ */
-#view-game{padding:0;gap:0}
+#view-game{padding:0;gap:0;overflow:hidden}
+.game-layout{display:flex;flex:1;overflow:hidden}
+.game-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 
 /* Top bar */
-.game-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:16px 32px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;gap:16px}
-.team-score-block{display:flex;align-items:center;gap:14px}
+.game-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 24px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;gap:16px}
+.team-score-block{display:flex;align-items:center;gap:12px}
 .team-score-block.t2{flex-direction:row-reverse}
-.team-name-disp{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em}
+.team-name-disp{font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em}
 .team-name-disp.t1{color:#4f9eff}.team-name-disp.t2{color:#ff6b9d}
-.team-score-disp{font-family:'Exo 2',sans-serif;font-size:42px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.team-score-disp{font-family:'Exo 2',sans-serif;font-size:40px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
 .team-score-disp.t1{color:#4f9eff}.team-score-disp.t2{color:#ff6b9d}
 .team-score-disp.bump{animation:bump .3s ease-out}
 @keyframes bump{0%{transform:scale(1.4)}100%{transform:scale(1)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 .game-q-center{text-align:center}
 .game-q-label{font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
-.game-q-text{font-size:15px;font-weight:600;color:#f0f0f5;max-width:340px;line-height:1.3}
+.game-q-text{font-size:14px;font-weight:600;color:#f0f0f5;max-width:300px;line-height:1.3;display:inline}
+.game-q-edit-btn{background:none;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);border-radius:6px;padding:2px 7px;font-size:11px;cursor:pointer;margin-left:6px;transition:border-color .2s,color .2s;vertical-align:middle}
+.game-q-edit-btn:hover{border-color:rgba(255,255,255,0.3);color:#fff}
+.game-q-panel-desc{font-size:11px;color:rgba(255,255,255,0.3);font-style:italic;margin-top:4px;min-height:16px}
+
+/* Wrong answer counters */
+.wrong-counters{display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;min-height:16px}
+.wrong-x-icon{width:15px;height:15px;background:rgba(220,40,40,0.85);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#fff;flex-shrink:0}
 
 /* Active team indicator */
-.turn-indicator{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 32px;flex-shrink:0}
+.turn-indicator{display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 24px;flex-shrink:0}
 .turn-badge{padding:6px 18px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'Exo 2',sans-serif;font-style:italic;transition:all .3s}
 .turn-badge.t1{background:rgba(79,158,255,0.15);border:1px solid rgba(79,158,255,0.4);color:#4f9eff}
 .turn-badge.t2{background:rgba(255,107,157,0.15);border:1px solid rgba(255,107,157,0.4);color:#ff6b9d}
@@ -98,8 +107,8 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 .turn-sep{color:rgba(255,255,255,0.15);font-size:12px}
 
 /* Answers board */
-.answers-board{flex:1;display:flex;align-items:center;justify-content:center;padding:16px 40px}
-.answers-grid{width:100%;max-width:700px;display:flex;flex-direction:column;gap:0}
+.answers-board{flex:1;display:flex;align-items:center;justify-content:center;padding:12px 24px;overflow-y:auto}
+.answers-grid{width:100%;max-width:680px;display:flex;flex-direction:column;gap:0}
 
 .answer-row{
   display:flex;align-items:center;gap:0;
@@ -130,10 +139,126 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 .ans-points.neutral{color:rgba(255,255,255,0.3)}
 
 /* Controls */
-.game-controls{padding:16px 32px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-top:1px solid rgba(255,255,255,0.06);gap:16px;flex-wrap:wrap}
+.game-controls{padding:12px 24px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-top:1px solid rgba(255,255,255,0.06);gap:12px;flex-wrap:wrap}
 .ctrl-left{display:flex;gap:10px;align-items:center}
 .ctrl-right{display:flex;gap:10px;align-items:center}
-.ctrl-center{display:flex;gap:10px;align-items:center}
+.ctrl-center{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* ════════════════════════════
+   QUESTIONS SIDEBAR (playlist)
+════════════════════════════ */
+.questions-sidebar{
+  width:270px;flex-shrink:0;
+  border-left:1px solid rgba(255,255,255,0.07);
+  display:flex;flex-direction:column;
+  background:rgba(0,0,0,0.15);
+  overflow-y:hidden;overflow-x:visible;
+}
+.sidebar-header{
+  padding:12px 14px 10px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  flex-shrink:0;
+}
+.sidebar-title{
+  font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;font-style:italic;
+  text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.3);
+}
+.sidebar-hint{font-size:10px;color:rgba(255,255,255,0.15);margin-top:2px}
+.sidebar-list{
+  flex:1;overflow-y:auto;overflow-x:visible;padding:8px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.sidebar-list::-webkit-scrollbar{width:4px}
+.sidebar-list::-webkit-scrollbar-track{background:transparent}
+.sidebar-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
+
+.sidebar-item{
+  display:flex;align-items:flex-start;gap:7px;
+  padding:8px 9px;border-radius:9px;
+  border:1px solid rgba(255,255,255,0.05);
+  cursor:pointer;transition:all .2s;
+  user-select:none;
+}
+.sidebar-item:hover:not(.active){background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1)}
+.sidebar-item.active{background:rgba(248,113,113,0.1);border-color:rgba(248,113,113,0.35);}
+.sidebar-item.done{opacity:.38}
+.sidebar-item.drag-over{border-color:rgba(248,113,113,0.6);background:rgba(248,113,113,0.05)}
+.sidebar-drag-handle{
+  color:rgba(255,255,255,0.18);font-size:13px;cursor:grab;flex-shrink:0;
+  margin-top:1px;line-height:1;
+}
+.sidebar-drag-handle:active{cursor:grabbing}
+.sidebar-item-body{flex:1;min-width:0}
+.sidebar-item-row{display:flex;align-items:center;gap:6px}
+.sidebar-item-num{
+  font-family:'Exo 2',sans-serif;font-size:10px;font-weight:800;font-style:italic;
+  color:rgba(255,255,255,0.2);flex-shrink:0;
+}
+.sidebar-item.active .sidebar-item-num{color:rgba(248,113,113,0.7)}
+.sidebar-item-text{
+  flex:1;font-size:11.5px;font-weight:500;
+  color:rgba(255,255,255,0.65);line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  word-break:break-word;
+}
+.sidebar-item.active .sidebar-item-text{color:#f0f0f5}
+.sidebar-item-done-icon{font-size:10px;color:rgba(79,206,143,0.65);flex-shrink:0}
+.sidebar-next-tag{
+  display:inline-block;margin-top:3px;
+  font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(248,113,113,0.7);
+  background:rgba(248,113,113,0.08);
+  border:1px solid rgba(248,113,113,0.2);
+  border-radius:4px;padding:1px 5px;
+}
+
+/* ── SIDEBAR ANSWERS TOOLTIP ── */
+.sidebar-item{position:relative}
+.sidebar-ans-tooltip{
+  display:none;
+  position:absolute;right:calc(100% + 10px);top:0;
+  width:220px;
+  background:#111120;border:1px solid rgba(255,255,255,0.12);
+  border-radius:10px;padding:10px 12px;
+  z-index:500;
+  box-shadow:0 8px 32px rgba(0,0,0,0.6);
+}
+.sidebar-item:hover .sidebar-ans-tooltip{display:block}
+.sat-q{font-size:10.5px;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:8px;line-height:1.4}
+.sat-row{display:flex;align-items:center;gap:6px;padding:3px 0}
+.sat-pts{
+  font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;font-style:italic;
+  min-width:28px;text-align:right;flex-shrink:0;color:rgba(255,200,60,0.85);
+}
+.sat-text{font-size:11px;color:rgba(255,255,255,0.75);flex:1;line-height:1.35}
+.sat-empty{font-size:11px;color:rgba(255,255,255,0.2);font-style:italic}
+
+/* ════════════════════════════
+   WRONG OVERLAY
+════════════════════════════ */
+#wrong-overlay{
+  position:fixed;inset:0;z-index:800;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .12s;
+}
+#wrong-overlay.show{opacity:1}
+.wrong-overlay-bg{
+  position:absolute;inset:0;
+  background:rgba(180,20,20,0.18);
+  border:6px solid rgba(255,40,40,0.35);
+}
+.wrong-x-big{
+  font-size:220px;font-weight:900;
+  color:rgba(255,50,50,0.9);
+  position:relative;z-index:1;
+  font-family:'Exo 2',sans-serif;font-style:italic;
+  text-shadow:0 0 80px rgba(255,0,0,0.6),0 0 20px rgba(255,0,0,0.8);
+  line-height:1;
+  animation:wrongPop .15s ease-out both;
+}
+@keyframes wrongPop{0%{transform:scale(0.6)}100%{transform:scale(1)}}
 
 /* ════════════════════════════
    ADMIN VIEW
@@ -172,6 +297,9 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 .modal-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.35)}
 .modal-input{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;font-size:14px;color:#f0f0f5;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;width:100%}
 .modal-input:focus{border-color:rgba(248,113,113,0.5)}
+.modal-textarea{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f5;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;width:100%;resize:vertical;min-height:64px}
+.modal-textarea:focus{border-color:rgba(248,113,113,0.3)}
+.modal-textarea::placeholder{color:rgba(255,255,255,0.2)}
 .modal-answers-grid{display:flex;flex-direction:column;gap:8px}
 .modal-ans-row{display:flex;align-items:center;gap:10px}
 .modal-ans-num{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;color:rgba(248,113,113,0.4);width:22px;flex-shrink:0;text-align:center}
@@ -182,13 +310,19 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 .modal-hint{font-size:12px;color:rgba(255,255,255,0.25);text-align:center;padding:4px 0}
 .modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid rgba(255,255,255,0.07)}
 
+/* Save mode toggle */
+.save-mode-toggle{display:flex;gap:8px;padding:10px 0 2px}
+.save-mode-btn{flex:1;padding:9px 12px;border-radius:9px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:1px solid rgba(255,255,255,0.12);background:transparent;color:rgba(255,255,255,0.35);font-family:'DM Sans',sans-serif;transition:all .2s;text-align:center}
+.save-mode-btn.active-temp{background:rgba(255,180,0,0.1);border-color:rgba(255,180,0,0.4);color:rgba(255,180,0,0.9)}
+.save-mode-btn.active-perm{background:rgba(248,113,113,0.1);border-color:rgba(248,113,113,0.4);color:#f87171}
+
 /* ════ MASTER SHEET ════ */
 .master-sheet{
-  margin:0 40px 0;padding:12px 18px;
+  margin:0 24px 0;padding:10px 16px;
   background:rgba(255,200,0,0.04);
   border:1px solid rgba(255,200,0,0.15);
   border-radius:12px;display:none;
-  transition:all .3s;
+  transition:all .3s;flex-shrink:0;
 }
 .master-sheet.visible{display:block}
 .master-sheet-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,200,0,0.5);margin-bottom:8px}
@@ -262,7 +396,7 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 .ans-face-front.revealed-t2{background:rgba(255,107,157,0.12);border-color:rgba(255,107,157,0.4)}
 .ans-face-front.revealed-t0{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.15)}
 .start-reminder {
-  text-align:center;padding:10px 0 0;
+  text-align:center;padding:6px 0 0;
   font-size:12px;color:rgba(255,255,255,0.3);
   font-style:italic;
 }
@@ -277,6 +411,12 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 <body>
 <div id="loading-overlay"><div style="display:flex;flex-direction:column;align-items:center;gap:14px"><div style="width:32px;height:32px;border:3px solid rgba(248,113,113,0.2);border-top-color:#f87171;border-radius:50%;animation:spin .7s linear infinite"></div><div style="font-size:13px">Chargement…</div></div></div>
 <div id="toast"></div>
+
+<!-- Wrong answer overlay -->
+<div id="wrong-overlay">
+  <div class="wrong-overlay-bg"></div>
+  <div class="wrong-x-big">✗</div>
+</div>
 
 <nav class="nav">
   <a href="index.html" class="nav-logo" style="text-decoration:none;cursor:pointer">Allo<span>Quizz</span> <span style="color:rgba(255,255,255,0.2);font-size:13px;font-weight:400;margin-left:6px">Le Panel</span></a>
@@ -334,73 +474,77 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
 
 <!-- ══ GAME ══ -->
 <div class="view" id="view-game">
-  <div class="game-top">
-    <div class="team-score-block">
-      <div class="team-score-disp t1" id="score-t1">0</div>
-      <div class="team-name-disp t1" id="name-t1">Équipe 1</div>
-    </div>
-    <div class="game-q-center">
-      <div class="game-q-label">Question</div>
-      <div class="game-q-text" id="game-q-text">—</div>
-    </div>
-    <div class="team-score-block t2">
-      <div class="team-score-disp t2" id="score-t2">0</div>
-      <div class="team-name-disp t2" id="name-t2">Équipe 2</div>
-    </div>
-  </div>
-
-  <!-- Turn selector — click to pick which team plays -->
-  <div class="turn-indicator">
-    <div class="turn-badge t1" id="turn-t1" onclick="setTurn(1)" style="cursor:pointer" title="Équipe 1 joue">Équipe 1</div>
-    <div class="turn-sep">joue</div>
-    <div class="turn-badge t2 inactive" id="turn-t2" onclick="setTurn(2)" style="cursor:pointer" title="Équipe 2 joue">Équipe 2</div>
-  </div>
-  <div class="start-reminder" id="start-reminder"></div>
-
-  <div class="answers-board">
-    <div class="answers-grid" id="answers-grid"></div>
-  </div>
-
-  <!-- Master cheat sheet — hidden answers -->
-  <div class="master-sheet" id="master-sheet">
-    <div class="master-sheet-title">👁 Réponses (maître)</div>
-    <div class="master-answers" id="master-answers"></div>
-  </div>
-
-  <div class="game-controls">
-    <div class="ctrl-left">
-      <button class="btn btn-ghost btn-sm" onclick="confirmBack()">← Quitter</button>
-    </div>
-    <div class="ctrl-center">
-      <button class="btn btn-ghost btn-sm" onclick="toggleMasterSheet()">👁 Réponses</button>
-      <button class="btn btn-sm" style="background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.35);color:#ff5050" onclick="wrongAnswer()">✗ Mauvaise réponse</button>
-      <button class="btn btn-ghost btn-sm" onclick="openScoreModal()">✏ Scores</button>
-      <button class="btn btn-ghost btn-sm" onclick="revealNoTeam()">Révéler (personne)</button>
-      <button class="btn btn-ghost btn-sm" onclick="endCurrentQuestion()">Terminer ✓</button>
-      <button class="btn btn-ghost btn-sm" onclick="nextQuestion()">Question suivante →</button>
-    </div>
-    <div class="ctrl-right">
-      <button class="btn btn-ghost btn-sm" onclick="saveSession()">💾 Sauvegarder</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ NEXT QUESTION MODAL ══ -->
-<div class="modal-backdrop" id="next-modal" style="display:none" onclick="if(event.target===this)closeNextModal()">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div class="modal-title">Question suivante</div>
-      <button class="modal-close" onclick="closeNextModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="section-label" style="margin-bottom:10px">Choisir une question</div>
-      <div class="questions-list" id="next-questions-list"></div>
-      <div style="border-top:1px solid rgba(255,255,255,0.07);margin-top:16px;padding-top:16px">
-        <div class="add-q-form">
-          <input class="add-q-input" id="next-new-q-input" placeholder="Ou créer une nouvelle question…" onkeydown="if(event.key==='Enter')openAddModalFromNext()">
-          <button class="btn btn-primary btn-sm" onclick="openAddModalFromNext()">+ Créer</button>
+  <div class="game-layout">
+    <!-- Main game area -->
+    <div class="game-main">
+      <div class="game-top">
+        <div class="team-score-block">
+          <div class="team-score-disp t1" id="score-t1">0</div>
+          <div>
+            <div class="team-name-disp t1" id="name-t1">Équipe 1</div>
+            <div class="wrong-counters" id="wrongs-t1"></div>
+          </div>
+        </div>
+        <div class="game-q-center">
+          <div class="game-q-label">Question</div>
+          <div>
+            <span class="game-q-text" id="game-q-text">—</span>
+            <button class="game-q-edit-btn" id="btn-edit-q" onclick="openEditCurrentQuestion()" style="display:none" title="Modifier cette question">✏</button>
+          </div>
+          <div class="game-q-panel-desc" id="game-q-panel-desc"></div>
+        </div>
+        <div class="team-score-block t2">
+          <div class="team-score-disp t2" id="score-t2">0</div>
+          <div style="text-align:right">
+            <div class="team-name-disp t2" id="name-t2">Équipe 2</div>
+            <div class="wrong-counters" id="wrongs-t2" style="justify-content:flex-end"></div>
+          </div>
         </div>
       </div>
+
+      <!-- Turn selector -->
+      <div class="turn-indicator">
+        <div class="turn-badge t1" id="turn-t1" onclick="setTurn(1)" style="cursor:pointer" title="Équipe 1 joue">Équipe 1</div>
+        <div class="turn-sep">joue</div>
+        <div class="turn-badge t2 inactive" id="turn-t2" onclick="setTurn(2)" style="cursor:pointer" title="Équipe 2 joue">Équipe 2</div>
+      </div>
+      <div class="start-reminder" id="start-reminder"></div>
+
+      <div class="answers-board">
+        <div class="answers-grid" id="answers-grid"></div>
+      </div>
+
+      <!-- Master cheat sheet -->
+      <div class="master-sheet" id="master-sheet">
+        <div class="master-sheet-title">👁 Réponses (maître)</div>
+        <div class="master-answers" id="master-answers"></div>
+      </div>
+
+      <div class="game-controls">
+        <div class="ctrl-left">
+          <button class="btn btn-ghost btn-sm" onclick="confirmBack()">← Quitter</button>
+        </div>
+        <div class="ctrl-center">
+          <button class="btn btn-ghost btn-sm" onclick="toggleMasterSheet()">👁 Réponses</button>
+          <button class="btn btn-sm" style="background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.35);color:#ff5050" onclick="wrongAnswer()">✗ Mauvaise réponse</button>
+          <button class="btn btn-ghost btn-sm" onclick="openScoreModal()">✏ Scores</button>
+          <button class="btn btn-ghost btn-sm" onclick="revealNoTeam()">Révéler (personne)</button>
+          <button class="btn btn-ghost btn-sm" onclick="endCurrentQuestion()">Terminer ✓</button>
+          <button class="btn btn-ghost btn-sm" onclick="goToNextInPlaylist()">Question suivante →</button>
+        </div>
+        <div class="ctrl-right">
+          <button class="btn btn-ghost btn-sm" onclick="saveSession()">💾 Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Questions sidebar / playlist -->
+    <div class="questions-sidebar" id="questions-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Playlist questions</div>
+        <div class="sidebar-hint">Glissez pour réordonner</div>
+      </div>
+      <div class="sidebar-list" id="sidebar-list"></div>
     </div>
   </div>
 </div>
@@ -418,7 +562,7 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
   </div>
 </div>
 
-<!-- ══ QUESTION MODAL ══ -->
+<!-- ══ QUESTION MODAL (admin) ══ -->
 <div class="modal-backdrop" id="q-modal" style="display:none" onclick="if(event.target===this)closeQModal()">
   <div class="modal-box">
     <div class="modal-header">
@@ -429,6 +573,10 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
       <div class="modal-field">
         <label class="modal-label">Question</label>
         <input class="modal-input" id="modal-q-text" placeholder="Ex: Super-héros préférés">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Description du panel <span style="font-weight:400;text-transform:none;letter-spacing:0;color:rgba(255,255,255,0.2)">(facultatif)</span></label>
+        <textarea class="modal-textarea" id="modal-q-desc" placeholder="Ex: Hommes 18-35 ans, France métropolitaine — 500 répondants"></textarea>
       </div>
       <div class="modal-answers-grid" id="modal-answers-grid">
         <!-- 6 answer rows injected by JS -->
@@ -442,6 +590,62 @@ body{font-family:'DM Sans',sans-serif;background:#06060d;color:#f0f0f5;min-heigh
   </div>
 </div>
 
+<!-- ══ IN-GAME EDIT MODAL ══ -->
+<div class="modal-backdrop" id="edit-q-modal" style="display:none" onclick="if(event.target===this)closeEditQModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Modifier la question</div>
+      <button class="modal-close" onclick="closeEditQModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label class="modal-label">Question</label>
+        <input class="modal-input" id="eq-text" placeholder="Texte de la question">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Description du panel <span style="font-weight:400;text-transform:none;letter-spacing:0;color:rgba(255,255,255,0.2)">(facultatif)</span></label>
+        <textarea class="modal-textarea" id="eq-desc" placeholder="Ex: Femmes 50-65 ans, France…"></textarea>
+      </div>
+      <div class="modal-answers-grid" id="eq-answers-grid"></div>
+      <div class="modal-field" style="gap:6px">
+        <label class="modal-label">Enregistrement</label>
+        <div class="save-mode-toggle">
+          <button class="save-mode-btn active-temp" id="eq-mode-temp" onclick="setEditMode('temp')">⏱ Temporaire <span style="display:block;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;opacity:.7;margin-top:1px">Pour cette partie seulement</span></button>
+          <button class="save-mode-btn" id="eq-mode-perm" onclick="setEditMode('perm')">💾 Permanent <span style="display:block;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;opacity:.7;margin-top:1px">Modifie la question en base</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeEditQModal()">Annuler</button>
+      <button class="btn btn-primary" id="eq-save-btn" onclick="saveInGameEdit()">Appliquer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCORE EDIT MODAL ══ -->
+<div class="modal-backdrop" id="score-modal" style="display:none" onclick="if(event.target===this)closeScoreModal()">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <div class="modal-title">Modifier les scores</div>
+      <button class="modal-close" onclick="closeScoreModal()">✕</button>
+    </div>
+    <div class="modal-body" style="gap:20px">
+      <div class="modal-field">
+        <label class="modal-label t1" style="color:#4f9eff" id="score-modal-lbl1">Équipe 1</label>
+        <input class="modal-input" id="score-modal-t1" type="number" min="0" style="font-size:28px;font-weight:800;text-align:center;color:#4f9eff">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label t2" style="color:#ff6b9d" id="score-modal-lbl2">Équipe 2</label>
+        <input class="modal-input" id="score-modal-t2" type="number" min="0" style="font-size:28px;font-weight:800;text-align:center;color:#ff6b9d">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeScoreModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="applyScores()">Valider</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://tsneytqibltnjarajcll.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
@@ -450,16 +654,24 @@ const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let questions = [];
 let currentQuestion = null;
-let currentAnswers = []; // [{...answer, revealedBy: null|1|2}]
+let currentAnswers = [];
 let scores = [0, 0];
 let currentTeam = 1;
 let spectatorWin = null;
 let bc = null;
 try { bc = new BroadcastChannel('panel_spectator'); } catch(e) {}
 
+// Playlist order (array of question IDs)
+let playlistOrder = [];
+
+// Wrong answer counters per team
+let wrongCounts = [0, 0];
+
+// In-game edit mode: 'temp' or 'perm'
+let editMode = 'temp';
+
 // ══ NAV ══
 function goToAdmin() {
-  // Always go to admin — session stays active in background
   showView('admin');
 }
 
@@ -500,11 +712,6 @@ function showView(v) {
   document.getElementById('view-' + v).classList.add('active');
 }
 
-// ══ SELECTOR ══
-function renderSelector() {
-  // Sessions list is handled by loadSessions() — nothing to do here
-}
-
 // ══ NEW GAME MODAL ══
 function openNewGameModal() {
   document.getElementById('new-game-modal').style.display = 'flex';
@@ -517,20 +724,20 @@ async function createNewGame() {
   const t1 = document.getElementById('team1-name').value.trim() || 'Équipe 1';
   const t2 = document.getElementById('team2-name').value.trim() || 'Équipe 2';
   closeNewGameModal();
-  // Create session in Supabase
   const { data, error } = await db.from('panel_sessions').insert({
     team_names: [t1, t2], scores: [0, 0], question_ids: [], done_question_ids: [], status: 'in_progress'
   }).select().single();
   if (error) { showToast('Erreur : ' + error.message); return; }
   currentSessionId = data.id;
   scores = [0, 0];
+  wrongCounts = [0, 0];
   currentTeam = 1;
   startingTeam = 1;
   questionCount = 0;
   doneQuestionIds = new Set();
   currentQuestion = null;
   currentAnswers = [];
-  // Update UI names
+  playlistOrder = questions.map(q => q.id);
   ['t1','t2'].forEach((t,i) => {
     const name = i===0 ? t1 : t2;
     document.getElementById('name-'+t).textContent = name;
@@ -539,10 +746,14 @@ async function createNewGame() {
   document.getElementById('score-t1').textContent = 0;
   document.getElementById('score-t2').textContent = 0;
   document.getElementById('game-q-text').textContent = 'Choisissez une question →';
+  document.getElementById('btn-edit-q').style.display = 'none';
+  document.getElementById('game-q-panel-desc').textContent = '';
   updateTurnUI();
+  updateWrongCountersUI();
+  renderSidebar();
   showView('game');
-  // Auto-open question picker
-  nextQuestion();
+  // Auto-pick first question from playlist
+  goToNextInPlaylist();
 }
 
 // ══ SESSIONS LIST ══
@@ -583,12 +794,18 @@ async function resumeSession(id) {
   if (error || !data) { showToast('Session introuvable'); return; }
   currentSessionId = id;
   scores = data.scores || [0,0];
+  wrongCounts = [0, 0];
   doneQuestionIds = new Set(data.done_question_ids || []);
   questionCount = doneQuestionIds.size;
   startingTeam = questionCount % 2 === 0 ? 1 : 2;
   currentTeam = startingTeam;
   currentQuestion = null;
   currentAnswers = [];
+  const savedOrder = data.question_ids || [];
+  // Merge saved order with current questions
+  const savedIds = savedOrder.filter(id => questions.find(q => q.id === id));
+  const newIds = questions.filter(q => !savedIds.includes(q.id)).map(q => q.id);
+  playlistOrder = [...savedIds, ...newIds];
   const names = data.team_names || ['Équipe 1','Équipe 2'];
   ['t1','t2'].forEach((t,i) => {
     document.getElementById('name-'+t).textContent = names[i];
@@ -597,9 +814,13 @@ async function resumeSession(id) {
   document.getElementById('score-t1').textContent = scores[0];
   document.getElementById('score-t2').textContent = scores[1];
   document.getElementById('game-q-text').textContent = 'Choisissez une question →';
+  document.getElementById('btn-edit-q').style.display = 'none';
+  document.getElementById('game-q-panel-desc').textContent = '';
   updateTurnUI();
+  updateWrongCountersUI();
+  renderSidebar();
   showView('game');
-  nextQuestion();
+  goToNextInPlaylist();
   showToast('Partie reprise ✓');
 }
 
@@ -611,12 +832,122 @@ async function deleteSession(id) {
   showToast('Partie supprimée');
 }
 
-// ══ GAME ══
-function startGame(questionId) {
-  // Called from question picker during a game
-  switchQuestion(questionId);
+// ══ PLAYLIST / SIDEBAR ══
+function buildAnswerTooltip(q) {
+  const ans = (q.panel_answers || []).filter(a => a.text && a.text.trim());
+  const rows = ans.length
+    ? ans.map(a => `<div class="sat-row"><span class="sat-pts">${a.points}</span><span class="sat-text">${a.text}</span></div>`).join('')
+    : '<div class="sat-empty">Aucune réponse</div>';
+  return `<div class="sidebar-ans-tooltip"><div class="sat-q">${q.question}</div>${rows}</div>`;
 }
 
+function renderSidebar() {
+  const list = document.getElementById('sidebar-list');
+  if (!playlistOrder.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:rgba(255,255,255,0.2)">Aucune question</div>';
+    return;
+  }
+
+  // Find next question (first undone, not current)
+  const nextId = playlistOrder.find(id => !doneQuestionIds.has(id) && id !== (currentQuestion ? currentQuestion.id : null));
+
+  list.innerHTML = playlistOrder.map((qid, i) => {
+    const q = questions.find(x => x.id === qid);
+    if (!q) return '';
+    const isCurrent = currentQuestion && q.id === currentQuestion.id;
+    const isDone = doneQuestionIds.has(q.id);
+    const isNext = q.id === nextId && !isCurrent;
+    let cls = 'sidebar-item';
+    if (isCurrent) cls += ' active';
+    if (isDone && !isCurrent) cls += ' done';
+
+    const badge = isDone && !isCurrent
+      ? '<span class="sidebar-item-done-icon">✓</span>'
+      : '';
+    const nextTag = isNext ? '<div class="sidebar-next-tag">→ Suivante</div>' : '';
+
+    return `<div class="${cls}"
+      draggable="true"
+      data-qid="${q.id}"
+      data-idx="${i}"
+      onclick="onSidebarClick('${q.id}')"
+      ondragstart="onDragStart(event,${i})"
+      ondragover="onDragOver(event,${i})"
+      ondragleave="onDragLeave(event)"
+      ondrop="onDrop(event,${i})"
+      ondragend="onDragEnd(event)"
+    >
+      <div class="sidebar-drag-handle" onclick="event.stopPropagation()">⋮⋮</div>
+      <div class="sidebar-item-body">
+        <div class="sidebar-item-row">
+          <div class="sidebar-item-num">${String(i+1).padStart(2,'0')}</div>
+          <div class="sidebar-item-text">${q.question}</div>
+          ${badge}
+        </div>
+        ${nextTag}
+      </div>
+      ${buildAnswerTooltip(q)}
+    </div>`;
+  }).join('');
+}
+
+function onSidebarClick(qid) {
+  if (currentQuestion && currentQuestion.id === qid) return;
+  if (doneQuestionIds.has(qid)) {
+    if (!confirm('Cette question est déjà terminée. Vouloir la rejouer ?')) return;
+  }
+  switchQuestion(qid);
+}
+
+// Drag & drop for sidebar reordering
+let dragFromIdx = null;
+
+function onDragStart(e, idx) {
+  dragFromIdx = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '0.4';
+}
+
+function onDragOver(e, idx) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const items = document.querySelectorAll('#sidebar-list .sidebar-item');
+  items.forEach(el => el.classList.remove('drag-over'));
+  if (idx !== dragFromIdx) {
+    const target = document.querySelector(`#sidebar-list .sidebar-item[data-idx="${idx}"]`);
+    if (target) target.classList.add('drag-over');
+  }
+}
+
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function onDrop(e, toIdx) {
+  e.preventDefault();
+  if (dragFromIdx === null || dragFromIdx === toIdx) return;
+  const moved = playlistOrder.splice(dragFromIdx, 1)[0];
+  playlistOrder.splice(toIdx, 0, moved);
+  renderSidebar();
+}
+
+function onDragEnd(e) {
+  e.currentTarget.style.opacity = '';
+  dragFromIdx = null;
+  document.querySelectorAll('#sidebar-list .sidebar-item').forEach(el => el.classList.remove('drag-over'));
+}
+
+function goToNextInPlaylist() {
+  // Find first undone question in playlist order (excluding current)
+  const nextId = playlistOrder.find(id => !doneQuestionIds.has(id) && id !== (currentQuestion ? currentQuestion.id : null));
+  if (!nextId) {
+    showToast('Plus de questions disponibles !');
+    return;
+  }
+  switchQuestion(nextId);
+}
+
+// ══ GAME ══
 function renderAnswers() {
   const grid = document.getElementById('answers-grid');
   grid.innerHTML = currentAnswers.map((a, i) => {
@@ -651,29 +982,17 @@ function revealAnswer(idx) {
   if (currentAnswers[idx].revealedBy !== null) return;
   currentAnswers[idx].revealedBy = currentTeam;
 
-  // Update front face colors
   const front = document.getElementById('ans-front-'+idx);
   const color = currentTeam === 1 ? '#4f9eff' : '#ff6b9d';
   front.classList.add('revealed-t'+currentTeam);
   front.querySelectorAll('.ans-rank,.ans-points').forEach(el => el.style.color = color);
-
-  // Flip!
   document.getElementById('ans-card-'+idx).classList.add('flipped');
 
-  // Sound
   playGoodSound();
-
   scores[currentTeam-1] += currentAnswers[idx].points;
   updateScoreUI();
   renderMasterSheet();
   showToast('✓ +' + currentAnswers[idx].points + ' pts');
-  pushSpectator();
-}
-
-function givePoint(team) {
-  scores[team-1]++;
-  updateScoreUI();
-  showToast('+1 → ' + document.getElementById('name-t'+team).textContent);
   pushSpectator();
 }
 
@@ -702,43 +1021,15 @@ function renderMasterSheet() {
   `).join('');
 }
 
-function nextQuestion() {
-  const list = document.getElementById('next-questions-list');
-  const others = questions.filter(q => q.id !== (currentQuestion ? currentQuestion.id : -1));
-  if (!others.length) {
-    list.innerHTML = '<div class="sel-empty">Aucune autre question disponible.</div>';
-  } else {
-    // Sort: not done first, done last
-    const sorted = [...others].sort((a,b) => {
-      const ad = doneQuestionIds.has(a.id) ? 1 : 0;
-      const bd = doneQuestionIds.has(b.id) ? 1 : 0;
-      return ad - bd;
-    });
-    list.innerHTML = sorted.map((q, i) => {
-      const done = doneQuestionIds.has(q.id);
-      return `<div class="q-card${done?' done':''}" onclick="${done?'':('switchQuestion('+q.id+')')}">
-        <div class="q-card-num">${String(i+1).padStart(2,'0')}</div>
-        <div class="q-card-text">${q.question}</div>
-        <div class="q-card-count">${(q.panel_answers||[]).length} réponses</div>
-        ${done ? '<div class="q-card-done-badge">✓ Faite</div>' : '<div class="q-card-arrow">›</div>'}
-      </div>`;
-    }).join('');
-  }
-  document.getElementById('next-modal').style.display = 'flex';
-}
-
-function closeNextModal() {
-  document.getElementById('next-modal').style.display = 'none';
-}
-
 function switchQuestion(questionId) {
-  closeNextModal();
-  // Mark current as done automatically
+  // Mark current as done
   if (currentQuestion) doneQuestionIds.add(currentQuestion.id);
   currentQuestion = questions.find(q => q.id === questionId);
   if (!currentQuestion) return;
   currentAnswers = currentQuestion.panel_answers.map(a => ({...a, revealedBy: null}));
   document.getElementById('game-q-text').textContent = currentQuestion.question;
+  document.getElementById('btn-edit-q').style.display = '';
+  document.getElementById('game-q-panel-desc').textContent = currentQuestion.panel_description || '';
   // Alternate starting team
   startingTeam = getNextStartingTeam();
   questionCount++;
@@ -747,15 +1038,9 @@ function switchQuestion(questionId) {
   renderAnswers();
   renderMasterSheet();
   renderStartReminder();
+  renderSidebar();
   pushSpectator();
   showToast('Nouvelle question chargée');
-}
-
-function openAddModalFromNext() {
-  const input = document.getElementById('next-new-q-input');
-  document.getElementById('new-q-input').value = input.value;
-  closeNextModal();
-  openAddModal();
 }
 
 // Reveal next unrevealed answer for nobody (grey)
@@ -768,13 +1053,10 @@ function revealNoTeam() {
 function revealNoTeamIdx(idx) {
   if (currentAnswers[idx].revealedBy !== null) return;
   currentAnswers[idx].revealedBy = 0;
-
   const front = document.getElementById('ans-front-'+idx);
   front.classList.add('revealed-t0');
-
   document.getElementById('ans-card-'+idx).classList.add('flipped');
   playRevealNoTeamSound();
-
   renderMasterSheet();
   pushSpectator();
   showToast('Réponse révélée (sans équipe)');
@@ -785,6 +1067,7 @@ let doneQuestionIds = new Set();
 function endCurrentQuestion() {
   if (currentQuestion) {
     doneQuestionIds.add(currentQuestion.id);
+    renderSidebar();
     showToast('Question marquée comme terminée ✓');
   }
 }
@@ -798,7 +1081,7 @@ async function saveSession() {
       document.getElementById('name-t2').textContent
     ],
     scores: scores,
-    question_ids: questions.map(q => q.id),
+    question_ids: playlistOrder,
     status: 'in_progress'
   };
   payload.done_question_ids = [...doneQuestionIds];
@@ -826,12 +1109,102 @@ function updateScoreUI() {
   });
 }
 
+function updateWrongCountersUI() {
+  [1,2].forEach(t => {
+    const el = document.getElementById('wrongs-t'+t);
+    el.innerHTML = Array.from({length: wrongCounts[t-1]}, () => '<div class="wrong-x-icon">✗</div>').join('');
+  });
+}
+
 function confirmBack() {
   if (confirm('Quitter la partie en cours ?')) {
     loadSessions();
     showView('selector');
     pushClearSpectator();
   }
+}
+
+// ══ IN-GAME EDIT MODAL ══
+function openEditCurrentQuestion() {
+  if (!currentQuestion) return;
+  document.getElementById('eq-text').value = currentQuestion.question;
+  document.getElementById('eq-desc').value = currentQuestion.panel_description || '';
+
+  // Build 6 answer rows (using current in-game answers, some may be revealed)
+  const grid = document.getElementById('eq-answers-grid');
+  grid.innerHTML = Array.from({length: 6}, (_, i) => {
+    const a = currentAnswers[i] || {answer: '', points: ''};
+    const isRevealed = a.revealedBy !== null;
+    return `<div class="modal-ans-row">
+      <div class="modal-ans-num">${i+1}</div>
+      <input class="modal-ans-input" id="eqans-${i}" placeholder="Réponse ${i+1}…" value="${escHtml(a.answer)}"${isRevealed ? ' style="opacity:.5"' : ''}>
+      <input class="modal-ans-pts" id="eqpts-${i}" type="number" placeholder="pts" value="${a.points||''}" min="1" max="100"${isRevealed ? ' style="opacity:.5"' : ''}>
+    </div>`;
+  }).join('');
+
+  setEditMode('temp');
+  document.getElementById('edit-q-modal').style.display = 'flex';
+}
+
+function closeEditQModal() {
+  document.getElementById('edit-q-modal').style.display = 'none';
+}
+
+function setEditMode(mode) {
+  editMode = mode;
+  document.getElementById('eq-mode-temp').className = 'save-mode-btn' + (mode === 'temp' ? ' active-temp' : '');
+  document.getElementById('eq-mode-perm').className = 'save-mode-btn' + (mode === 'perm' ? ' active-perm' : '');
+}
+
+async function saveInGameEdit() {
+  const newText = document.getElementById('eq-text').value.trim();
+  const newDesc = document.getElementById('eq-desc').value.trim();
+  if (!newText) { showToast('La question ne peut pas être vide'); return; }
+
+  const newAnswers = Array.from({length: 6}, (_, i) => ({
+    answer: document.getElementById('eqans-'+i).value.trim(),
+    points: parseInt(document.getElementById('eqpts-'+i).value) || 0
+  }));
+
+  if (editMode === 'perm') {
+    // Save to DB
+    const { error: qErr } = await db.from('panel_questions').update({
+      question: newText, panel_description: newDesc
+    }).eq('id', currentQuestion.id);
+    if (qErr) { showToast('Erreur : ' + qErr.message); return; }
+    await db.from('panel_answers').delete().eq('question_id', currentQuestion.id);
+    const { error: aErr } = await db.from('panel_answers').insert(
+      newAnswers.map((a, i) => ({
+        question_id: currentQuestion.id, answer: a.answer, points: a.points, sort_order: i
+      }))
+    );
+    if (aErr) { showToast('Erreur réponses : ' + aErr.message); return; }
+    // Reload questions to reflect changes
+    await loadQuestions();
+    // Re-find current question
+    currentQuestion = questions.find(q => q.id === currentQuestion.id);
+    showToast('Question modifiée en base ✓');
+  } else {
+    showToast('Modification temporaire appliquée ✓');
+  }
+
+  // Apply locally
+  currentQuestion = { ...currentQuestion, question: newText, panel_description: newDesc };
+  // Update answers, preserving revealedBy state
+  currentAnswers = newAnswers.map((a, i) => ({
+    ...a,
+    id: currentAnswers[i]?.id,
+    question_id: currentQuestion.id,
+    revealedBy: currentAnswers[i]?.revealedBy ?? null
+  }));
+
+  document.getElementById('game-q-text').textContent = newText;
+  document.getElementById('game-q-panel-desc').textContent = newDesc;
+  renderAnswers();
+  renderMasterSheet();
+  renderSidebar();
+  pushSpectator();
+  closeEditQModal();
 }
 
 // ══ SPECTATOR ══
@@ -911,7 +1284,12 @@ body{background:#06060d;color:#f0f0f5;font-family:'DM Sans',sans-serif;height:10
 .sp-pts.hidden{opacity:0}
 .sp-pts.t1{color:#4f9eff}.sp-pts.t2{color:#ff6b9d}.sp-pts.neutral{color:rgba(255,255,255,0.25)}
 .sp-waiting{display:flex;align-items:center;justify-content:center;flex:1;color:rgba(255,255,255,0.2);font-size:18px;font-weight:600}
+#sp-wrong-overlay{position:fixed;inset:0;z-index:800;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .12s}
+#sp-wrong-overlay.show{opacity:1}
+.sp-wrong-bg{position:absolute;inset:0;background:rgba(180,20,20,0.18);border:6px solid rgba(255,40,40,0.35)}
+.sp-wrong-x{font-size:260px;font-weight:900;color:rgba(255,50,50,0.9);position:relative;z-index:1;font-family:'Exo 2',sans-serif;font-style:italic;text-shadow:0 0 80px rgba(255,0,0,0.6);line-height:1}
 </style></head><body>
+<div id="sp-wrong-overlay"><div class="sp-wrong-bg"></div><div class="sp-wrong-x">✗</div></div>
 <div class="sp-top">
   <div class="sp-score-block">
     <div class="sp-score t1" id="sp-s1">0</div>
@@ -936,25 +1314,30 @@ body{background:#06060d;color:#f0f0f5;font-family:'DM Sans',sans-serif;height:10
 </div>
 <script>
 let pScores=[0,0];
+let spWrongTimer=null;
 function applyPanelState(s){
   if(!s||!s.active){document.getElementById('sp-board').innerHTML='<div class="sp-waiting">En attente du maître du jeu…</div>';return;}
+  if(s.wrongFlash){
+    const ov=document.getElementById('sp-wrong-overlay');
+    ov.classList.add('show');
+    if(spWrongTimer)clearTimeout(spWrongTimer);
+    spWrongTimer=setTimeout(()=>ov.classList.remove('show'),2000);
+    return;
+  }
   document.getElementById('sp-q').textContent=s.question||'—';
   document.getElementById('sp-n1').textContent=s.team1Name||'Équipe 1';
   document.getElementById('sp-n2').textContent=s.team2Name||'Équipe 2';
   document.getElementById('sp-turn-t1').textContent=s.team1Name||'Équipe 1';
   document.getElementById('sp-turn-t2').textContent=s.team2Name||'Équipe 2';
-  // Scores with bump
   [1,2].forEach(t=>{
     const el=document.getElementById('sp-s'+t);
     const v=s.scores[t-1]||0;
     if(v!==pScores[t-1]){el.textContent=v;el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');pScores[t-1]=v;}
     else{el.textContent=v;}
   });
-  // Turn
   const tb1=document.getElementById('sp-turn-t1'),tb2=document.getElementById('sp-turn-t2');
   if(s.currentTeam===1){tb1.classList.remove('inactive');tb2.classList.add('inactive');}
   else{tb2.classList.remove('inactive');tb1.classList.add('inactive');}
-  // Board
   if(!s.answers||!s.answers.length){document.getElementById('sp-board').innerHTML='<div class="sp-waiting">En attente…</div>';return;}
   const grid=s.answers.map((a,i)=>{
     const rev=a.revealedBy!==null;
@@ -980,7 +1363,10 @@ function renderAdmin() {
   container.innerHTML = questions.map((q, i) => `
     <div class="q-card" style="cursor:default">
       <div class="q-card-num">${String(i+1).padStart(2,'0')}</div>
-      <div class="q-card-text">${q.question}</div>
+      <div style="flex:1;min-width:0">
+        <div class="q-card-text">${q.question}</div>
+        ${q.panel_description ? `<div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:3px;font-style:italic">${q.panel_description}</div>` : ''}
+      </div>
       <div class="q-card-count">${(q.panel_answers||[]).length}/6 réponses</div>
       <button class="btn btn-ghost btn-sm" onclick="openEditModal(${q.id})" style="flex-shrink:0">✏ Modifier</button>
       <button class="btn btn-sm btn-ghost" onclick="deleteQuestion(${q.id})" style="flex-shrink:0;color:rgba(255,80,80,0.6);border-color:rgba(255,80,80,0.2)">✕</button>
@@ -996,6 +1382,7 @@ function openAddModal() {
   modalEditId = null;
   document.getElementById('modal-title').textContent = 'Nouvelle question';
   document.getElementById('modal-q-text').value = text;
+  document.getElementById('modal-q-desc').value = '';
   input.value = '';
   buildModalAnswers([]);
   document.getElementById('q-modal').style.display = 'flex';
@@ -1008,6 +1395,7 @@ function openEditModal(id) {
   modalEditId = id;
   document.getElementById('modal-title').textContent = 'Modifier la question';
   document.getElementById('modal-q-text').value = q.question;
+  document.getElementById('modal-q-desc').value = q.panel_description || '';
   buildModalAnswers(q.panel_answers || []);
   document.getElementById('q-modal').style.display = 'flex';
   checkModalValid();
@@ -1019,7 +1407,7 @@ function buildModalAnswers(existing) {
     const a = existing[i] || {answer:'', points:''};
     return `<div class="modal-ans-row">
       <div class="modal-ans-num">${i+1}</div>
-      <input class="modal-ans-input" id="mans-${i}" placeholder="Réponse ${i+1}…" value="${a.answer}" oninput="checkModalValid()">
+      <input class="modal-ans-input" id="mans-${i}" placeholder="Réponse ${i+1}…" value="${escHtml(a.answer)}" oninput="checkModalValid()">
       <input class="modal-ans-pts" id="mpts-${i}" type="number" placeholder="pts" value="${a.points||''}" min="1" max="100" oninput="checkModalValid()">
     </div>`;
   }).join('');
@@ -1047,6 +1435,7 @@ function closeQModal() {
 
 async function saveQModal() {
   const qText = document.getElementById('modal-q-text').value.trim();
+  const qDesc = document.getElementById('modal-q-desc').value.trim();
   if (!qText) return;
   const answers = Array.from({length:6}, (_,i) => ({
     answer: document.getElementById('mans-'+i).value.trim(),
@@ -1054,7 +1443,7 @@ async function saveQModal() {
   }));
 
   if (modalEditId) {
-    const { error: qErr } = await db.from('panel_questions').update({ question: qText }).eq('id', modalEditId);
+    const { error: qErr } = await db.from('panel_questions').update({ question: qText, panel_description: qDesc }).eq('id', modalEditId);
     if (qErr) { showToast('Erreur : ' + qErr.message); return; }
     await db.from('panel_answers').delete().eq('question_id', modalEditId);
     const { error: aErr } = await db.from('panel_answers').insert(
@@ -1064,7 +1453,7 @@ async function saveQModal() {
     showToast('Question mise à jour ✓');
   } else {
     const { data: qData, error: qErr } = await db.from('panel_questions')
-      .insert({ question: qText, sort_order: questions.length })
+      .insert({ question: qText, panel_description: qDesc, sort_order: questions.length })
       .select().single();
     if (qErr) { showToast('Erreur : ' + qErr.message); return; }
     const { error: aErr } = await db.from('panel_answers').insert(
@@ -1091,6 +1480,10 @@ function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ══ SCORE EDIT ══
@@ -1121,6 +1514,7 @@ function applyScores() {
 // ══ SOUND ENGINE ══
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
+let wrongOverlayTimer = null;
 
 function getAudio() {
   if (!audioCtx) audioCtx = new AudioCtx();
@@ -1131,17 +1525,15 @@ function playGoodSound() {
   try {
     const ctx = getAudio();
     const t = ctx.currentTime;
-    // Success fanfare: 3-note ascending chord ding
     const notes = [
-      { freq: 523.25, delay: 0,    dur: 0.5 },  // C5
-      { freq: 659.25, delay: 0.1,  dur: 0.45 }, // E5
-      { freq: 783.99, delay: 0.2,  dur: 0.55 }, // G5
-      { freq: 1046.5, delay: 0.28, dur: 0.7 },  // C6 — top note
+      { freq: 523.25, delay: 0,    dur: 0.5 },
+      { freq: 659.25, delay: 0.1,  dur: 0.45 },
+      { freq: 783.99, delay: 0.2,  dur: 0.55 },
+      { freq: 1046.5, delay: 0.28, dur: 0.7 },
     ];
     notes.forEach(({ freq, delay, dur }) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      // Add slight harmonic for richness
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc.connect(gain); gain.connect(ctx.destination);
@@ -1182,7 +1574,6 @@ function playWrongSound() {
   try {
     const ctx = getAudio();
     const t = ctx.currentTime;
-    // Two descending buzzer tones — classic wrong answer sound
     [0, 0.22].forEach((delay) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -1199,19 +1590,8 @@ function playWrongSound() {
   } catch(e) {}
 }
 
-function wrongAnswer() {
-  // Shake all unrevealed rows slightly, play wrong sound
-  playWrongSound();
-  // Shake the whole grid briefly
-  const grid = document.getElementById('answers-grid');
-  grid.classList.remove('wrong-shake');
-  void grid.offsetWidth;
-  grid.classList.add('wrong-shake');
-  showToast('✗ Mauvaise réponse');
-}
-
 // ══ STARTING TEAM TRACKING ══
-let startingTeam = 1; // who started last question
+let startingTeam = 1;
 let questionCount = 0;
 
 function getNextStartingTeam() {
@@ -1231,28 +1611,5 @@ function renderStartReminder() {
 
 init();
 </script>
-<!-- ══ SCORE EDIT MODAL ══ -->
-<div class="modal-backdrop" id="score-modal" style="display:none" onclick="if(event.target===this)closeScoreModal()">
-  <div class="modal-box" style="max-width:380px">
-    <div class="modal-header">
-      <div class="modal-title">Modifier les scores</div>
-      <button class="modal-close" onclick="closeScoreModal()">✕</button>
-    </div>
-    <div class="modal-body" style="gap:20px">
-      <div class="modal-field">
-        <label class="modal-label t1" style="color:#4f9eff" id="score-modal-lbl1">Équipe 1</label>
-        <input class="modal-input" id="score-modal-t1" type="number" min="0" style="font-size:28px;font-weight:800;text-align:center;color:#4f9eff">
-      </div>
-      <div class="modal-field">
-        <label class="modal-label t2" style="color:#ff6b9d" id="score-modal-lbl2">Équipe 2</label>
-        <input class="modal-input" id="score-modal-t2" type="number" min="0" style="font-size:28px;font-weight:800;text-align:center;color:#ff6b9d">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeScoreModal()">Annuler</button>
-      <button class="btn btn-primary" onclick="applyScores()">Valider</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
