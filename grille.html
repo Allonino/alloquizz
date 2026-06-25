@@ -392,11 +392,17 @@ let pendingThemeId = null, pendingTeam = null;
 
 // ── INIT ──────────────────────────────────────────
 async function init() {
-  const { data } = await db.from('themes').select('*, images(*)').order('sort_order', { ascending: true });
-  themes = (data || []).map(t => ({ ...t, images: (t.images || []).sort((a,b) => a.sort_order - b.sort_order) }));
+  const [tRes, iRes] = await Promise.all([
+    db.from('themes').select('*').order('sort_order'),
+    db.from('images').select('*').order('sort_order')
+  ]);
+  const allImages = iRes.data || [];
+  themes = (tRes.data || []).map(t => ({
+    ...t,
+    images: allImages.filter(i => i.theme_id === t.id).sort((a,b) => a.sort_order - b.sort_order)
+  }));
   renderSidebar();
   document.getElementById('loader').classList.add('hidden');
-  // Init BroadcastChannel for spectateur
   try { new BroadcastChannel('aq_grille'); } catch(e) {}
 }
 
