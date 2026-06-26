@@ -818,7 +818,7 @@ function wrongAnswer(){
 
 let startingTeam2 = 1;
 function getNextStartingTeam(){return startingTeam===1?2:1;}
-function renderStartReminder(){const el=document.getElementById('start-reminder');if(!el)return;const next=getNextStartingTeam();const name=next===1?document.getElementById('name-t1').textContent:document.getElementById('name-t2').textContent;el.className='start-reminder t'+next;el.innerHTML=`Pour cette question, c'est <span>${name}</span> qui commence`;}
+function renderStartReminder(){const el=document.getElementById('start-reminder');if(!el)return;const name=currentTeam===1?document.getElementById('name-t1').textContent:document.getElementById('name-t2').textContent;el.className='start-reminder t'+currentTeam;el.innerHTML=`Pour cette question, c'est <span>${name}</span> qui commence`;}
 
 
 // ══ HINTS ══
