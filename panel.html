@@ -429,6 +429,7 @@ let questions = [], currentQuestion = null, currentAnswers = [], scores = [0,0],
 let spectatorWin = null, bc = null;
 let playlistOrder = [], wrongCounts = [0,0], editMode = 'temp';
 let doneQuestionIds = new Set(), currentSessionId = null;
+let lastReveal = null; // {idx, team, points} pour annulation
 let startingTeam = 1, questionCount = 0;
 let wrongOverlayTimer = null;
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -634,6 +635,7 @@ function renderAnswers() {
 
 function revealAnswer(idx) {
   if(currentAnswers[idx].revealedBy!==null) return;
+  const prevTeam = currentTeam;
   currentAnswers[idx].revealedBy = currentTeam;
   const front = document.getElementById('ans-front-'+idx);
   const color = currentTeam===1?'var(--t1)':'var(--t2)';
@@ -641,8 +643,13 @@ function revealAnswer(idx) {
   front.querySelectorAll('div[style*="color"]').forEach(el => { if(el.style.color!=='var(--text)') el.style.color=color; });
   document.getElementById('ans-card-'+idx).classList.add('flipped');
   playGoodSound(); scores[currentTeam-1]+=currentAnswers[idx].points;
+  lastReveal = {idx, team: prevTeam, points: currentAnswers[idx].points};
+  const undoBtn = document.getElementById('btn-undo');
+  if(undoBtn) undoBtn.style.display = 'inline-flex';
   updateScoreUI(); renderMasterSheet();
-  showToast('✓ +'+currentAnswers[idx].points+' pts'); pushSpectator();
+  // Auto-switch équipe
+  currentTeam = currentTeam===1?2:1; updateTurnUI();
+  showToast('✓ +'+currentAnswers[idx].points+' pts — à '+( currentTeam===1?document.getElementById('name-t1').textContent:document.getElementById('name-t2').textContent)); pushSpectator();
 }
 
 function setTurn(team){currentTeam=team;updateTurnUI();pushSpectator();}
@@ -663,6 +670,9 @@ function switchQuestion(questionId) {
   answerHints = {};
   wrongCounts = [0,0];
   updateWrongCountersUI();
+  lastReveal = null;
+  const undoBtn = document.getElementById('btn-undo');
+  if(undoBtn) undoBtn.style.display = 'none';
   document.getElementById('game-q-text').textContent = currentQuestion.question;
   document.getElementById('btn-edit-q').style.display = 'inline-flex';
   document.getElementById('game-q-panel-desc').textContent = currentQuestion.panel_description||'';
@@ -799,8 +809,11 @@ function wrongAnswer(){
   const flashState={...getSpectatorState(),wrongFlash:true};
   if(bc)try{bc.postMessage(flashState);}catch(e){}
   try{localStorage.setItem('aq_panel',JSON.stringify(flashState));}catch(e){}
+  // Auto-switch équipe
+  const prevTeamName = currentTeam===1?document.getElementById('name-t1').textContent:document.getElementById('name-t2').textContent;
+  currentTeam = currentTeam===1?2:1; updateTurnUI();
   setTimeout(()=>pushSpectator(),2100);
-  showToast('✗ Mauvaise réponse — '+(currentTeam===1?document.getElementById('name-t1').textContent:document.getElementById('name-t2').textContent));
+  showToast('✗ Mauvaise réponse ('+prevTeamName+') — à '+(currentTeam===1?document.getElementById('name-t1').textContent:document.getElementById('name-t2').textContent));
 }
 
 let startingTeam2 = 1;
@@ -826,13 +839,24 @@ function openHintModal(idx) {
   document.getElementById('hint-modal').style.display = 'flex';
 }
 
-function closeHintModal() { document.getElementById('hint-modal').style.display = 'none'; hintAnswerIdx = null; hintType = null; }
+function closeHintModal() { document.getElementById('hint-modal').style.display = 'none'; hintAnswerIdx = null; hintType = null; document.getElementById('hint-custom-input').value = ''; document.getElementById('hint-custom-wrap').style.display = 'none'; }
 
 function selectHintType(type) {
   hintType = type;
   document.getElementById('hint-choice-letter').classList.toggle('selected', type==='letter');
   document.getElementById('hint-choice-blanks').classList.toggle('selected', type==='blanks');
-  document.getElementById('hint-apply-btn').disabled = false;
+  document.getElementById('hint-choice-custom').classList.toggle('selected', type==='custom');
+  const customWrap = document.getElementById('hint-custom-wrap');
+  customWrap.style.display = type==='custom' ? 'block' : 'none';
+  if(type==='custom') { setTimeout(()=>document.getElementById('hint-custom-input').focus(),50); }
+  document.getElementById('hint-apply-btn').disabled = type==='custom'
+    ? !document.getElementById('hint-custom-input').value.trim()
+    : false;
+}
+
+function checkHintCustom() {
+  if(hintType==='custom')
+    document.getElementById('hint-apply-btn').disabled = !document.getElementById('hint-custom-input').value.trim();
 }
 
 function applyHint() {
@@ -840,6 +864,8 @@ function applyHint() {
   const ans = currentAnswers[hintAnswerIdx].answer;
   const hintText = hintType === 'letter'
     ? ans[0].toUpperCase()
+    : hintType === 'custom'
+    ? document.getElementById('hint-custom-input').value.trim()
     : ans.split('').map(c => c === ' ' ? ' ' : '_').join(' ');
   answerHints[hintAnswerIdx] = { type: hintType, text: hintText };
   // Afficher l'indice sur la face cachée de la carte
@@ -858,6 +884,27 @@ function applyHint() {
   showToast('Indice affiché ✓');
 }
 
+
+// ══ UNDO ══
+function undoLastPoint() {
+  if(!lastReveal) return;
+  const {idx, team, points} = lastReveal;
+  currentAnswers[idx].revealedBy = null;
+  scores[team-1] = Math.max(0, scores[team-1] - points);
+  // Retourner la carte
+  const card = document.getElementById('ans-card-'+idx);
+  const front = document.getElementById('ans-front-'+idx);
+  if(card) card.classList.remove('flipped');
+  if(front) { front.className = 'ans-face ans-face-front'; }
+  // Revenir à l'équipe qui avait le point
+  currentTeam = team; updateTurnUI();
+  lastReveal = null;
+  const undoBtn = document.getElementById('btn-undo');
+  if(undoBtn) undoBtn.style.display = 'none';
+  updateScoreUI(); renderMasterSheet(); pushSpectator();
+  showToast('↩ Point annulé');
+}
+
 init();
 </script>
 
@@ -869,12 +916,19 @@ init();
     <div class="hint-choices">
       <div class="hint-choice" id="hint-choice-letter" onclick="selectHintType('letter')">
         <div class="hint-choice-title">Première lettre</div>
-        <div class="hint-choice-preview" id="hint-preview-letter">A…</div>
+        <div class="hint-choice-preview" id="hint-preview-letter">A</div>
       </div>
       <div class="hint-choice" id="hint-choice-blanks" onclick="selectHintType('blanks')">
         <div class="hint-choice-title">Nombre de lettres</div>
         <div class="hint-choice-preview" id="hint-preview-blanks">_ _ _</div>
       </div>
+      <div class="hint-choice" id="hint-choice-custom" onclick="selectHintType('custom')">
+        <div class="hint-choice-title">Indice libre</div>
+        <div class="hint-choice-preview" style="font-size:14px">✏ Texte</div>
+      </div>
+    </div>
+    <div id="hint-custom-wrap" style="display:none;margin-bottom:8px">
+      <input class="aq-input" id="hint-custom-input" placeholder="Écris ton indice ici…" oninput="checkHintCustom()" style="border-color:var(--panel-border)">
     </div>
     <div class="hint-modal-footer">
       <button class="aq-btn aq-btn-ghost" onclick="closeHintModal()">Annuler</button>
