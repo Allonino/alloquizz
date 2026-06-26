@@ -38,7 +38,7 @@ body{display:flex;flex-direction:column}
 .sp-row.revealed-t2 .sp-rank{color:var(--t2)}
 .sp-row.revealed-t0 .sp-rank{color:var(--border3)}
 .sp-ans{flex:1;font-size:20px;font-weight:700;color:var(--text);padding:0 8px;transition:opacity .4s}
-.sp-ans.hidden{opacity:0}
+.sp-ans.hidden{opacity:0}.sp-ans.has-hint{opacity:1}
 .sp-pts{width:80px;text-align:center;font-family:'Exo 2',sans-serif;font-size:26px;font-weight:800;font-style:italic;padding:0 14px;transition:opacity .4s}
 .sp-pts.hidden{opacity:0}
 .sp-pts.t1{color:var(--t1)}.sp-pts.t2{color:var(--t2)}.sp-pts.neutral{color:var(--border3)}
@@ -144,7 +144,7 @@ function applyPanelState(s) {
       const hint = a.hint;
       return `<div class="sp-row ${tc}">
         <div class="sp-rank">${String(i+1).padStart(2,'0')}</div>
-        <div class="sp-ans${rev?'':' hidden'}">${rev ? a.answer : (hint ? `<span style="font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(192,132,252,.8);letter-spacing:.1em">${hint.text}</span>` : '')}</div>
+        <div class="sp-ans${rev?'':(!hint?' hidden':' has-hint')}">${rev ? a.answer : (hint ? `<span style="font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(192,132,252,.8);letter-spacing:.1em">${hint.text}</span>` : '')}</div>
         <div class="sp-pts ${pc}${rev?'':' hidden'}">${a.points}</div>
       </div>`;
     }).join('') + '</div>';
