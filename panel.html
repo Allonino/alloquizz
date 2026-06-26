@@ -817,7 +817,7 @@ function openHintModal(idx) {
   hintAnswerIdx = idx; hintType = null;
   const ans = currentAnswers[idx].answer;
   document.getElementById('hint-ans-name').textContent = ans;
-  document.getElementById('hint-preview-letter').textContent = ans[0].toUpperCase() + '…';
+  document.getElementById('hint-preview-letter').textContent = ans[0].toUpperCase();
   const blanks = ans.replace(/[^ ]/g, '_').replace(/_/g, '_ ').trim();
   document.getElementById('hint-preview-blanks').textContent = blanks;
   document.getElementById('hint-choice-letter').classList.remove('selected');
@@ -839,7 +839,7 @@ function applyHint() {
   if(hintAnswerIdx === null || !hintType) return;
   const ans = currentAnswers[hintAnswerIdx].answer;
   const hintText = hintType === 'letter'
-    ? ans[0].toUpperCase() + '…'
+    ? ans[0].toUpperCase()
     : ans.split('').map(c => c === ' ' ? ' ' : '_').join(' ');
   answerHints[hintAnswerIdx] = { type: hintType, text: hintText };
   // Afficher l'indice sur la face cachée de la carte
