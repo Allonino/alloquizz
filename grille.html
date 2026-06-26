@@ -443,9 +443,9 @@ function renderBoEditor(t) {
       </div>
       <button class="aq-btn aq-btn-danger aq-btn-sm" onclick="deleteTheme()">Supprimer</button>
     </div>
-    <div class="upload-zone" onclick="document.getElementById('file-input').click()" ondrop="handleDrop(event)" ondragover="handleDragover(event)" ondragleave="this.classList.remove('drag')">
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondrop="handleDrop(event)" ondragover="handleDragover(event)" ondragleave="this.classList.remove('drag')">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text3)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <p>Glisse des images ici ou clique pour uploader</p>
+      <p>Glisse des images ici, clique pour uploader, ou <strong>Ctrl+V</strong> pour coller</p>
     </div>
     <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
     <div class="url-row">
@@ -517,6 +517,21 @@ async function handleFiles(files) {
 
 function handleDrop(e) { e.preventDefault(); e.currentTarget.classList.remove('drag'); handleFiles(e.dataTransfer.files); }
 function handleDragover(e) { e.preventDefault(); e.currentTarget.classList.add('drag'); }
+
+// Coller une image depuis le presse-papier (Ctrl+V)
+document.addEventListener('paste', async (e) => {
+  if (!currentThemeId) return;
+  const items = Array.from(e.clipboardData.items).filter(i => i.type.startsWith('image/'));
+  if (!items.length) return;
+  e.preventDefault();
+  const files = items.map(i => i.getAsFile()).filter(Boolean);
+  if (files.length) {
+    const zone = document.getElementById('upload-zone');
+    if (zone) { zone.classList.add('drag'); setTimeout(() => zone.classList.remove('drag'), 600); }
+    aqToast('Image collée, upload en cours…');
+    await handleFiles(files);
+  }
+});
 
 async function deleteTheme() {
   if (!currentThemeId || !confirm('Supprimer ce thème et toutes ses images ?')) return;
