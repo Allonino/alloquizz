@@ -171,13 +171,21 @@ body { display: flex; flex-direction: column; }
 .url-row { display: flex; gap: 8px; margin-bottom: 16px; }
 
 /* Images grid */
-.images-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-.img-card { background: var(--bg3); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
-.img-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
-.img-card-footer { padding: 6px 8px; display: flex; align-items: center; gap: 6px; }
-.img-card-label input { flex: 1; font-size: 11px; color: var(--text2); background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; width: 100%; }
-.img-card-del { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 13px; opacity: 0; transition: opacity .15s; }
-.img-card:hover .img-card-del { opacity: 1; }
+
+.img-list { display: flex; flex-direction: column; gap: 8px; }
+.img-card { background: var(--bg3); border-radius: var(--radius-lg); border: 1px solid var(--border); display: flex; align-items: center; gap: 14px; padding: 10px 14px; transition: border-color .15s; }
+.img-card:hover { border-color: var(--border2); }
+.img-card-thumb { width: 80px; height: 56px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: var(--bg4); cursor: pointer; }
+.img-card-thumb:hover { opacity: .85; }
+.img-card-body { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.img-card-label { width: 100%; background: rgba(255,255,255,.05); border: 1px solid var(--border2); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color .2s; }
+.img-card-label:focus { border-color: var(--grille); }
+.img-card-label::placeholder { color: var(--text3); font-weight: 400; }
+.img-card-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.img-card-del { background: transparent; border: 1px solid rgba(239,68,68,.25); color: var(--red); border-radius: 7px; padding: 5px 10px; font-size: 12px; cursor: pointer; transition: all .15s; }
+.img-card-del:hover { background: var(--red-bg); }
+.img-card-replace { background: transparent; border: 1px solid var(--border2); color: var(--text3); border-radius: 7px; padding: 5px 10px; font-size: 12px; cursor: pointer; transition: all .15s; }
+.img-card-replace:hover { border-color: var(--grille); color: var(--grille); }
 .diff-selector { display:flex; gap:3px; align-items:center; }
 .diff-star { font-size:14px; cursor:pointer; opacity:.25; transition:opacity .15s; line-height:1; }
 .diff-star.active { opacity:1; }
@@ -456,16 +464,23 @@ function renderBoEditor(t) {
       <input class="aq-input" id="url-input" placeholder="Ou colle une URL d'image…" style="flex:1">
       <button class="aq-btn aq-btn-grille aq-btn-sm" onclick="importFromUrl()">Ajouter</button>
     </div>
-    <div class="images-grid" id="images-grid">
+    <div class="img-list" id="images-grid">
       ${imgs.map((img,i) => `
         <div class="img-card">
-          <img src="${img.public_url}" alt="">
-          <div class="img-card-footer">
-            <div style="flex:1"><input value="${aqEsc(img.label||'')}" placeholder="Réponse…" onblur="saveImageLabel(${img.id},this.value)"></div>
-            <div class="diff-selector" title="Niveau de difficulté">
-              ${[1,2,3,4,5].map(n=>`<span class="diff-star ${(img.difficulty||1)>=n?'active':''}" onclick="saveDifficulty(${img.id},${n},this)">★</span>`).join('')}
+          <img class="img-card-thumb" src="${img.public_url}" alt="" onclick="replaceImage(${img.id})" title="Cliquer pour remplacer l'image">
+          <input type="file" id="replace-input-${img.id}" accept="image/*" style="display:none" onchange="handleReplaceFile(event,${img.id},'${img.storage_path||''}')">
+          <div class="img-card-body">
+            <input class="img-card-label" value="${aqEsc(img.label||'')}" placeholder="Nom de la réponse…" onblur="saveImageLabel(${img.id},this.value)" onkeydown="if(event.key==='Enter')this.blur()">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:11px;color:var(--text3);font-weight:600">Difficulté</span>
+              <div class="diff-selector" title="Niveau de difficulté">
+                ${[1,2,3,4,5].map(n=>`<span class="diff-star ${(img.difficulty||1)>=n?'active':''}" onclick="saveDifficulty(${img.id},${n},this)">★</span>`).join('')}
+              </div>
             </div>
-            <button class="img-card-del" onclick="deleteImage(${img.id},'${img.storage_path}')">✕</button>
+          </div>
+          <div class="img-card-actions">
+            <button class="img-card-replace" onclick="replaceImage(${img.id})" title="Remplacer l'image">🔄 Remplacer</button>
+            <button class="img-card-del" onclick="deleteImage(${img.id},'${img.storage_path}')">✕ Supprimer</button>
           </div>
         </div>`).join('')}
     </div>`;
@@ -479,6 +494,31 @@ async function saveThemeName() {
   t.name = name;
   await db.from('themes').update({ name }).eq('id', currentThemeId);
   renderSidebar(); showSaved();
+}
+
+function replaceImage(id) {
+  const input = document.getElementById('replace-input-'+id);
+  if (input) input.click();
+}
+
+async function handleReplaceFile(e, id, oldPath) {
+  const file = e.target.files[0]; if (!file) return;
+  const t = themes.find(x => x.id === currentThemeId); if (!t) return;
+  const img = t.images.find(i => i.id === id); if (!img) return;
+  aqToast('Remplacement en cours…');
+  // Upload nouvelle image
+  const ext = file.name.split('.').pop();
+  const newPath = `${currentThemeId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error: upErr } = await db.storage.from(BUCKET).upload(newPath, file);
+  if (upErr) { aqToast('Erreur upload', 'error'); return; }
+  const { data: urlData } = db.storage.from(BUCKET).getPublicUrl(newPath);
+  // Supprimer l'ancienne
+  if (oldPath) await db.storage.from(BUCKET).remove([oldPath]);
+  // Mettre à jour en DB
+  await db.from('images').update({ public_url: urlData.publicUrl, storage_path: newPath }).eq('id', id);
+  img.public_url = urlData.publicUrl; img.storage_path = newPath;
+  renderBoEditor(t);
+  aqToast('Image remplacée ✓', 'success');
 }
 
 async function saveDifficulty(id, level, starEl) {
