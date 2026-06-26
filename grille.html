@@ -178,6 +178,10 @@ body { display: flex; flex-direction: column; }
 .img-card-label input { flex: 1; font-size: 11px; color: var(--text2); background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; width: 100%; }
 .img-card-del { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 13px; opacity: 0; transition: opacity .15s; }
 .img-card:hover .img-card-del { opacity: 1; }
+.diff-selector { display:flex; gap:3px; align-items:center; }
+.diff-star { font-size:14px; cursor:pointer; opacity:.25; transition:opacity .15s; line-height:1; }
+.diff-star.active { opacity:1; }
+.diff-star:hover { opacity:.7; }
 .saved-toast { position: fixed; bottom: 20px; right: 24px; background: var(--green-bg); border: 1px solid rgba(16,185,129,.3); color: var(--green); font-size: 12px; padding: 8px 14px; border-radius: 8px; opacity: 0; transition: opacity .3s; pointer-events: none; }
 .saved-toast.show { opacity: 1; }
 </style>
@@ -458,6 +462,9 @@ function renderBoEditor(t) {
           <img src="${img.public_url}" alt="">
           <div class="img-card-footer">
             <div style="flex:1"><input value="${aqEsc(img.label||'')}" placeholder="Réponse…" onblur="saveImageLabel(${img.id},this.value)"></div>
+            <div class="diff-selector" title="Niveau de difficulté">
+              ${[1,2,3,4,5].map(n=>`<span class="diff-star ${(img.difficulty||1)>=n?'active':''}" onclick="saveDifficulty(${img.id},${n},this)">★</span>`).join('')}
+            </div>
             <button class="img-card-del" onclick="deleteImage(${img.id},'${img.storage_path}')">✕</button>
           </div>
         </div>`).join('')}
@@ -472,6 +479,16 @@ async function saveThemeName() {
   t.name = name;
   await db.from('themes').update({ name }).eq('id', currentThemeId);
   renderSidebar(); showSaved();
+}
+
+async function saveDifficulty(id, level, starEl) {
+  await db.from('images').update({ difficulty: level }).eq('id', id);
+  const t = themes.find(x => x.id === currentThemeId);
+  if (t) { const img = t.images.find(i => i.id === id); if (img) img.difficulty = level; }
+  // Mettre à jour visuellement
+  const stars = starEl.parentElement.querySelectorAll('.diff-star');
+  stars.forEach((s, i) => s.classList.toggle('active', i < level));
+  showSaved();
 }
 
 async function saveImageLabel(id, label) {
