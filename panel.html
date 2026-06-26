@@ -664,7 +664,7 @@ function switchQuestion(questionId) {
   wrongCounts = [0,0];
   updateWrongCountersUI();
   document.getElementById('game-q-text').textContent = currentQuestion.question;
-  document.getElementById('btn-edit-q').style.display = '';
+  document.getElementById('btn-edit-q').style.display = 'inline-flex';
   document.getElementById('game-q-panel-desc').textContent = currentQuestion.panel_description||'';
   startingTeam = getNextStartingTeam(); questionCount++;
   currentTeam = startingTeam; updateTurnUI();
