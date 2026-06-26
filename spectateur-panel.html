@@ -48,6 +48,8 @@ body{display:flex;flex-direction:column}
 #sp-wrong-overlay.show{opacity:1}
 .sp-wrong-bg{position:absolute;inset:0;background:rgba(180,20,20,.18);border:6px solid rgba(255,40,40,.35)}
 .sp-wrong-x{font-size:260px;font-weight:900;color:rgba(255,50,50,.9);position:relative;z-index:1;font-family:'Exo 2',sans-serif;font-style:italic;text-shadow:0 0 80px rgba(255,0,0,.6);line-height:1}
+.sp-wrong-counters{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.sp-wrong-x-icon{width:22px;height:22px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#ef4444;font-weight:900;animation:aq-bump .3s ease-out}
 </style>
 </head>
 <body>
@@ -58,17 +60,23 @@ body{display:flex;flex-direction:column}
 </div>
 
 <div class="sp-top">
-  <div class="sp-score-block">
-    <div class="sp-score t1" id="sp-s1">0</div>
-    <div class="sp-name t1" id="sp-n1">Équipe 1</div>
+  <div class="sp-score-block" style="flex-direction:column;align-items:flex-start;gap:4px">
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="sp-score t1" id="sp-s1">0</div>
+      <div class="sp-name t1" id="sp-n1">Équipe 1</div>
+    </div>
+    <div class="sp-wrong-counters" id="sp-wrongs-1"></div>
   </div>
   <div class="sp-q-center">
     <div class="sp-q-label">Question</div>
     <div class="sp-q-text" id="sp-q">En attente…</div>
   </div>
-  <div class="sp-score-block t2">
-    <div class="sp-score t2" id="sp-s2">0</div>
-    <div class="sp-name t2" id="sp-n2">Équipe 2</div>
+  <div class="sp-score-block t2" style="flex-direction:column;align-items:flex-end;gap:4px">
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="sp-name t2" id="sp-n2">Équipe 2</div>
+      <div class="sp-score t2" id="sp-s2">0</div>
+    </div>
+    <div class="sp-wrong-counters" id="sp-wrongs-2" style="justify-content:flex-end"></div>
   </div>
 </div>
 
@@ -83,7 +91,19 @@ body{display:flex;flex-direction:column}
 </div>
 
 <script>
-let pScores = [0,0], spWrongTimer = null;
+let pScores = [0,0], pWrongs = [0,0], spWrongTimer = null;
+
+function updateWrongCounters(wrongs) {
+  [1,2].forEach(t => {
+    const el = document.getElementById('sp-wrongs-'+t);
+    if (!el) return;
+    const count = wrongs[t-1] || 0;
+    if (count !== pWrongs[t-1]) {
+      el.innerHTML = Array.from({length: count}, () => '<div class="sp-wrong-x-icon">✗</div>').join('');
+      pWrongs[t-1] = count;
+    }
+  });
+}
 
 function applyPanelState(s) {
   if (!s || !s.active) {
@@ -95,8 +115,12 @@ function applyPanelState(s) {
     ov.classList.add('show');
     if (spWrongTimer) clearTimeout(spWrongTimer);
     spWrongTimer = setTimeout(() => ov.classList.remove('show'), 2000);
+    // Mettre à jour les compteurs même sur le flash
+    if (s.wrongCounts) updateWrongCounters(s.wrongCounts);
     return;
   }
+  // Mettre à jour les compteurs d'erreurs
+  if (s.wrongCounts) updateWrongCounters(s.wrongCounts);
   document.getElementById('sp-q').textContent = s.question || '—';
   document.getElementById('sp-n1').textContent = s.team1Name || 'Équipe 1';
   document.getElementById('sp-n2').textContent = s.team2Name || 'Équipe 2';
@@ -117,9 +141,10 @@ function applyPanelState(s) {
       const rev = a.revealedBy !== null;
       const tc = rev ? 'revealed-t'+a.revealedBy : '';
       const pc = rev ? (a.revealedBy===0?'neutral':'t'+a.revealedBy) : 'neutral';
+      const hint = a.hint;
       return `<div class="sp-row ${tc}">
         <div class="sp-rank">${String(i+1).padStart(2,'0')}</div>
-        <div class="sp-ans${rev?'':' hidden'}">${a.answer}</div>
+        <div class="sp-ans${rev?'':' hidden'}">${rev ? a.answer : (hint ? `<span style="font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(192,132,252,.8);letter-spacing:.1em">${hint.text}</span>` : '')}</div>
         <div class="sp-pts ${pc}${rev?'':' hidden'}">${a.points}</div>
       </div>`;
     }).join('') + '</div>';
