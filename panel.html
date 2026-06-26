@@ -170,6 +170,26 @@ body{display:flex;flex-direction:column}
 .save-mode-btn.active-temp{background:rgba(255,180,0,.1);border-color:rgba(255,180,0,.4);color:rgba(255,180,0,.9)}
 .save-mode-btn.active-perm{background:var(--panel-bg);border-color:var(--panel-border);color:var(--panel)}
 .wrong-shake{animation:aq-shake .4s ease both}
+.sidebar-ans-list{margin-top:6px;display:flex;flex-direction:column;gap:2px}
+.sidebar-ans-row{display:flex;align-items:center;gap:6px;padding:2px 0}
+.sidebar-ans-pts{font-family:'Exo 2',sans-serif;font-size:10px;font-weight:800;font-style:italic;color:rgba(255,200,60,.7);min-width:22px;text-align:right;flex-shrink:0}
+.sidebar-ans-text{font-size:11px;color:rgba(255,255,255,.45);flex:1}
+.sidebar-item.active .sidebar-ans-text{color:rgba(255,255,255,.65)}
+.sidebar-item.active .sidebar-ans-pts{color:rgba(255,200,60,.9)}
+
+/* Hint modal */
+.hint-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:600;display:flex;align-items:center;justify-content:center}
+.hint-modal-box{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-xl);padding:24px 28px;width:100%;max-width:420px;animation:aq-slideUp .2s ease}
+.hint-modal-title{font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;color:var(--panel);margin-bottom:16px}
+.hint-ans-name{font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;text-align:center;padding:10px;background:var(--bg4);border-radius:var(--radius)}
+.hint-choices{display:flex;gap:10px;margin-bottom:16px}
+.hint-choice{flex:1;padding:14px;border-radius:var(--radius-lg);border:2px solid var(--border2);background:transparent;cursor:pointer;text-align:center;transition:all .15s;font-family:'DM Sans',sans-serif}
+.hint-choice:hover{border-color:var(--panel-border);background:var(--panel-bg)}
+.hint-choice.selected{border-color:var(--panel);background:var(--panel-bg)}
+.hint-choice-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.hint-choice-preview{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;color:var(--panel)}
+.hint-modal-footer{display:flex;gap:8px;justify-content:flex-end}
+
 </style>
 </head>
 <body>
@@ -529,12 +549,6 @@ async function deleteSession(id) {
 }
 
 // ══ PLAYLIST / SIDEBAR ══
-function buildAnswerTooltip(q) {
-  const ans = (q.panel_answers||[]).filter(a => a.answer?.trim());
-  const rows = ans.length ? ans.map(a=>`<div class="sat-row"><span class="sat-pts">${a.points}</span><span class="sat-text">${a.answer}</span></div>`).join('') : '<div class="sat-empty">Aucune réponse</div>';
-  return `<div class="sidebar-ans-tooltip"><div class="sat-q">${q.question}</div>${rows}</div>`;
-}
-
 function renderSidebar() {
   const list = document.getElementById('sidebar-list');
   if (!playlistOrder.length) { list.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--text3)">Aucune question</div>'; return; }
@@ -544,6 +558,7 @@ function renderSidebar() {
     const isCurrent = currentQuestion?.id === q.id;
     const isDone = doneQuestionIds.has(q.id);
     const isNext = q.id===nextId && !isCurrent;
+    const ans = (q.panel_answers||[]).filter(a=>a.answer?.trim());
     let cls = 'sidebar-item';
     if(isCurrent) cls+=' active';
     if(isDone&&!isCurrent) cls+=' done';
@@ -559,8 +574,8 @@ function renderSidebar() {
           ${isDone&&!isCurrent?'<span class="sidebar-item-done-icon">✓</span>':''}
         </div>
         ${isNext?'<div class="sidebar-next-tag">→ Suivante</div>':''}
+        ${ans.length ? `<div class="sidebar-ans-list">${ans.map(a=>`<div class="sidebar-ans-row"><span class="sidebar-ans-pts">${a.points}</span><span class="sidebar-ans-text">${a.answer}</span></div>`).join('')}</div>` : ''}
       </div>
-      ${buildAnswerTooltip(q)}
     </div>`;
   }).join('');
 }
@@ -608,7 +623,10 @@ function renderAnswers() {
       <div class="master-hint">
         <div class="master-hint-text">${a.answer}</div>
         <div class="master-hint-pts">${a.points}</div>
-        <button onclick="revealNoTeamIdx(${i})" style="background:none;border:1px solid rgba(255,200,0,.2);color:rgba(255,200,0,.5);border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;flex-shrink:0" title="Révéler sans équipe">↗</button>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+          <button onclick="event.stopPropagation();revealNoTeamIdx(${i})" style="background:none;border:1px solid rgba(255,200,0,.2);color:rgba(255,200,0,.5);border-radius:6px;padding:2px 7px;font-size:11px;cursor:pointer;white-space:nowrap" title="Révéler sans équipe">↗ Révéler</button>
+          ${!revealed?`<button onclick="event.stopPropagation();openHintModal(${i})" style="background:none;border:1px solid rgba(192,132,252,.25);color:rgba(192,132,252,.6);border-radius:6px;padding:2px 7px;font-size:11px;cursor:pointer;white-space:nowrap" title="Donner un indice">💡 Indice</button>`:''}
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -642,6 +660,9 @@ function switchQuestion(questionId) {
   if(currentQuestion) doneQuestionIds.add(currentQuestion.id);
   currentQuestion = questions.find(q=>q.id===questionId); if(!currentQuestion)return;
   currentAnswers = currentQuestion.panel_answers.map(a=>({...a,revealedBy:null}));
+  answerHints = {};
+  wrongCounts = [0,0];
+  updateWrongCountersUI();
   document.getElementById('game-q-text').textContent = currentQuestion.question;
   document.getElementById('btn-edit-q').style.display = '';
   document.getElementById('game-q-panel-desc').textContent = currentQuestion.panel_description||'';
@@ -758,7 +779,7 @@ async function saveQModal(){
 async function deleteQuestion(id){const pin=prompt('Code de suppression :');if(pin!=='1234'){showToast('Code incorrect');return;}await db.from('panel_questions').delete().eq('id',id);await loadQuestions();showToast('Supprimée');}
 
 // ══ SPECTATOR ══
-function getSpectatorState(){return{game:'panel',question:currentQuestion?currentQuestion.question:null,answers:currentAnswers,scores,team1Name:document.getElementById('name-t1')?.textContent||'Équipe 1',team2Name:document.getElementById('name-t2')?.textContent||'Équipe 2',currentTeam,active:true};}
+function getSpectatorState(){return{game:'panel',question:currentQuestion?currentQuestion.question:null,answers:currentAnswers.map((a,i)=>({...a,hint:answerHints[i]||null})),scores,wrongCounts,team1Name:document.getElementById('name-t1')?.textContent||'Équipe 1',team2Name:document.getElementById('name-t2')?.textContent||'Équipe 2',currentTeam,active:true};}
 function pushSpectator(){const state=getSpectatorState();if(bc)try{bc.postMessage(state);}catch(e){}try{localStorage.setItem('aq_panel',JSON.stringify(state));}catch(e){}if(spectatorWin&&!spectatorWin.closed&&spectatorWin.applyPanelState)try{spectatorWin.applyPanelState(state);}catch(e){}}
 function pushClearSpectator(){const state={active:false};if(bc)try{bc.postMessage(state);}catch(e){}try{localStorage.setItem('aq_panel',JSON.stringify(state));}catch(e){}}
 function openSpectator(){pushSpectator();spectatorWin=window.open('spectateur-panel.html','aq_panel_spectator','width=1280,height=720,toolbar=0,menubar=0,location=0');if(!spectatorWin){showToast('Pop-up bloquée');return;}showToast('Écran TV ouvert');setTimeout(()=>pushSpectator(),800);setTimeout(()=>pushSpectator(),2000);}
@@ -786,7 +807,80 @@ let startingTeam2 = 1;
 function getNextStartingTeam(){return startingTeam===1?2:1;}
 function renderStartReminder(){const el=document.getElementById('start-reminder');if(!el)return;const next=getNextStartingTeam();const name=next===1?document.getElementById('name-t1').textContent:document.getElementById('name-t2').textContent;el.className='start-reminder t'+next;el.innerHTML=`Pour cette question, c'est <span>${name}</span> qui commence`;}
 
+
+// ══ HINTS ══
+let hintAnswerIdx = null, hintType = null;
+let answerHints = {}; // idx -> {type, text}
+
+function openHintModal(idx) {
+  if(currentAnswers[idx].revealedBy !== null) return;
+  hintAnswerIdx = idx; hintType = null;
+  const ans = currentAnswers[idx].answer;
+  document.getElementById('hint-ans-name').textContent = ans;
+  document.getElementById('hint-preview-letter').textContent = ans[0].toUpperCase() + '…';
+  const blanks = ans.replace(/[^ ]/g, '_').replace(/_/g, '_ ').trim();
+  document.getElementById('hint-preview-blanks').textContent = blanks;
+  document.getElementById('hint-choice-letter').classList.remove('selected');
+  document.getElementById('hint-choice-blanks').classList.remove('selected');
+  document.getElementById('hint-apply-btn').disabled = true;
+  document.getElementById('hint-modal').style.display = 'flex';
+}
+
+function closeHintModal() { document.getElementById('hint-modal').style.display = 'none'; hintAnswerIdx = null; hintType = null; }
+
+function selectHintType(type) {
+  hintType = type;
+  document.getElementById('hint-choice-letter').classList.toggle('selected', type==='letter');
+  document.getElementById('hint-choice-blanks').classList.toggle('selected', type==='blanks');
+  document.getElementById('hint-apply-btn').disabled = false;
+}
+
+function applyHint() {
+  if(hintAnswerIdx === null || !hintType) return;
+  const ans = currentAnswers[hintAnswerIdx].answer;
+  const hintText = hintType === 'letter'
+    ? ans[0].toUpperCase() + '…'
+    : ans.split('').map(c => c === ' ' ? ' ' : '_').join(' ');
+  answerHints[hintAnswerIdx] = { type: hintType, text: hintText };
+  // Afficher l'indice sur la face cachée de la carte
+  const backCard = document.querySelector(`#ans-card-${hintAnswerIdx} .ans-face-back`);
+  if(backCard) {
+    const existing = backCard.querySelector('.hint-text-display');
+    if(existing) existing.remove();
+    const hintEl = document.createElement('div');
+    hintEl.className = 'hint-text-display';
+    hintEl.style.cssText = 'flex:1;text-align:center;font-family:Exo 2,sans-serif;font-size:14px;font-weight:800;font-style:italic;color:rgba(192,132,252,.7);letter-spacing:.08em;padding:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    hintEl.textContent = hintText;
+    backCard.appendChild(hintEl);
+  }
+  pushSpectator();
+  closeHintModal();
+  showToast('Indice affiché ✓');
+}
+
 init();
 </script>
+
+<!-- ══ HINT MODAL ══ -->
+<div id="hint-modal" style="display:none" class="hint-modal-backdrop" onclick="if(event.target===this)closeHintModal()">
+  <div class="hint-modal-box">
+    <div class="hint-modal-title">💡 Donner un indice</div>
+    <div class="hint-ans-name" id="hint-ans-name">—</div>
+    <div class="hint-choices">
+      <div class="hint-choice" id="hint-choice-letter" onclick="selectHintType('letter')">
+        <div class="hint-choice-title">Première lettre</div>
+        <div class="hint-choice-preview" id="hint-preview-letter">A…</div>
+      </div>
+      <div class="hint-choice" id="hint-choice-blanks" onclick="selectHintType('blanks')">
+        <div class="hint-choice-title">Nombre de lettres</div>
+        <div class="hint-choice-preview" id="hint-preview-blanks">_ _ _</div>
+      </div>
+    </div>
+    <div class="hint-modal-footer">
+      <button class="aq-btn aq-btn-ghost" onclick="closeHintModal()">Annuler</button>
+      <button class="aq-btn aq-btn-panel" onclick="applyHint()" id="hint-apply-btn" disabled>Appliquer l'indice</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
