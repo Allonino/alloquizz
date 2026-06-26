@@ -144,7 +144,7 @@ function applyPanelState(s) {
       const hint = a.hint;
       return `<div class="sp-row ${tc}">
         <div class="sp-rank">${String(i+1).padStart(2,'0')}</div>
-        <div class="sp-ans${rev?'':(!hint?' hidden':' has-hint')}">${rev ? a.answer : (hint ? `<span style="font-size:20px;font-weight:700;color:rgba(192,132,252,.85);letter-spacing:.05em">${hint.text}</span>` : '')}</div>
+        <div class="sp-ans${rev?'':(!hint?' hidden':' has-hint')}">${rev ? a.answer : (hint ? `<span style="font-size:20px;font-weight:700;color:rgba(192,132,252,.85)">${hint.text}</span>` : '')}</div>
         <div class="sp-pts ${pc}${rev?'':' hidden'}">${a.points}</div>
       </div>`;
     }).join('') + '</div>';
