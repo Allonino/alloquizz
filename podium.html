@@ -13,512 +13,469 @@ body{display:flex;flex-direction:column}
 .view{display:none;flex:1;flex-direction:column;overflow:hidden}
 .view.active{display:flex}
 
-/* ── SELECTOR ── */
-.sel-wrap{padding:32px 40px;display:flex;flex-direction:column;gap:24px;max-width:900px;margin:0 auto;width:100%;overflow-y:auto}
-.sel-title{font-family:'Exo 2',sans-serif;font-size:28px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
+/* SELECTOR */
+.sel-wrap{padding:28px 36px;overflow-y:auto;display:flex;flex-direction:column;gap:20px;max-width:860px;margin:0 auto;width:100%}
+.sel-title{font-family:'Exo 2',sans-serif;font-size:26px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
 .sel-title span{color:var(--podium)}
-.sessions-list{display:flex;flex-direction:column;gap:8px}
 .sess-row{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px;display:flex;align-items:center;gap:14px;transition:border-color .15s}
 .sess-row:hover{border-color:var(--border2)}
-.sess-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.sess-dot.in_progress{background:var(--grille);box-shadow:0 0 6px rgba(251,146,60,.6)}
-.sess-dot.finished{background:rgba(255,255,255,.2)}
+.sess-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sess-dot.waiting{background:var(--yellow)}
+.sess-dot.playing{background:var(--green);box-shadow:0 0 6px rgba(16,185,129,.6)}
+.sess-dot.finished,.sess-dot.scores{background:var(--text3)}
 .sess-info{flex:1;min-width:0}
 .sess-name{font-size:13px;font-weight:600;color:var(--text)}
-.sess-meta{font-size:11px;color:var(--text3);margin-top:3px}
-.sess-code{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;color:var(--podium);flex-shrink:0}
+.sess-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.sess-code{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;color:var(--podium);letter-spacing:.1em;flex-shrink:0}
 
-/* ── GAME LAYOUT ── */
-.game-layout{display:flex;flex:1;overflow:hidden}
-.game-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+/* GAME */
+.game-layout{display:grid;grid-template-columns:1fr 270px;flex:1;overflow:hidden}
+.game-main{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+.game-top{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;flex-wrap:wrap}
+.game-code-big{font-family:'Exo 2',sans-serif;font-size:28px;font-weight:800;font-style:italic;letter-spacing:.12em;color:var(--podium)}
+.copy-btn{background:var(--podium-bg);border:1px solid var(--podium-border);color:var(--podium);border-radius:8px;padding:6px 13px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:filter .2s;font-family:'DM Sans',sans-serif}
+.copy-btn:hover{filter:brightness(1.3)}
+.game-q-area{flex:1;text-align:center}
+.game-q-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:3px}
+.game-q-txt{font-family:'Exo 2',sans-serif;font-size:15px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
+.status-badge{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:5px 13px;border-radius:20px;flex-shrink:0}
+.status-badge.waiting{background:var(--yellow-bg);border:1px solid rgba(245,158,11,.3);color:var(--yellow)}
+.status-badge.playing{background:var(--green-bg);border:1px solid rgba(16,185,129,.3);color:var(--green)}
+.status-badge.reveal{background:var(--podium-bg);border:1px solid var(--podium-border);color:var(--podium)}
+.status-badge.scores{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:#fbbf24}
 
-/* ── GAME TOP ── */
-.game-top{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);flex-shrink:0;gap:16px}
-.game-code{font-family:'Exo 2',sans-serif;font-size:32px;font-weight:800;font-style:italic;letter-spacing:.12em;color:var(--podium)}
-.game-q-text{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em;text-align:center;flex:1}
-.game-status{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px;border-radius:20px}
-.game-status.waiting{background:var(--yellow-bg);border:1px solid rgba(245,158,11,.3);color:var(--yellow)}
-.game-status.playing{background:var(--green-bg);border:1px solid rgba(16,185,129,.3);color:var(--green);animation:aq-pulse 2s infinite}
-.game-status.stopped{background:var(--bg3);border:1px solid var(--border2);color:var(--text3)}
+/* PLAYERS */
+.players-bar{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;gap:7px;flex-wrap:wrap;flex-shrink:0;min-height:50px;align-items:center}
+.p-chip{display:flex;align-items:center;gap:6px;padding:4px 8px 4px 4px;border-radius:20px;background:var(--bg3);border:1px solid var(--border2);font-size:12px;font-weight:600;color:var(--text2);transition:all .25s}
+.p-chip.submitted{background:var(--green-bg);border-color:rgba(16,185,129,.4);color:var(--green)}
+.p-chip-av{width:22px;height:22px;border-radius:50%;background:var(--podium-bg);border:1px solid var(--podium-border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--podium);font-family:'Exo 2',sans-serif;font-style:italic;flex-shrink:0}
+.p-chip.submitted .p-chip-av{background:var(--green-bg);border-color:rgba(16,185,129,.4);color:var(--green)}
+.p-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:0;line-height:1;margin-left:2px}
+.p-del:hover{color:var(--red)}
+.no-players{font-size:12px;color:var(--text3);font-style:italic}
 
-/* ── TEAMS STATUS ── */
-.teams-bar{display:flex;gap:12px;padding:12px 24px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
-.team-card{background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 18px;display:flex;align-items:center;gap:12px;min-width:160px;transition:all .3s}
-.team-card.submitted{border-color:rgba(79,206,143,.5);background:var(--green-bg)}
-.team-name{font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em}
-.team-score{font-family:'Exo 2',sans-serif;font-size:28px;font-weight:800;font-style:italic;color:var(--podium);line-height:1}
-.team-submitted{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:10px}
-.team-submitted.yes{background:rgba(79,206,143,.15);color:var(--green);border:1px solid rgba(79,206,143,.3)}
-.team-submitted.no{background:rgba(255,255,255,.04);color:var(--text3);border:1px solid var(--border)}
+/* TIMER */
+.timer-row{display:flex;align-items:center;gap:8px;padding:8px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.timer-lbl{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.timer-val{font-family:'Exo 2',sans-serif;font-size:20px;font-weight:800;font-style:italic;color:var(--podium);min-width:52px;text-align:center}
+.timer-note{font-size:11px;color:var(--text3);margin-left:4px}
 
-/* ── QR CODE ── */
-.qr-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 24px;border-bottom:1px solid var(--border);flex-shrink:0}
-.qr-img{width:100px;height:100px;border-radius:10px}
-.qr-url{font-size:11px;color:var(--text3);font-family:monospace;word-break:break-all;text-align:center;max-width:300px}
+/* CONTENT */
+.game-content{flex:1;overflow-y:auto;padding:16px 20px}
 
-/* ── CONTROLS ── */
-.game-controls{padding:14px 24px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap;flex-shrink:0}
+/* REVEAL */
+.rev-list{display:flex;flex-direction:column;gap:8px}
+.rev-item{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;min-height:54px;transition:all .4s cubic-bezier(.16,1,.3,1);opacity:.5}
+.rev-item.revealed{background:var(--podium-bg);border-color:var(--podium-border);opacity:1}
+.rev-rank{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(244,114,182,.3);width:24px;text-align:center;flex-shrink:0}
+.rev-item.revealed .rev-rank{color:var(--podium)}
+.rev-img{width:36px;height:36px;border-radius:7px;object-fit:cover;background:var(--bg4);flex-shrink:0}
+.rev-name{font-size:13px;font-weight:700;color:var(--text);flex:1}
+.rev-line{flex:1;height:2px;background:var(--border2);border-radius:2px}
+.rev-detail{font-size:11px;color:var(--podium);font-weight:600;margin-top:2px}
 
-/* ── REVEAL AREA ── */
-.reveal-area{flex:1;overflow-y:auto;padding:16px 24px}
-.reveal-header{display:grid;gap:8px;margin-bottom:8px}
-.reveal-row{display:grid;gap:8px;margin-bottom:6px;align-items:stretch}
-.rev-ans{display:flex;align-items:center;gap:10px;border-radius:10px;padding:8px 12px;border:1.5px solid var(--border);background:var(--bg2);transition:all .4s cubic-bezier(.16,1,.3,1);min-height:58px}
-.rev-ans.revealed{border-color:var(--podium-border);background:var(--podium-bg)}
-.rev-rank{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(244,114,182,.25);width:22px;flex-shrink:0;text-align:center}
-.rev-ans.revealed .rev-rank{color:var(--podium)}
-.rev-thumb{width:36px;height:36px;border-radius:6px;flex-shrink:0;object-fit:cover;background:var(--bg4)}
-.rev-name{font-size:13px;font-weight:700;color:var(--text)}
-.rev-detail{font-size:10px;color:var(--podium);font-weight:600;margin-top:2px}
-.rev-hidden{flex:1;height:1.5px;background:var(--border);border-radius:2px}
-.tc{border-radius:10px;display:flex;flex-direction:column;align-items:center;padding:6px 4px;gap:3px;min-height:58px;justify-content:center;border:1.5px solid transparent}
-.tc.ok{border-color:rgba(79,206,143,.5);background:var(--green-bg)}
-.tc.ko{border-color:rgba(248,113,113,.5);background:rgba(248,113,113,.08)}
-.tc.wt{border-color:var(--border2);background:var(--bg3)}
-.tc-thumb{width:34px;height:34px;border-radius:6px;background:var(--bg4)}
-.tc-name{font-size:10px;font-weight:700;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.tc.ok .tc-name{color:var(--green)}.tc.ko .tc-name{color:#f87171}.tc.wt .tc-name{color:var(--text3)}
-.tc-score{font-size:18px;font-weight:700;color:var(--podium);line-height:1}
-.tc-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+/* SCORES */
+.score-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:6px}
+.score-medal{font-size:20px;width:28px;text-align:center;flex-shrink:0}
+.score-name{flex:1;font-size:13px;font-weight:600}
+.score-pts{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;color:var(--podium)}
 
-/* ── SIDEBAR ── */
-.questions-sidebar{width:260px;flex-shrink:0;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;background:var(--bg2)}
-.sidebar-q-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;display:flex;align-items:flex-start;gap:10px}
-.sidebar-q-item:hover{background:var(--bg3)}
-.sidebar-q-item.active{background:var(--podium-bg);border-left:3px solid var(--podium)}
-.sidebar-q-item.done{opacity:.4}
-.sidebar-q-num{font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;font-style:italic;color:var(--text3);flex-shrink:0;min-width:22px}
-.sidebar-q-item.active .sidebar-q-num{color:var(--podium)}
-.sidebar-q-text{font-size:12px;color:var(--text2);line-height:1.4}
+/* CONTROLS */
+.game-controls{padding:10px 20px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex-shrink:0;background:var(--bg2)}
 
-/* MODAL nouvelle partie */
-.new-game-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:center;justify-content:center}
-.new-game-box{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-xl);padding:28px 32px;width:100%;max-width:440px;animation:aq-slideUp .25s ease}
-.new-game-title{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;color:var(--podium);margin-bottom:20px}
-.ng-field{margin-bottom:14px}
-.ng-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;display:block}
-.ng-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
-.ng-input:focus{border-color:var(--podium)}
-.ng-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
-.teams-input-list{display:flex;flex-direction:column;gap:8px}
+/* SIDEBAR */
+.q-sidebar{display:flex;flex-direction:column;overflow:hidden}
+.q-sidebar-head{padding:12px 14px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);flex-shrink:0}
+.q-list{flex:1;overflow-y:auto}
+.q-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;display:flex;align-items:flex-start;gap:8px}
+.q-item:hover{background:var(--bg3)}
+.q-item.active{background:var(--podium-bg);border-left:3px solid var(--podium)}
+.q-item.done{opacity:.35}
+.q-num{font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;font-style:italic;color:var(--text3);flex-shrink:0;min-width:20px}
+.q-item.active .q-num{color:var(--podium)}
+.q-text{font-size:12px;color:var(--text2);line-height:1.4;flex:1}
+.q-timer{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:center;justify-content:center}
+.modal-box{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-xl);padding:28px 32px;width:100%;max-width:420px;animation:aq-slideUp .25s ease}
+.modal-title{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;color:var(--podium);margin-bottom:20px}
+.modal-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;display:block}
+.modal-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;margin-bottom:14px}
+.modal-input:focus{border-color:var(--podium)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end}
 </style>
 </head>
 <body>
-
 <div class="aq-loading-overlay" id="loader"><div class="aq-spinner"></div></div>
 
-<!-- NAV -->
 <nav class="aq-nav">
   <a href="index.html" class="aq-nav-logo podium" style="text-decoration:none">Allo<b>Quizz</b></a>
   <div class="aq-nav-title">Le Podium</div>
   <div class="aq-nav-actions">
-    <button class="aq-btn aq-btn-ghost aq-btn-sm" onclick="showView('selector')">← Sessions</button>
     <button class="aq-btn aq-btn-podium aq-btn-sm" onclick="openSpectateur()">📺 Spectateur</button>
     <a class="aq-btn aq-btn-ghost aq-btn-sm" href="index.html">← Accueil</a>
   </div>
 </nav>
 
-<!-- ══ SELECTOR ══ -->
+<!-- SELECTOR -->
 <div class="view active" id="view-selector">
   <div class="sel-wrap">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-      <div>
-        <div class="sel-title">Le <span>Podium</span></div>
-        <div style="font-size:13px;color:var(--text3);margin-top:4px">Sessions de jeu</div>
-      </div>
-      <button class="aq-btn aq-btn-podium" onclick="openNewGameModal()">+ Nouvelle partie</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div class="sel-title">Le <span>Podium</span></div>
+      <button class="aq-btn aq-btn-podium" onclick="openNewModal()">+ Nouvelle partie</button>
     </div>
-    <div class="sessions-list" id="sessions-list">
-      <div style="color:var(--text3);font-size:13px;padding:24px 0;text-align:center">Chargement…</div>
-    </div>
+    <div id="sessions-list"><div class="aq-waiting" style="min-height:100px"><div class="aq-spinner"></div></div></div>
   </div>
 </div>
 
-<!-- ══ GAME ══ -->
+<!-- GAME -->
 <div class="view" id="view-game">
   <div class="game-layout">
     <div class="game-main">
       <div class="game-top">
-        <div class="game-code" id="game-code">—</div>
-        <div class="game-q-text" id="game-q-text">Choisissez une question</div>
-        <div class="game-status waiting" id="game-status">En attente</div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:2px">Code</div>
+          <div class="game-code-big" id="game-code">—</div>
+        </div>
+        <button class="copy-btn" onclick="copyLink()">🔗 Copier le lien joueur</button>
+        <div class="game-q-area">
+          <div class="game-q-lbl">Question</div>
+          <div class="game-q-txt" id="game-q-txt">Sélectionnez une question →</div>
+        </div>
+        <div class="status-badge waiting" id="status-badge">En attente</div>
       </div>
-      <div class="teams-bar" id="teams-bar"></div>
-      <div class="qr-wrap" id="qr-wrap"></div>
-      <div class="reveal-area" id="reveal-area">
-        <div class="aq-waiting" style="min-height:200px">
+
+      <div class="players-bar" id="players-bar">
+        <span class="no-players">En attente de joueurs…</span>
+      </div>
+
+      <div class="timer-row" id="timer-row" style="display:none">
+        <span class="timer-lbl">⏱ Chrono</span>
+        <button class="aq-btn aq-btn-ghost aq-btn-sm" onclick="adjTimer(-10)">−10</button>
+        <button class="aq-btn aq-btn-ghost aq-btn-sm" onclick="adjTimer(-5)">−5</button>
+        <div class="timer-val" id="timer-val">60s</div>
+        <button class="aq-btn aq-btn-ghost aq-btn-sm" onclick="adjTimer(5)">+5</button>
+        <button class="aq-btn aq-btn-ghost aq-btn-sm" onclick="adjTimer(10)">+10</button>
+        <span class="timer-note" id="timer-note"></span>
+      </div>
+
+      <div class="game-content" id="game-content">
+        <div class="aq-waiting" style="min-height:180px">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-          Sélectionnez une question pour commencer
+          Sélectionnez une question →
         </div>
       </div>
+
       <div class="game-controls">
         <button class="aq-btn aq-btn-ghost aq-btn-sm" onclick="confirmQuit()">← Quitter</button>
-        <button class="aq-btn aq-btn-podium aq-btn-sm" id="btn-start" onclick="startQuestion()" style="display:none">▶ Lancer</button>
-        <button class="aq-btn aq-btn-ghost aq-btn-sm" id="btn-reveal" onclick="revealNext()" style="display:none">↓ Révéler suivant</button>
-        <button class="aq-btn aq-btn-ghost aq-btn-sm" id="btn-reveal-all" onclick="revealAll()" style="display:none">↓↓ Tout révéler</button>
-        <button class="aq-btn aq-btn-success aq-btn-sm" id="btn-score" onclick="calculateScores()" style="display:none">✓ Calculer scores</button>
-        <button class="aq-btn aq-btn-ghost aq-btn-sm" id="btn-next-q" onclick="nextQuestion()" style="display:none">Question suivante →</button>
+        <div style="flex:1"></div>
+        <button class="aq-btn aq-btn-podium aq-btn-sm" id="btn-launch" style="display:none" onclick="launchQuestion()">▶ Lancer</button>
+        <button class="aq-btn aq-btn-ghost aq-btn-sm" id="btn-rev-next" style="display:none" onclick="revealNext()">↓ Révéler suivant</button>
+        <button class="aq-btn aq-btn-ghost aq-btn-sm" id="btn-rev-all" style="display:none" onclick="revealAll()">↓↓ Tout révéler</button>
+        <button class="aq-btn aq-btn-success aq-btn-sm" id="btn-scores" style="display:none" onclick="calcScores()">🏆 Scores</button>
+        <button class="aq-btn aq-btn-ghost aq-btn-sm" id="btn-next-q" style="display:none" onclick="nextQuestion()">Suivante →</button>
       </div>
     </div>
-    <div class="questions-sidebar">
-      <div style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Questions</div>
-      <div style="flex:1;overflow-y:auto" id="sidebar-questions"></div>
+
+    <div class="q-sidebar">
+      <div class="q-sidebar-head">Questions</div>
+      <div class="q-list" id="q-list"></div>
     </div>
   </div>
 </div>
 
-<!-- ══ NEW GAME MODAL ══ -->
-<div id="new-game-modal" class="new-game-modal" style="display:none" onclick="if(event.target===this)closeNewGameModal()">
-  <div class="new-game-box">
-    <div class="new-game-title">Nouvelle partie</div>
-    <div class="ng-field">
-      <label class="ng-label">Équipes (une par ligne)</label>
-      <textarea class="ng-input" id="ng-teams" rows="4" placeholder="Équipe 1&#10;Équipe 2&#10;Équipe 3" style="resize:none;font-size:14px;line-height:1.6"></textarea>
-    </div>
-    <div class="ng-field">
-      <label class="ng-label">Durée par question (secondes)</label>
-      <input class="ng-input" id="ng-timer" type="number" value="90" min="10" max="300">
-    </div>
-    <div class="ng-footer">
-      <button class="aq-btn aq-btn-ghost" onclick="closeNewGameModal()">Annuler</button>
-      <button class="aq-btn aq-btn-podium" onclick="createNewGame()">Créer →</button>
+<!-- MODAL -->
+<div id="new-modal" class="modal-bg" style="display:none" onclick="if(event.target===this)closeNewModal()">
+  <div class="modal-box">
+    <div class="modal-title">Nouvelle partie</div>
+    <label class="modal-label">Code (optionnel — laisse vide pour générer)</label>
+    <input class="modal-input" id="ng-code" placeholder="Ex: QUIZ" maxlength="6" oninput="this.value=this.value.toUpperCase()">
+    <div class="modal-footer">
+      <button class="aq-btn aq-btn-ghost" onclick="closeNewModal()">Annuler</button>
+      <button class="aq-btn aq-btn-podium" onclick="createSession()">Créer →</button>
     </div>
   </div>
 </div>
 
 <script>
-const DB_URL = 'https://tsneytqibltnjarajcll.supabase.co';
-const DB_KEY = 'sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
-const { createClient } = supabase;
-const db = createClient(DB_URL, DB_KEY);
+const DB_URL='https://tsneytqibltnjarajcll.supabase.co';
+const DB_KEY='sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
+const {createClient}=supabase;
+const db=createClient(DB_URL,DB_KEY);
 
-let questions = [], sessions = [];
-let currentSession = null, currentQuestion = null, currentItems = [];
-let revealedCount = 0, answers = [];
+let questions=[],players=[],answers=[];
+let sess=null,curQ=null,curItems=[];
+let revealed=0,qTimer=60;
+let pollInt=null;
 
-function showToast(msg) {
-  let el = document.getElementById('aq-toast');
-  if (!el) { el = document.createElement('div'); el.id = 'aq-toast'; document.body.appendChild(el); }
-  el.textContent = msg; el.className = 'show';
-  setTimeout(() => el.className = '', 2200);
-}
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toast(msg,t=''){let el=document.getElementById('aq-toast');if(!el){el=document.createElement('div');el.id='aq-toast';document.body.appendChild(el);}el.textContent=msg;el.className='show'+(t?' '+t:'');setTimeout(()=>el.className='',2400);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function genCode(){return Math.random().toString(36).slice(2,6).toUpperCase();}
+function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));document.getElementById('view-'+v).classList.add('active');}
 
-// ══ INIT ══
-async function init() {
-  const [qRes, aRes] = await Promise.all([
+async function init(){
+  const[qRes,iRes]=await Promise.all([
     db.from('podium_questions').select('*').order('sort_order'),
     db.from('podium_items').select('*').order('correct_rank')
   ]);
-  questions = (qRes.data||[]).map(q => ({
-    ...q,
-    podium_items: (aRes.data||[]).filter(i => i.question_id === q.id).sort((a,b) => a.correct_rank - b.correct_rank)
-  }));
+  questions=(qRes.data||[]).map(q=>({...q,podium_items:(iRes.data||[]).filter(i=>i.question_id===q.id).sort((a,b)=>a.correct_rank-b.correct_rank)}));
   await loadSessions();
   document.getElementById('loader').classList.add('hidden');
 }
 
-// ══ SESSIONS ══
-async function loadSessions() {
-  const { data } = await db.from('podium_sessions').select('*').order('created_at', { ascending: false }).limit(15);
-  sessions = data || [];
-  renderSessions();
-}
-
-function renderSessions() {
-  const list = document.getElementById('sessions-list');
-  if (!sessions.length) { list.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:24px 0;text-align:center">Aucune partie — crée-en une !</div>'; return; }
-  list.innerHTML = sessions.map(s => {
-    const date = new Date(s.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-    const teams = s.teams||[];
-    return `<div class="sess-row">
+// ── SESSIONS ──
+async function loadSessions(){
+  const{data}=await db.from('podium_sessions').select('*').order('created_at',{ascending:false}).limit(20);
+  const list=document.getElementById('sessions-list');
+  if(!data?.length){list.innerHTML='<div style="color:var(--text3);font-size:13px;padding:32px;text-align:center">Aucune partie — crée-en une !</div>';return;}
+  list.innerHTML=data.map(s=>{
+    const date=new Date(s.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    return`<div class="sess-row">
       <div class="sess-dot ${s.status||'waiting'}"></div>
-      <div class="sess-info">
-        <div class="sess-name">${teams.map(t=>esc(t.name)).join(' · ') || 'Sans équipes'}</div>
-        <div class="sess-meta">${date} · ${s.status==='in_progress'?'En cours':'Terminée'}</div>
-      </div>
-      <div class="sess-code">${s.code||''}</div>
+      <div class="sess-info"><div class="sess-name">Partie du ${date}</div><div class="sess-meta">${s.status==='playing'?'En cours':s.status==='finished'?'Terminée':'En attente'}</div></div>
+      <div class="sess-code">${s.code}</div>
       <div style="display:flex;gap:8px">
-        <button class="aq-btn aq-btn-podium aq-btn-sm" onclick="loadSession('${s.id}')">Ouvrir →</button>
-        <button class="aq-btn aq-btn-danger aq-btn-sm" onclick="deleteSession('${s.id}')">✕</button>
+        <button class="aq-btn aq-btn-podium aq-btn-sm" onclick="openSession('${s.id}')">Ouvrir →</button>
+        <button class="aq-btn aq-btn-danger aq-btn-sm" onclick="deleteSess('${s.id}')">✕</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function openNewGameModal() { document.getElementById('new-game-modal').style.display='flex'; document.getElementById('ng-teams').focus(); }
-function closeNewGameModal() { document.getElementById('new-game-modal').style.display='none'; }
+function openNewModal(){document.getElementById('new-modal').style.display='flex';document.getElementById('ng-code').focus();}
+function closeNewModal(){document.getElementById('new-modal').style.display='none';}
 
-function genCode() { return Math.random().toString(36).slice(2,6).toUpperCase(); }
-
-async function createNewGame() {
-  const teamsRaw = document.getElementById('ng-teams').value.trim().split('\n').map(t=>t.trim()).filter(Boolean);
-  if (!teamsRaw.length) { showToast('Ajoute au moins une équipe'); return; }
-  const timer = parseInt(document.getElementById('ng-timer').value)||90;
-  const teams = teamsRaw.map(name => ({ name, score: 0, submitted: false }));
-  const code = genCode();
-  const { data, error } = await db.from('podium_sessions').insert({
-    code, teams, status: 'waiting', timer_duration: timer,
-    current_question_id: null, revealed_count: 0, done_question_ids: []
-  }).select().single();
-  if (error) { showToast('Erreur : ' + error.message); return; }
-  closeNewGameModal();
-  await loadSessions();
-  loadSession(data.id);
+async function createSession(){
+  const code=(document.getElementById('ng-code').value.trim().toUpperCase())||genCode();
+  const{data,error}=await db.from('podium_sessions').insert({code,status:'waiting',current_question_id:null,revealed_count:0,done_question_ids:[]}).select().single();
+  if(error){toast('Erreur : '+error.message,'error');return;}
+  closeNewModal();
+  await openSession(data.id);
 }
 
-async function loadSession(id) {
-  const { data } = await db.from('podium_sessions').select('*').eq('id', id).single();
-  if (!data) { showToast('Session introuvable'); return; }
-  currentSession = data;
-  revealedCount = data.revealed_count || 0;
-  renderGameUI();
+async function openSession(id){
+  const{data}=await db.from('podium_sessions').select('*').eq('id',id).single();
+  if(!data){toast('Session introuvable','error');return;}
+  sess=data; revealed=data.revealed_count||0; curQ=null; curItems=[]; answers=[];
+  await loadPlayers();
+  document.getElementById('game-code').textContent=sess.code;
+  renderQList();
   showView('game');
-  if (data.current_question_id) {
-    selectQuestion(data.current_question_id, false);
-  }
-}
-
-async function deleteSession(id) {
-  const pin = prompt('Code de suppression :');
-  if (pin !== '1234') { showToast('Code incorrect'); return; }
-  await db.from('podium_sessions').delete().eq('id', id);
-  await loadSessions();
-  showToast('Supprimée');
-}
-
-function showView(v) {
-  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-  document.getElementById('view-'+v).classList.add('active');
-}
-
-// ══ GAME UI ══
-function renderGameUI() {
-  const s = currentSession;
-  document.getElementById('game-code').textContent = s.code;
-  const url = `${location.origin}${location.pathname.replace('podium.html','podium-joueur.html')}?code=${s.code}`;
-  document.getElementById('qr-wrap').innerHTML = `
-    <img class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(url)}&bgcolor=0e0e18&color=f472b6&margin=4">
-    <div class="qr-url">${url}</div>`;
-  renderTeamsBar();
-  renderSidebarQuestions();
-  updateStatus();
-}
-
-function renderTeamsBar() {
-  const teams = currentSession.teams || [];
-  document.getElementById('teams-bar').innerHTML = teams.map(t => `
-    <div class="team-card ${t.submitted?'submitted':''}">
-      <div>
-        <div class="team-name">${esc(t.name)}</div>
-        <div class="team-submitted ${t.submitted?'yes':'no'}">${t.submitted?'✓ Prêt':'En attente'}</div>
-      </div>
-      <div class="team-score">${t.score||0}</div>
-    </div>`).join('');
-}
-
-function renderSidebarQuestions() {
-  const done = currentSession.done_question_ids || [];
-  document.getElementById('sidebar-questions').innerHTML = questions.map((q,i) => `
-    <div class="sidebar-q-item ${currentQuestion?.id===q.id?'active':''} ${done.includes(q.id)?'done':''}" onclick="selectQuestion(${q.id}, true)">
-      <div class="sidebar-q-num">${String(i+1).padStart(2,'0')}</div>
-      <div class="sidebar-q-text">${esc(q.question)}</div>
-    </div>`).join('');
-}
-
-function updateStatus() {
-  const status = currentSession.status;
-  const el = document.getElementById('game-status');
-  el.textContent = status==='playing'?'En cours':status==='waiting'?'En attente':'Arrêtée';
-  el.className = 'game-status ' + (status||'waiting');
-}
-
-// ══ QUESTIONS ══
-async function selectQuestion(qId, updateDb) {
-  currentQuestion = questions.find(q => String(q.id) === String(qId));
-  if (!currentQuestion) return;
-  currentItems = currentQuestion.podium_items || [];
-  revealedCount = 0;
-
-  // Load answers for this question
-  const { data: ans } = await db.from('podium_answers').select('*').eq('session_id', currentSession.id).eq('question_id', qId);
-  answers = ans || [];
-
-  document.getElementById('game-q-text').textContent = currentQuestion.question;
-
-  if (updateDb) {
-    await db.from('podium_sessions').update({
-      current_question_id: qId, status: 'waiting',
-      revealed_count: 0,
-      teams: (currentSession.teams||[]).map(t => ({...t, submitted: false}))
-    }).eq('id', currentSession.id);
-    const { data } = await db.from('podium_sessions').select('*').eq('id', currentSession.id).single();
-    currentSession = data;
-  }
-
-  renderSidebarQuestions();
-  renderReveal();
-  updateStatus();
-  updateControlButtons();
-  pushSpectator('waiting');
-
-  // Start polling for team submissions
   startPolling();
+  if(data.current_question_id) await pickQuestion(data.current_question_id,false);
 }
 
-async function startQuestion() {
-  if (!currentQuestion) return;
-  await db.from('podium_sessions').update({ status: 'playing' }).eq('id', currentSession.id);
-  const { data } = await db.from('podium_sessions').select('*').eq('id', currentSession.id).single();
-  currentSession = data;
-  updateStatus(); updateControlButtons();
-  pushSpectator('playing');
-  showToast('Question lancée !');
+async function deleteSess(id){
+  if(!confirm('Supprimer cette partie ?'))return;
+  await Promise.all([
+    db.from('podium_players').delete().eq('session_id',id),
+    db.from('podium_answers').delete().eq('session_id',id),
+    db.from('podium_sessions').delete().eq('id',id)
+  ]);
+  loadSessions();toast('Supprimée');
 }
 
-// ══ REVEAL ══
-function renderReveal() {
-  if (!currentQuestion) return;
-  const teams = currentSession.teams || [];
-  const cols = `2fr ${teams.map(()=>'1fr').join(' ')}`;
-  document.getElementById('reveal-area').innerHTML = `
-    <div class="reveal-header" style="grid-template-columns:${cols};padding:0 0 8px">
-      <div></div>
-      ${teams.map(t=>`<div style="text-align:center">
-        <div class="tc-score">${t.score||0}</div>
-        <div class="tc-lbl">${esc(t.name)}</div>
-      </div>`).join('')}
-    </div>
-    ${currentItems.map((it,i) => {
-      const isRev = i < revealedCount;
-      return `<div class="reveal-row" style="grid-template-columns:${cols}" id="rev-row-${i}">
-        <div class="rev-ans ${isRev?'revealed':''}" id="rev-ans-${i}">
-          <div class="rev-rank">${i+1}</div>
-          ${isRev
-            ? (it.image_url?`<img class="rev-thumb" src="${it.image_url}" alt="">`:'')+`<div><div class="rev-name">${esc(it.name)}</div>${it.detail?`<div class="rev-detail">${esc(it.detail)}</div>`:''}</div>`
-            : '<div class="rev-hidden"></div>'}
-        </div>
-        ${teams.map(t => {
-          const ans = answers.find(a => a.team_name === t.name);
-          const ranking = ans?.rankings || [];
-          const itemId = ranking[i];
-          const item = currentItems.find(x => String(x.id) === String(itemId));
-          const ok = isRev && String(itemId) === String(it.id);
-          const cls = isRev ? (ok?'ok':'ko') : 'wt';
-          return `<div class="tc ${cls}" id="tc-${t.name.replace(/ /g,'_')}-${i}">
-            <div class="tc-thumb" ${item?.image_url&&isRev?`style="background:url('${item.image_url}') center/cover;background-size:cover"`:''} ></div>
-            <div class="tc-name">${isRev?(ok?'✓ ':'✗ '):''}${esc(item?.name||'?')}</div>
-          </div>`;
-        }).join('')}
-      </div>`;
-    }).join('')}`;
+// ── PLAYERS ──
+async function loadPlayers(){
+  const{data}=await db.from('podium_players').select('*').eq('session_id',sess.id).eq('is_active',true).order('created_at');
+  players=data||[];
+  renderPlayers();
 }
 
-async function revealNext() {
-  if (revealedCount >= currentItems.length) { showToast('Tout est révélé'); return; }
-  revealedCount++;
-  await db.from('podium_sessions').update({ revealed_count: revealedCount }).eq('id', currentSession.id);
-  renderReveal();
-  updateControlButtons();
-  pushSpectator('reveal');
+function renderPlayers(){
+  const bar=document.getElementById('players-bar');
+  if(!players.length){bar.innerHTML='<span class="no-players">En attente de joueurs…</span>';return;}
+  const submitted=new Set(answers.map(a=>a.player_name));
+  bar.innerHTML=players.map(p=>`
+    <div class="p-chip ${submitted.has(p.name)?'submitted':''}">
+      <div class="p-chip-av">${p.name[0].toUpperCase()}</div>
+      <span>${esc(p.name)}</span>
+      ${submitted.has(p.name)?'<span style="font-size:10px">✓</span>':''}
+      <button class="p-del" onclick="removePlayer('${p.id}',event)" title="Supprimer">✕</button>
+    </div>`).join('');
 }
 
-async function revealAll() {
-  revealedCount = currentItems.length;
-  await db.from('podium_sessions').update({ revealed_count: revealedCount }).eq('id', currentSession.id);
-  renderReveal();
-  updateControlButtons();
-  pushSpectator('reveal');
+async function removePlayer(id,e){
+  e.stopPropagation();
+  if(!confirm('Supprimer ce joueur ?'))return;
+  await db.from('podium_players').update({is_active:false}).eq('id',id);
+  players=players.filter(p=>p.id!==id);
+  renderPlayers();pushState();
 }
 
-async function calculateScores() {
-  const teams = [...(currentSession.teams||[])];
-  for (const ans of answers) {
-    const team = teams.find(t => t.name === ans.team_name);
-    if (!team) continue;
-    let pts = 0;
-    (ans.rankings||[]).forEach((itemId, i) => {
-      if (String(itemId) === String(currentItems[i]?.id)) pts += (currentItems.length - i);
-    });
-    team.score = (team.score||0) + pts;
+// ── QUESTIONS ──
+function renderQList(){
+  const done=sess.done_question_ids||[];
+  document.getElementById('q-list').innerHTML=questions.map((q,i)=>`
+    <div class="q-item ${curQ?.id===q.id?'active':''} ${done.includes(q.id)?'done':''}" onclick="pickQuestion(${q.id},true)">
+      <div class="q-num">${String(i+1).padStart(2,'0')}</div>
+      <div>
+        <div class="q-text">${esc(q.question)}</div>
+        <div class="q-timer">⏱ ${q.timer_duration||60}s</div>
+      </div>
+    </div>`).join('');
+}
+
+async function pickQuestion(qId,updateDb){
+  curQ=questions.find(q=>String(q.id)===String(qId));
+  if(!curQ)return;
+  curItems=curQ.podium_items||[];
+  qTimer=curQ.timer_duration||60;
+  revealed=0;
+  document.getElementById('game-q-txt').textContent=curQ.question;
+  document.getElementById('timer-row').style.display='flex';
+  document.getElementById('timer-val').textContent=qTimer+'s';
+  document.getElementById('timer-note').textContent='Défaut : '+(curQ.timer_duration||60)+'s';
+  const{data:ans}=await db.from('podium_answers').select('*').eq('session_id',sess.id).eq('question_id',qId);
+  answers=ans||[];
+  renderPlayers();
+  if(updateDb){
+    await db.from('podium_sessions').update({current_question_id:qId,status:'waiting',revealed_count:0}).eq('id',sess.id);
+    const{data}=await db.from('podium_sessions').select('*').eq('id',sess.id).single();
+    sess=data;
   }
-  await db.from('podium_sessions').update({ teams }).eq('id', currentSession.id);
-  const { data } = await db.from('podium_sessions').select('*').eq('id', currentSession.id).single();
-  currentSession = data;
-  renderTeamsBar(); renderReveal();
-  pushSpectator('reveal');
-  showToast('Scores calculés ✓');
+  renderQList();renderReveal();setStatus('waiting');updateBtns();
+  pushState('waiting');
 }
 
-async function nextQuestion() {
-  if (!currentQuestion) return;
-  const done = [...(currentSession.done_question_ids||[])];
-  if (!done.includes(currentQuestion.id)) done.push(currentQuestion.id);
-  await db.from('podium_sessions').update({ done_question_ids: done, status: 'waiting', current_question_id: null, revealed_count: 0 }).eq('id', currentSession.id);
-  const { data } = await db.from('podium_sessions').select('*').eq('id', currentSession.id).single();
-  currentSession = data;
-  currentQuestion = null; currentItems = []; answers = []; revealedCount = 0;
-  document.getElementById('game-q-text').textContent = 'Choisissez une question';
-  document.getElementById('reveal-area').innerHTML = '<div class="aq-waiting" style="min-height:200px"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Sélectionnez une question</div>';
-  renderSidebarQuestions(); updateStatus(); updateControlButtons();
-  pushSpectator('waiting');
-  showToast('Prêt pour la prochaine question');
+function adjTimer(d){qTimer=Math.max(10,Math.min(300,qTimer+d));document.getElementById('timer-val').textContent=qTimer+'s';}
+
+async function launchQuestion(){
+  if(!curQ)return;
+  await db.from('podium_sessions').update({status:'playing',timer_duration:qTimer}).eq('id',sess.id);
+  const{data}=await db.from('podium_sessions').select('*').eq('id',sess.id).single();
+  sess=data;
+  setStatus('playing');updateBtns();pushState('playing');
+  toast('Question lancée ▶');
 }
 
-function updateControlButtons() {
-  const hasQ = !!currentQuestion;
-  const status = currentSession?.status;
-  const allRevd = revealedCount >= currentItems.length;
-  document.getElementById('btn-start').style.display = hasQ && status==='waiting' ? 'inline-flex' : 'none';
-  document.getElementById('btn-reveal').style.display = hasQ && !allRevd ? 'inline-flex' : 'none';
-  document.getElementById('btn-reveal-all').style.display = hasQ && !allRevd ? 'inline-flex' : 'none';
-  document.getElementById('btn-score').style.display = hasQ && allRevd ? 'inline-flex' : 'none';
-  document.getElementById('btn-next-q').style.display = hasQ ? 'inline-flex' : 'none';
+function renderReveal(){
+  if(!curQ)return;
+  document.getElementById('game-content').innerHTML=`<div class="rev-list">
+    ${curItems.map((it,i)=>{
+      const isRev=i<revealed;
+      return`<div class="rev-item ${isRev?'revealed':''}" id="rv-${i}">
+        <div class="rev-rank">${i+1}</div>
+        ${it.image_url?`<img class="rev-img" src="${it.image_url}" alt="">`:''}
+        ${isRev
+          ?`<div><div class="rev-name">${esc(it.name)}</div>${it.detail?`<div class="rev-detail">${esc(it.detail)}</div>`:''}</div>`
+          :'<div class="rev-line"></div>'}
+      </div>`;
+    }).join('')}
+  </div>`;
 }
 
-// ══ POLLING ══
-let pollInt = null;
-function startPolling() {
-  if (pollInt) clearInterval(pollInt);
-  pollInt = setInterval(async () => {
-    if (!currentSession) return;
-    const { data } = await db.from('podium_sessions').select('*').eq('id', currentSession.id).single();
-    if (!data) return;
-    currentSession = data;
-    renderTeamsBar(); updateStatus();
-    // Recharger les réponses si nouvelle soumission
-    if (currentQuestion) {
-      const { data: ans } = await db.from('podium_answers').select('*').eq('session_id', currentSession.id).eq('question_id', currentQuestion.id);
-      if (ans) answers = ans;
+async function revealNext(){
+  if(revealed>=curItems.length){toast('Tout révélé');return;}
+  revealed++;
+  await db.from('podium_sessions').update({revealed_count:revealed}).eq('id',sess.id);
+  renderReveal();updateBtns();pushState('reveal');
+}
+
+async function revealAll(){
+  revealed=curItems.length;
+  await db.from('podium_sessions').update({revealed_count:revealed}).eq('id',sess.id);
+  renderReveal();updateBtns();pushState('reveal');
+}
+
+async function calcScores(){
+  // Calculer points par joueur
+  for(const ans of answers){
+    let pts=0;
+    (ans.rankings||[]).forEach((itemId,i)=>{if(String(itemId)===String(curItems[i]?.id))pts++;});
+    if(pts===curItems.length)pts+=2; // bonus parfait
+    const p=players.find(x=>x.name===ans.player_name);
+    if(p){const ns=(p.score||0)+pts;await db.from('podium_players').update({score:ns}).eq('id',p.id);p.score=ns;}
+  }
+  await loadPlayers();
+  // Afficher le classement
+  const sorted=[...players].sort((a,b)=>b.score-a.score);
+  document.getElementById('game-content').innerHTML=`
+    <div style="font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;color:var(--podium);margin-bottom:12px">🏆 Classement</div>
+    ${sorted.map((p,i)=>`<div class="score-row">
+      <div class="score-medal">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div>
+      <div class="score-name">${esc(p.name)}</div>
+      <div class="score-pts">${p.score||0} pts</div>
+    </div>`).join('')}`;
+  setStatus('scores');updateBtns();pushState('scores');
+}
+
+async function nextQuestion(){
+  if(!curQ)return;
+  const done=[...(sess.done_question_ids||[])];
+  if(!done.includes(curQ.id))done.push(curQ.id);
+  await db.from('podium_sessions').update({done_question_ids:done,status:'waiting',current_question_id:null,revealed_count:0}).eq('id',sess.id);
+  const{data}=await db.from('podium_sessions').select('*').eq('id',sess.id).single();
+  sess=data;curQ=null;curItems=[];answers=[];revealed=0;
+  document.getElementById('game-q-txt').textContent='Sélectionnez une question →';
+  document.getElementById('timer-row').style.display='none';
+  document.getElementById('game-content').innerHTML='<div class="aq-waiting" style="min-height:180px"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Sélectionnez une question →</div>';
+  renderQList();setStatus('waiting');updateBtns();pushState('waiting');
+  toast('Prêt pour la suivante');
+}
+
+function setStatus(s){
+  const el=document.getElementById('status-badge');
+  const labels={waiting:'En attente',playing:'En cours',reveal:'Révélation',scores:'Scores'};
+  el.textContent=labels[s]||s;el.className='status-badge '+s;
+}
+
+function updateBtns(){
+  const hasQ=!!curQ,status=sess?.status,allRev=revealed>=curItems.length;
+  document.getElementById('btn-launch').style.display=hasQ&&status==='waiting'?'inline-flex':'none';
+  document.getElementById('btn-rev-next').style.display=hasQ&&status!=='waiting'&&!allRev?'inline-flex':'none';
+  document.getElementById('btn-rev-all').style.display=hasQ&&status!=='waiting'&&!allRev?'inline-flex':'none';
+  document.getElementById('btn-scores').style.display=hasQ&&allRev?'inline-flex':'none';
+  document.getElementById('btn-next-q').style.display=hasQ?'inline-flex':'none';
+}
+
+// ── POLLING ──
+function startPolling(){
+  if(pollInt)clearInterval(pollInt);
+  pollInt=setInterval(async()=>{
+    if(!sess)return;
+    const[sRes,pRes]=await Promise.all([
+      db.from('podium_sessions').select('*').eq('id',sess.id).single(),
+      db.from('podium_players').select('*').eq('session_id',sess.id).eq('is_active',true).order('created_at')
+    ]);
+    if(sRes.data)sess=sRes.data;
+    if(pRes.data)players=pRes.data;
+    if(curQ){
+      const{data:ans}=await db.from('podium_answers').select('*').eq('session_id',sess.id).eq('question_id',curQ.id);
+      if(ans)answers=ans;
     }
-  }, 3000);
+    renderPlayers();
+    pushState(sess.status==='playing'?'playing':'waiting');
+  },2500);
 }
 
-// ══ SPECTATOR ══
-function pushSpectator(view) {
-  const teams = currentSession?.teams || [];
-  const state = {
-    view,
-    code: currentSession?.code,
-    question_id: currentQuestion?.id,
-    teams,
-    revealed_count: revealedCount,
-    answers: answers.map(a => ({ team_name: a.team_name, rankings: a.rankings }))
+// ── SPECTATOR ──
+function getState(view){
+  return{
+    view:view||sess?.status||'waiting',
+    code:sess?.code,
+    question:curQ?.question||null,
+    question_id:curQ?.id,
+    items:curItems,
+    players:players.map(p=>({name:p.name,score:p.score||0,submitted:answers.some(a=>a.player_name===p.name)})),
+    revealed_count:revealed,
+    answers:answers.map(a=>({player_name:a.player_name,rankings:a.rankings}))
   };
-  try { localStorage.setItem('aq_podium', JSON.stringify(state)); } catch(e) {}
-  try { const bc = new BroadcastChannel('aq_podium'); bc.postMessage(state); bc.close(); } catch(e) {}
+}
+function pushState(view){
+  const state=getState(view);
+  try{localStorage.setItem('aq_podium',JSON.stringify(state));}catch(e){}
+  try{const bc=new BroadcastChannel('aq_podium');bc.postMessage(state);bc.close();}catch(e){}
+}
+function openSpectateur(){pushState();window.open('spectateur-podium.html','_blank');}
+
+function copyLink(){
+  const url=`${location.origin}${location.pathname.replace('podium.html','podium-joueur.html')}?code=${sess?.code}`;
+  navigator.clipboard.writeText(url).then(()=>toast('Lien copié ✓','success')).catch(()=>prompt('Copie ce lien :',url));
 }
 
-function openSpectateur() {
-  pushSpectator(currentQuestion ? 'reveal' : 'waiting');
-  window.open('spectateur-podium.html', '_blank');
-}
-
-function confirmQuit() {
-  if (pollInt) clearInterval(pollInt);
-  showView('selector');
-  loadSessions();
-}
+function confirmQuit(){if(pollInt)clearInterval(pollInt);sess=null;curQ=null;loadSessions();showView('selector');}
 
 init();
 </script>
