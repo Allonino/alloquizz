@@ -11,53 +11,62 @@
 html,body{height:100%;overflow:hidden}
 body{display:flex;flex-direction:column}
 
+/* TOP */
 .sp-top{display:flex;align-items:center;padding:14px 32px;border-bottom:1px solid var(--border);flex-shrink:0;gap:16px}
-.sp-logo{font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.25);flex-shrink:0}
+.sp-logo{font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.25)}
 .sp-logo b{color:var(--podium)}
-.sp-q{flex:1;text-align:center;font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
-.sp-code{font-family:'Exo 2',sans-serif;font-size:12px;font-weight:800;font-style:italic;color:rgba(255,255,255,.2);letter-spacing:.1em;flex-shrink:0}
+.sp-q{flex:1;text-align:center;font-family:'Exo 2',sans-serif;font-size:17px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em;color:var(--text)}
+.sp-code{font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;font-style:italic;color:rgba(255,255,255,.2);letter-spacing:.1em}
 .sp-main{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center}
 
-/* WAITING */
-.s-wait{display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center}
-.w-code{font-family:'Exo 2',sans-serif;font-size:72px;font-weight:800;font-style:italic;color:var(--podium);letter-spacing:.12em;line-height:1}
-.w-hint{font-size:14px;color:rgba(255,255,255,.3)}
-.w-chips{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:4px}
-.w-chip{padding:8px 20px;border-radius:20px;font-family:'Exo 2',sans-serif;font-size:14px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;border:1.5px solid var(--podium-border);color:var(--podium);background:var(--podium-bg)}
+/* WAITING / LOBBY */
+.s-lobby{display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center;padding:40px}
+.lobby-code{font-family:'Exo 2',sans-serif;font-size:80px;font-weight:800;font-style:italic;color:var(--podium);letter-spacing:.15em;line-height:1}
+.lobby-hint{font-size:15px;color:rgba(255,255,255,.3)}
+.players-grid{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:800px}
+.p-card{padding:10px 20px;border-radius:20px;font-family:'Exo 2',sans-serif;font-size:15px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;border:1.5px solid var(--podium-border);color:var(--podium);background:var(--podium-bg);animation:aq-fadeIn .3s ease}
+.p-card.submitted{background:var(--green-bg);border-color:rgba(79,206,143,.5);color:#4fce8f}
 
 /* PLAYING */
-.s-play{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;padding:0 40px}
-.p-lbl{font-size:11px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.12em;font-weight:700}
-.p-teams{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
-.p-card{background:rgba(255,255,255,.03);border:2px solid rgba(255,255,255,.1);border-radius:16px;padding:18px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:160px;transition:all .4s}
-.p-card.ready{border-color:rgba(79,206,143,.5);background:rgba(79,206,143,.06)}
-.p-name{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em}
-.p-score{font-family:'Exo 2',sans-serif;font-size:44px;font-weight:800;font-style:italic;color:var(--podium);line-height:1}
-.p-status{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:20px}
-.p-status.ready{background:rgba(79,206,143,.15);color:#4fce8f;border:1px solid rgba(79,206,143,.3)}
-.p-status.wait{background:rgba(255,255,255,.06);color:rgba(255,255,255,.3);border:1px solid rgba(255,255,255,.08)}
+.s-playing{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;padding:20px 40px}
+.playing-q{font-family:'Exo 2',sans-serif;font-size:22px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em;text-align:center;color:var(--text)}
+.items-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;width:100%;max-width:900px}
+.item-card{background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;display:flex;align-items:center;gap:10px;animation:aq-fadeIn .4s ease}
+.item-card img{width:40px;height:40px;border-radius:7px;object-fit:cover;flex-shrink:0}
+.item-name{font-size:13px;font-weight:700;color:var(--text)}
+.players-status{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.ps-chip{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);transition:all .3s}
+.ps-chip.submitted{background:var(--green-bg);border-color:rgba(79,206,143,.4);color:#4fce8f}
 
 /* REVEAL */
 .s-reveal{width:100%;height:100%;overflow-y:auto;padding:16px 32px;display:flex;align-items:flex-start;justify-content:center}
 .rev-inner{max-width:1000px;width:100%;display:flex;flex-direction:column;gap:7px}
 .rev-hdr,.rev-row{display:grid;gap:8px;align-items:stretch}
-.rev-ans{display:flex;align-items:center;gap:10px;border-radius:10px;padding:8px 12px;border:1.5px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);transition:all .4s cubic-bezier(.16,1,.3,1);min-height:62px}
+.rev-ans{display:flex;align-items:center;gap:10px;border-radius:10px;padding:8px 12px;border:1.5px solid var(--border);background:var(--bg2);transition:all .4s cubic-bezier(.16,1,.3,1);min-height:58px}
 .rev-ans.rev{border-color:var(--podium-border);background:var(--podium-bg)}
 .rev-rk{font-family:'Exo 2',sans-serif;font-size:16px;font-weight:800;font-style:italic;color:rgba(244,114,182,.25);width:22px;flex-shrink:0;text-align:center}
 .rev-ans.rev .rev-rk{color:var(--podium)}
-.rsq{width:40px;height:40px;border-radius:7px;flex-shrink:0;object-fit:cover;background:rgba(255,255,255,.08)}
-.rev-nm{font-size:14px;font-weight:700;color:var(--text)}
-.rev-dt{font-size:11px;color:var(--podium);font-weight:600;margin-top:2px}
-.rev-hid{flex:1;height:1.5px;background:rgba(255,255,255,.06);border-radius:2px}
-.tc{border-radius:10px;display:flex;flex-direction:column;align-items:center;padding:6px 5px 5px;gap:4px;min-height:62px;justify-content:center}
-.tc.ok{border:1.5px solid rgba(79,206,143,.5);background:rgba(79,206,143,.08)}
-.tc.ko{border:1.5px solid rgba(248,113,113,.5);background:rgba(248,113,113,.08)}
-.tc.wt{border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
-.tcsq{width:40px;height:40px;border-radius:7px;flex-shrink:0;background:rgba(255,255,255,.08)}
-.tcnm{font-size:11px;font-weight:700;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.tc.ok .tcnm{color:#4fce8f}.tc.ko .tcnm{color:#f87171}.tc.wt .tcnm{color:rgba(255,255,255,.55)}
-.tcsc{font-size:20px;font-weight:700;color:var(--podium);text-align:center;line-height:1}
-.tclbl{font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.06em;text-align:center;margin-top:2px}
+.rsq{width:38px;height:38px;border-radius:6px;flex-shrink:0;object-fit:cover;background:var(--bg4)}
+.rev-nm{font-size:13px;font-weight:700;color:var(--text)}
+.rev-dt{font-size:10px;color:var(--podium);font-weight:600;margin-top:2px}
+.rev-hid{flex:1;height:1.5px;background:var(--border2);border-radius:2px}
+.tc{border-radius:9px;display:flex;flex-direction:column;align-items:center;padding:5px 4px;gap:3px;min-height:58px;justify-content:center;border:1.5px solid transparent}
+.tc.ok{border-color:rgba(79,206,143,.5);background:var(--green-bg)}
+.tc.ko{border-color:rgba(248,113,113,.5);background:rgba(248,113,113,.08)}
+.tc.wt{border-color:var(--border2);background:var(--bg3)}
+.tcsq{width:34px;height:34px;border-radius:6px;background:var(--bg4)}
+.tcnm{font-size:10px;font-weight:700;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.tc.ok .tcnm{color:#4fce8f}.tc.ko .tcnm{color:#f87171}.tc.wt .tcnm{color:var(--text3)}
+.tcsc{font-size:18px;font-weight:700;color:var(--podium);text-align:center;line-height:1}
+.tclbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;text-align:center}
+
+/* SCORES */
+.s-scores{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px;width:100%;max-width:600px}
+.scores-title{font-family:'Exo 2',sans-serif;font-size:24px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;color:var(--podium);margin-bottom:8px}
+.score-row{display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;animation:aq-fadeIn .3s ease}
+.score-medal{font-size:24px;width:32px;text-align:center;flex-shrink:0}
+.score-name{flex:1;font-family:'Exo 2',sans-serif;font-size:18px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.04em}
+.score-pts{font-family:'Exo 2',sans-serif;font-size:36px;font-weight:800;font-style:italic;color:var(--podium)}
 </style>
 </head>
 <body>
@@ -74,143 +83,152 @@ body{display:flex;flex-direction:column}
 </div>
 
 <script>
-const DB_URL = 'https://tsneytqibltnjarajcll.supabase.co';
-const DB_KEY = 'sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
-const { createClient } = supabase;
-const db = createClient(DB_URL, DB_KEY);
+const DB_URL='https://tsneytqibltnjarajcll.supabase.co';
+const DB_KEY='sb_publishable_yxIJa12tOnd1UqEkdo7p_Q_7SwjwZH1';
+const {createClient}=supabase;
+const db=createClient(DB_URL,DB_KEY);
 
-let questions = [], lastView = '', lastRevealed = -1;
+let questions=[],lastView='',lastRevealed=-1;
 
-async function init() {
-  const [qRes, iRes] = await Promise.all([
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function init(){
+  const[qRes,iRes]=await Promise.all([
     db.from('podium_questions').select('*').order('sort_order'),
     db.from('podium_items').select('*').order('correct_rank')
   ]);
-  questions = (qRes.data||[]).map(q => ({
-    ...q,
-    podium_items: (iRes.data||[]).filter(i => i.question_id === q.id).sort((a,b) => a.correct_rank - b.correct_rank)
-  }));
-  // Listen
-  try { const bc = new BroadcastChannel('aq_podium'); bc.onmessage = e => applyState(e.data); } catch(e) {}
-  let lastRaw = null;
-  setInterval(() => {
-    try {
-      const raw = localStorage.getItem('aq_podium');
-      if (raw && raw !== lastRaw) { lastRaw = raw; applyState(JSON.parse(raw)); }
-    } catch(e) {}
-  }, 500);
-  try { applyState(JSON.parse(localStorage.getItem('aq_podium'))); } catch(e) {}
+  questions=(qRes.data||[]).map(q=>({...q,podium_items:(iRes.data||[]).filter(i=>i.question_id===q.id).sort((a,b)=>a.correct_rank-b.correct_rank)}));
+  try{const bc=new BroadcastChannel('aq_podium');bc.onmessage=e=>{if(e.data)applyState(e.data);};}catch(e){}
+  let lastRaw=null;
+  setInterval(()=>{try{const raw=localStorage.getItem('aq_podium');if(raw&&raw!==lastRaw){lastRaw=raw;applyState(JSON.parse(raw));}}catch(e){}},500);
+  try{const raw=localStorage.getItem('aq_podium');if(raw)applyState(JSON.parse(raw));}catch(e){}
 }
 
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function applyState(s){
+  if(!s){return;}
+  document.getElementById('sp-code').textContent=s.code||'';
+  document.getElementById('sp-q').textContent=s.question||'En attente…';
+  const players=s.players||[];
+  const items=s.items||[];
+  const q=questions.find(x=>String(x.id)===String(s.question_id));
+  const qItems=q?q.podium_items||[]:items;
 
-function applyState(s) {
-  if (!s) return;
-  const code = s.code || '';
-  const teams = s.teams || [];
-  const q = questions.find(x => String(x.id) === String(s.question_id));
-  document.getElementById('sp-code').textContent = code;
-  document.getElementById('sp-q').textContent = q ? q.question : 'En attente…';
-
-  if (s.view === 'reveal') {
-    const items = q ? q.podium_items || [] : [];
-    const revealed = s.revealed_count || 0;
-    const answers = s.answers || [];
-    if (lastView !== 'reveal') { lastView = 'reveal'; lastRevealed = -1; buildReveal(items, teams, answers, revealed); }
-    else if (revealed !== lastRevealed) { updateReveal(items, teams, answers, revealed); }
-  } else if (s.view === 'playing' || s.view === 'waiting') {
-    if (lastView !== 'playing') {
-      lastView = 'playing';
-      const url = `${location.origin}${location.pathname.replace('spectateur-podium.html','podium-joueur.html')}?code=${code}`;
-      document.getElementById('sp-main').innerHTML = `<div class="s-play">
-        <div class="p-lbl">En cours</div>
-        <div class="p-teams" id="sp-teams"></div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(url)}&bgcolor=06060d&color=f472b6&margin=6" style="width:120px;height:120px;border-radius:10px">
-          <div style="font-family:'Exo 2',sans-serif;font-size:40px;font-weight:800;font-style:italic;color:var(--podium);letter-spacing:.1em">${code}</div>
-        </div>
-      </div>`;
-    }
-    const el = document.getElementById('sp-teams');
-    if (el) el.innerHTML = teams.map(t => `
-      <div class="p-card ${t.submitted?'ready':''}">
-        <div class="p-name">${esc(t.name)}</div>
-        <div class="p-score">${t.score||0}</div>
-        <div class="p-status ${t.submitted?'ready':'wait'}">${t.submitted?'✓ Prêt':'En cours…'}</div>
-      </div>`).join('');
-  } else {
-    if (lastView === 'default') return;
-    lastView = 'default';
-    const url = `${location.origin}${location.pathname.replace('spectateur-podium.html','podium-joueur.html')}?code=${code}`;
-    document.getElementById('sp-main').innerHTML = `<div class="s-wait">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}&bgcolor=06060d&color=f472b6&margin=8" style="width:180px;height:180px;border-radius:14px">
-      <div><div class="w-code">${code||'—'}</div><div class="w-hint">Rejoindre sur cette page</div></div>
-      <div class="w-chips">${teams.map(t=>`<div class="w-chip">${esc(t.name)}</div>`).join('')}</div>
+  if(s.view==='scores'){
+    if(lastView==='scores')return;
+    lastView='scores';
+    const sorted=[...players].sort((a,b)=>b.score-a.score);
+    document.getElementById('sp-main').innerHTML=`<div class="s-scores">
+      <div class="scores-title">🏆 Classement</div>
+      ${sorted.map((p,i)=>`<div class="score-row">
+        <div class="score-medal">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div>
+        <div class="score-name">${esc(p.name)}</div>
+        <div class="score-pts">${p.score||0} pts</div>
+      </div>`).join('')}
     </div>`;
+    return;
   }
+
+  if(s.view==='reveal'){
+    const revealed=s.revealed_count||0;
+    const answers=s.answers||[];
+    if(lastView!=='reveal'){lastView='reveal';lastRevealed=-1;buildReveal(qItems,players,answers,revealed);}
+    else if(revealed!==lastRevealed){updateReveal(qItems,players,answers,revealed);}
+    return;
+  }
+
+  if(s.view==='playing'){
+    lastView='playing';
+    const submitted=new Set(players.filter(p=>p.submitted).map(p=>p.name));
+    document.getElementById('sp-main').innerHTML=`<div class="s-playing">
+      <div class="playing-q">${esc(s.question||'')}</div>
+      <div class="items-grid">
+        ${[...qItems].sort(()=>Math.random()-.5).map(it=>`
+          <div class="item-card">
+            ${it.image_url?`<img src="${it.image_url}" alt="">`:''}
+            <div class="item-name">${esc(it.name)}</div>
+          </div>`).join('')}
+      </div>
+      <div class="players-status">
+        ${players.map(p=>`<div class="ps-chip ${p.submitted?'submitted':''}">
+          ${p.submitted?'✓ ':''}<span>${esc(p.name)}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+    return;
+  }
+
+  // LOBBY / WAITING
+  lastView='lobby';
+  const url=`${location.origin}${location.pathname.replace('spectateur-podium.html','podium-joueur.html')}?code=${s.code||''}`;
+  document.getElementById('sp-main').innerHTML=`<div class="s-lobby">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(url)}&bgcolor=06060d&color=f472b6&margin=6" style="width:160px;height:160px;border-radius:12px">
+    <div>
+      <div class="lobby-code">${s.code||'—'}</div>
+      <div class="lobby-hint">Rejoindre sur podium-joueur</div>
+    </div>
+    <div class="players-grid">
+      ${players.map(p=>`<div class="p-card">${esc(p.name)}</div>`).join('')}
+    </div>
+  </div>`;
 }
 
-function buildReveal(items, teams, answers, revealed) {
-  const cols = `2fr ${teams.map(()=>'1fr').join(' ')}`;
-  document.getElementById('sp-main').innerHTML = `<div class="s-reveal"><div class="rev-inner">
+function buildReveal(items,players,answers,revealed){
+  const cols=`2fr ${players.map(()=>'1fr').join(' ')}`;
+  document.getElementById('sp-main').innerHTML=`<div class="s-reveal"><div class="rev-inner">
     <div class="rev-hdr" style="grid-template-columns:${cols}">
       <div></div>
-      ${teams.map(t=>`<div><div class="tcsc">${t.score||0}</div><div class="tclbl">${esc(t.name)}</div></div>`).join('')}
+      ${players.map(p=>`<div><div class="tcsc">${p.score||0}</div><div class="tclbl">${esc(p.name)}</div></div>`).join('')}
     </div>
-    ${items.map((it,i) => {
-      const isRev = i < revealed;
-      return `<div class="rev-row" style="grid-template-columns:${cols}">
+    ${items.map((it,i)=>{
+      const isRev=i<revealed;
+      return`<div class="rev-row" style="grid-template-columns:${cols}">
         <div class="rev-ans${isRev?' rev':''}" id="sa-${i}">
           <div class="rev-rk">${i+1}</div>
-          ${isRev
-            ? (it.image_url?`<img class="rsq" src="${it.image_url}" alt="">`:'')+`<div><div class="rev-nm">${esc(it.name)}</div>${it.detail?`<div class="rev-dt">${esc(it.detail)}</div>`:''}</div>`
-            : '<div class="rev-hid"></div>'}
+          ${isRev?(it.image_url?`<img class="rsq" src="${it.image_url}" alt="">`:'')+'<div><div class="rev-nm">'+esc(it.name)+'</div>'+(it.detail?'<div class="rev-dt">'+esc(it.detail)+'</div>':'')+'</div>':'<div class="rev-hid"></div>'}
         </div>
-        ${teams.map(t => {
-          const ans = answers.find(a => a.team_name === t.name);
-          const ranking = ans?.rankings || [];
-          const itemId = ranking[i];
-          const item = items.find(x => String(x.id) === String(itemId));
-          const ok = isRev && String(itemId) === String(it.id);
-          const cls = isRev ? (ok?'ok':'ko') : 'wt';
-          return `<div class="tc ${cls}" id="stc-${t.name.replace(/ /g,'_')}-${i}">
-            <div class="tcsq" ${item?.image_url&&isRev?`style="background:url('${item.image_url}') center/cover"`:''} ></div>
+        ${players.map(p=>{
+          const ans=answers.find(a=>a.player_name===p.name);
+          const ranking=ans?.rankings||[];
+          const itemId=ranking[i];
+          const item=items.find(x=>String(x.id)===String(itemId));
+          const ok=isRev&&String(itemId)===String(it.id);
+          const cls=isRev?(ok?'ok':'ko'):'wt';
+          return`<div class="tc ${cls}" id="stc-${p.name.replace(/ /g,'_')}-${i}">
+            <div class="tcsq" ${item?.image_url&&isRev?`style="background:url('${item.image_url}') center/cover;background-size:cover"`:''}></div>
             <div class="tcnm">${isRev?(ok?'✓ ':'✗ '):''}${esc(item?.name||'?')}</div>
           </div>`;
         }).join('')}
       </div>`;
     }).join('')}
   </div></div>`;
-  lastRevealed = revealed;
+  lastRevealed=revealed;
 }
 
-function updateReveal(items, teams, answers, revealed) {
-  if (!document.getElementById('sa-0')) { buildReveal(items, teams, answers, revealed); return; }
-  for (let i = lastRevealed; i < revealed; i++) {
-    const it = items[i];
-    const cell = document.getElementById('sa-'+i);
-    if (cell && !cell.classList.contains('rev')) {
+function updateReveal(items,players,answers,revealed){
+  if(!document.getElementById('sa-0')){buildReveal(items,players,answers,revealed);return;}
+  for(let i=lastRevealed;i<revealed;i++){
+    const it=items[i];
+    const cell=document.getElementById('sa-'+i);
+    if(cell&&!cell.classList.contains('rev')){
       cell.classList.add('rev');
-      cell.innerHTML = `<div class="rev-rk">${i+1}</div>`
-        + (it.image_url?`<img class="rsq" src="${it.image_url}" alt="">`:'')
-        + `<div><div class="rev-nm">${esc(it.name)}</div>${it.detail?`<div class="rev-dt">${esc(it.detail)}</div>`:''}</div>`;
+      cell.innerHTML=`<div class="rev-rk">${i+1}</div>`+(it.image_url?`<img class="rsq" src="${it.image_url}" alt="">`:'')
+        +`<div><div class="rev-nm">${esc(it.name)}</div>${it.detail?'<div class="rev-dt">'+esc(it.detail)+'</div>':''}</div>`;
     }
-    teams.forEach(t => {
-      const ans = answers.find(a => a.team_name === t.name);
-      const key = t.name.replace(/ /g,'_');
-      const tc = document.getElementById(`stc-${key}-${i}`);
-      if (!tc) return;
-      const ranking = ans?.rankings || [];
-      const itemId = ranking[i];
-      const item = items.find(x => String(x.id) === String(itemId));
-      const ok = String(itemId) === String(it.id);
-      tc.className = 'tc ' + (ans?(ok?'ok':'ko'):'ko');
-      const nm = tc.querySelector('.tcnm');
-      if (nm) nm.textContent = (ans?(ok?'✓ ':'✗ '):'— ') + esc(item?.name||'?');
-      if (item?.image_url) { const sq = tc.querySelector('.tcsq'); if (sq) sq.style.background = `url('${item.image_url}') center/cover`; }
+    players.forEach(p=>{
+      const ans=answers.find(a=>a.player_name===p.name);
+      const key=p.name.replace(/ /g,'_');
+      const tc=document.getElementById(`stc-${key}-${i}`);
+      if(!tc)return;
+      const itemId=(ans?.rankings||[])[i];
+      const item=items.find(x=>String(x.id)===String(itemId));
+      const ok=String(itemId)===String(it.id);
+      tc.className='tc '+(ans?(ok?'ok':'ko'):'ko');
+      const nm=tc.querySelector('.tcnm');
+      if(nm)nm.textContent=(ans?(ok?'✓ ':'✗ '):'— ')+esc(item?.name||'?');
+      if(item?.image_url){const sq=tc.querySelector('.tcsq');if(sq)sq.style.background=`url('${item.image_url}') center/cover`;}
     });
   }
-  lastRevealed = revealed;
+  lastRevealed=revealed;
 }
 
 init();
